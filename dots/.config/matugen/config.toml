@@ -32,3 +32,15 @@ output_path = '~/.local/state/quickshell/user/generated/color.txt'
 [templates.wallpaper]
 input_path = '~/.config/matugen/templates/wallpaper.txt'
 output_path = '~/.local/state/quickshell/user/generated/wallpaper/path.txt'
+
+[templates.cava]
+input_path = '~/.config/matugen/templates/cava/config'
+output_path = '~/.config/cava/config'
+
+[templates.vesktop]
+input_path = '~/.config/matugen/templates/vesktop/midnight.theme.css'
+output_path = '~/.config/vesktop/themes/midnight.theme.css'
+
+[templates.sddm]
+input_path = '~/.config/matugen/templates/sddm/theme.conf'
+output_path = '~/.config/sddm/theme.conf.user'

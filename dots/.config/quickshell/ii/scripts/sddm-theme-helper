@@ -1,0 +1,132 @@
+#!/bin/bash
+# SDDM wallpaper and color updater - runs with elevated privileges
+# This script is called by matugen/switchwall automatically
+
+SDDM_THEME_DIR="/usr/share/sddm/themes/sugar-candy"
+SDDM_BG_DIR="$SDDM_THEME_DIR/Backgrounds"
+THEME_CONF_USER="$SDDM_THEME_DIR/theme.conf.user"
+# Use SUDO_USER to get the actual user home directory
+REAL_USER="${SUDO_USER:-$USER}"
+REAL_HOME=$(getent passwd "$REAL_USER" | cut -d: -f6)
+USER_COLORS="$REAL_HOME/.config/sddm/theme.conf.user"
+
+ACTION="$1"
+shift
+
+case "$ACTION" in
+    set-wallpaper)
+        WALLPAPER_PATH="$1"
+        if [ -z "$WALLPAPER_PATH" ] || [ ! -f "$WALLPAPER_PATH" ]; then
+            echo "Error: Invalid wallpaper path: $WALLPAPER_PATH"
+            exit 1
+        fi
+        
+        # Ensure the background directory exists
+        if [ ! -d "$SDDM_BG_DIR" ]; then
+            mkdir -p "$SDDM_BG_DIR"
+        fi
+        
+        # Copy wallpaper to SDDM backgrounds dir
+        FILENAME="current-wallpaper.${WALLPAPER_PATH##*.}"
+        cp "$WALLPAPER_PATH" "$SDDM_BG_DIR/$FILENAME"
+        chmod 644 "$SDDM_BG_DIR/$FILENAME"
+        
+        # Update theme.conf.user to use this wallpaper (quoted for sugar-candy compatibility)
+        if [ -f "$THEME_CONF_USER" ]; then
+            if grep -q "^Background=" "$THEME_CONF_USER"; then
+                sed -i "s|^Background=.*|Background=\"Backgrounds/$FILENAME\"|" "$THEME_CONF_USER"
+            else
+                echo "Background=\"Backgrounds/$FILENAME\"" >> "$THEME_CONF_USER"
+            fi
+        else
+            echo "[General]" > "$THEME_CONF_USER"
+            echo "Background=\"Backgrounds/$FILENAME\"" >> "$THEME_CONF_USER"
+        fi
+        echo "SDDM wallpaper updated: $FILENAME"
+        ;;
+    
+    set-colors)
+        if [ ! -f "$USER_COLORS" ]; then
+            echo "No color file found at $USER_COLORS"
+            exit 0
+        fi
+        
+        # Check if sugar-candy theme is installed
+        if [ ! -d "$SDDM_THEME_DIR" ]; then
+            echo "Sugar Candy theme not installed at $SDDM_THEME_DIR"
+            exit 0
+        fi
+        
+        # Ensure [General] section exists
+        if [ ! -f "$THEME_CONF_USER" ]; then
+            echo "[General]" > "$THEME_CONF_USER"
+        fi
+        
+        # Read colors and update theme.conf.user
+        while IFS="=" read -r key value; do
+            [[ "$key" =~ ^[[:space:]]*# ]] && continue
+            [[ "$key" =~ ^\[.*\]$ ]] && continue
+            [[ -z "$key" ]] && continue
+            key=$(echo "$key" | tr -d " ")
+            value=$(echo "$value" | tr -d " ")
+            if [ -n "$key" ] && [ -n "$value" ]; then
+                if grep -q "^$key=" "$THEME_CONF_USER" 2>/dev/null; then
+                    sed -i "s|^$key=.*|$key=$value|" "$THEME_CONF_USER"
+                else
+                    echo "$key=$value" >> "$THEME_CONF_USER"
+                fi
+            fi
+        done < "$USER_COLORS"
+        echo "SDDM colors updated from $USER_COLORS"
+        ;;
+    
+    update-all)
+        # Update both wallpaper and colors
+        WALLPAPER_PATH="$1"
+        
+        # Update colors first
+        if [ -f "$USER_COLORS" ] && [ -d "$SDDM_THEME_DIR" ]; then
+            if [ ! -f "$THEME_CONF_USER" ]; then
+                echo "[General]" > "$THEME_CONF_USER"
+            fi
+            
+            while IFS="=" read -r key value; do
+                [[ "$key" =~ ^[[:space:]]*# ]] && continue
+                [[ "$key" =~ ^\[.*\]$ ]] && continue
+                [[ -z "$key" ]] && continue
+                key=$(echo "$key" | tr -d " ")
+                value=$(echo "$value" | tr -d " ")
+                if [ -n "$key" ] && [ -n "$value" ]; then
+                    if grep -q "^$key=" "$THEME_CONF_USER" 2>/dev/null; then
+                        sed -i "s|^$key=.*|$key=$value|" "$THEME_CONF_USER"
+                    else
+                        echo "$key=$value" >> "$THEME_CONF_USER"
+                    fi
+                fi
+            done < "$USER_COLORS"
+            echo "SDDM colors updated"
+        fi
+        
+        # Update wallpaper if provided and valid
+        if [ -n "$WALLPAPER_PATH" ] && [ -f "$WALLPAPER_PATH" ]; then
+            if [ ! -d "$SDDM_BG_DIR" ]; then
+                mkdir -p "$SDDM_BG_DIR"
+            fi
+            
+            FILENAME="current-wallpaper.${WALLPAPER_PATH##*.}"
+            cp "$WALLPAPER_PATH" "$SDDM_BG_DIR/$FILENAME"
+            chmod 644 "$SDDM_BG_DIR/$FILENAME"
+            
+            if grep -q "^Background=" "$THEME_CONF_USER" 2>/dev/null; then
+                sed -i "s|^Background=.*|Background=\"Backgrounds/$FILENAME\"|" "$THEME_CONF_USER"
+            else
+                echo "Background=\"Backgrounds/$FILENAME\"" >> "$THEME_CONF_USER"
+            fi
+            echo "SDDM wallpaper updated: $FILENAME"
+        fi
+        ;;
+    *)
+        echo "Usage: $0 {set-wallpaper <path>|set-colors|update-all [wallpaper_path]}"
+        exit 1
+        ;;
+esac

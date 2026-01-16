@@ -19,6 +19,58 @@ function setup_user_group(){
     x sudo usermod -aG video,i2c,input "$(whoami)"
   fi
 }
+
+function setup_sddm(){
+  # Set up SDDM with Sugar Candy theme
+  local sddm_conf="/etc/sddm.conf.d/theme.conf"
+  local sugar_candy_dir="/usr/share/sddm/themes/sugar-candy"
+  local polkit_rules_dir="/etc/polkit-1/rules.d"
+  
+  # Check if Sugar Candy theme is installed
+  if [[ -d "$sugar_candy_dir" ]]; then
+    printf "${STY_CYAN}[$0]: Setting up SDDM with Sugar Candy theme...${STY_RST}\n"
+    
+    # Create SDDM config directory if it doesn't exist (non-fatal if fails)
+    sudo mkdir -p /etc/sddm.conf.d 2>/dev/null || true
+    
+    # Configure SDDM to use Sugar Candy theme
+    x sudo bash -c "cat > $sddm_conf << 'EOF'
+[Theme]
+Current=sugar-candy
+EOF"
+    
+    # Create Backgrounds directory in the theme (non-fatal - might already exist with different perms)
+    sudo mkdir -p "$sugar_candy_dir/Backgrounds" 2>/dev/null || {
+      # If mkdir fails, try to ensure directory exists anyway
+      if [[ ! -d "$sugar_candy_dir/Backgrounds" ]]; then
+        printf "${STY_YELLOW}[$0]: Warning: Could not create Backgrounds directory.${STY_RST}\n"
+        printf "${STY_YELLOW}[$0]: You may need to create it manually: sudo mkdir -p $sugar_candy_dir/Backgrounds${STY_RST}\n"
+      else
+        printf "${STY_CYAN}[$0]: Backgrounds directory already exists.${STY_RST}\n"
+      fi
+    }
+    
+    # Install polkit rule for passwordless sddm-theme-helper execution
+    if [[ -f "${REPO_ROOT}/dots-extra/sddm/49-sddm-theme-helper.rules" ]]; then
+      sudo mkdir -p "$polkit_rules_dir" 2>/dev/null || true
+      # Use cp with -f to force overwrite if file exists
+      x sudo cp -f "${REPO_ROOT}/dots-extra/sddm/49-sddm-theme-helper.rules" "$polkit_rules_dir/"
+      printf "${STY_GREEN}[$0]: Polkit rule installed for SDDM theming.${STY_RST}\n"
+    fi
+    
+    # Enable SDDM service
+    if [[ ! -z $(systemctl --version) ]]; then
+      # Use || true to not fail if already enabled or if another DM is enabled
+      sudo systemctl enable sddm 2>/dev/null || {
+        printf "${STY_YELLOW}[$0]: Could not enable SDDM (might already be enabled or another DM is in use).${STY_RST}\n"
+      }
+      printf "${STY_GREEN}[$0]: SDDM setup complete. It will be active on next boot.${STY_RST}\n"
+    fi
+  else
+    printf "${STY_YELLOW}[$0]: Sugar Candy theme not found. Skipping SDDM theme setup.${STY_RST}\n"
+    printf "${STY_YELLOW}[$0]: You can install it manually (Arch: yay -S sddm-sugar-candy-git)${STY_RST}\n"
+  fi
+}
 #####################################################################################
 # These python packages are installed using uv into the venv (virtual environment). Once the folder of the venv gets deleted, they are all gone cleanly. So it's considered as setups, not dependencies.
 showfun install-python-packages
@@ -70,3 +122,7 @@ fi
 v gsettings set org.gnome.desktop.interface font-name 'Google Sans Flex Medium 11 @opsz=11,wght=500'
 v gsettings set org.gnome.desktop.interface color-scheme 'prefer-dark'
 v kwriteconfig6 --file kdeglobals --group KDE --key widgetStyle Darkly
+
+# Setup SDDM display manager with Sugar Candy theme
+showfun setup_sddm
+v setup_sddm

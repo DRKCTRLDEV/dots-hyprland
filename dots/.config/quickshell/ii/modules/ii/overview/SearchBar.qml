@@ -110,7 +110,7 @@ RowLayout {
         }
         text: "image_search"
         StyledToolTip {
-            text: Translation.tr("Google Lens")
+            text: Translation.tr("Image Search")
         }
     }
 

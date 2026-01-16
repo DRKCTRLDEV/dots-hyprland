@@ -1,0 +1,9 @@
+polkit.addRule(function(action, subject) {
+    // Allow users in the wheel group to run sddm-theme-helper without authentication
+    if (action.id == "org.freedesktop.policykit.exec" &&
+        action.lookup("program") &&
+        action.lookup("program").indexOf("sddm-theme-helper") !== -1 &&
+        subject.isInGroup("wheel")) {
+        return polkit.Result.YES;
+    }
+});

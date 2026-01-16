@@ -276,3 +276,8 @@ for pattern in "${patterns[@]}"; do
       ;;
   esac
 done
+
+# Post-processing: Make sddm-theme-helper executable
+if [ -f "${XDG_CONFIG_HOME}/quickshell/ii/scripts/sddm-theme-helper" ]; then
+  chmod +x "${XDG_CONFIG_HOME}/quickshell/ii/scripts/sddm-theme-helper"
+fi

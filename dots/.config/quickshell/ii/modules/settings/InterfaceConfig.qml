@@ -345,7 +345,7 @@ ContentPage {
 
     ContentSection {
         icon: "screenshot_frame_2"
-        title: Translation.tr("Region selector (screen snipping/Google Lens)")
+        title: Translation.tr("Region selector (screen snipping/Image Search)")
 
         ContentSubsection {
             title: Translation.tr("Hint target regions")
@@ -381,7 +381,7 @@ ContentPage {
         }
         
         ContentSubsection {
-            title: Translation.tr("Google Lens")
+            title: Translation.tr("Image Search")
             
             ConfigSelectionArray {
                 currentValue: Config.options.search.imageSearch.useCircleSelection ? "circle" : "rectangles"
@@ -462,39 +462,69 @@ ContentPage {
             }
         }
 
+        ConfigSwitch {
+            buttonIcon: "mouse"
+            text: Translation.tr('Enable MouseCtrl')
+            checked: Config.options.sidebar.mouseConfig.enable
+            onCheckedChanged: {
+                Config.options.sidebar.mouseConfig.enable = checked;
+            }
+            StyledToolTip {
+                text: Translation.tr("Enable the MouseCtrl tab in the left sidebar for configuring SteelSeries mice using rivalcfg.\nInstall with: paru -S rivalcfg")
+            }
+        }
+
+        ConfigSpinBox {
+            enabled: Config.options.sidebar.mouseConfig.enable
+            icon: "speed"
+            text: Translation.tr("Max DPI limit")
+            value: Config.options.sidebar.mouseConfig.maxDpi
+            from: 1000
+            to: 12000
+            stepSize: 500
+            onValueChanged: {
+                Config.options.sidebar.mouseConfig.maxDpi = value;
+            }
+            StyledToolTip {
+                text: Translation.tr("Maximum DPI value allowed in the MouseCtrl interface.\nSet based on your mouse's maximum supported DPI.")
+            }
+        }
+        
         ContentSubsection {
             title: Translation.tr("Quick toggles")
             
-            ConfigSelectionArray {
-                Layout.fillWidth: false
-                currentValue: Config.options.sidebar.quickToggles.style
-                onSelected: newValue => {
-                    Config.options.sidebar.quickToggles.style = newValue;
-                }
-                options: [
-                    {
-                        displayName: Translation.tr("Classic"),
-                        icon: "password_2",
-                        value: "classic"
-                    },
-                    {
-                        displayName: Translation.tr("Android"),
-                        icon: "action_key",
-                        value: "android"
+            ConfigRow {
+                uniform: false
+                ConfigSelectionArray {
+                    Layout.fillWidth: true
+                    currentValue: Config.options.sidebar.quickToggles.style
+                    onSelected: newValue => {
+                        Config.options.sidebar.quickToggles.style = newValue;
                     }
-                ]
-            }
+                    options: [
+                        {
+                            displayName: Translation.tr("Classic"),
+                            icon: "password_2",
+                            value: "classic"
+                        },
+                        {
+                            displayName: Translation.tr("Android"),
+                            icon: "action_key",
+                            value: "android"
+                        }
+                    ]
+                }
 
-            ConfigSpinBox {
-                enabled: Config.options.sidebar.quickToggles.style === "android"
-                icon: "splitscreen_left"
-                text: Translation.tr("Columns")
-                value: Config.options.sidebar.quickToggles.android.columns
-                from: 1
-                to: 8
-                stepSize: 1
-                onValueChanged: {
-                    Config.options.sidebar.quickToggles.android.columns = value;
+                ConfigSpinBox {
+                    enabled: Config.options.sidebar.quickToggles.style === "android"
+                    icon: "splitscreen_left"
+                    text: Translation.tr("Columns")
+                    value: Config.options.sidebar.quickToggles.android.columns
+                    from: 1
+                    to: 8
+                    stepSize: 1
+                    onValueChanged: {
+                        Config.options.sidebar.quickToggles.android.columns = value;
                 }
             }
         }

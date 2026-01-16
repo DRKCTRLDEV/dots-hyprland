@@ -83,7 +83,7 @@ Item {
         id: getLanguagesProc
         command: ["trans", "-list-languages", "-no-bidi"]
         property list<string> bufferList: ["auto"]
-        running: true
+        running: false
         stdout: SplitParser {
             onRead: data => {
                 getLanguagesProc.bufferList.push(data.trim());
@@ -98,6 +98,15 @@ Item {
             root.languages = langs;
             getLanguagesProc.bufferList = []; // Clear the buffer
         }
+    }
+
+    Component.onCompleted: {
+        // Load languages asynchronously after component is ready
+        Qt.callLater(() => {
+            if (!getLanguagesProc.running) {
+                getLanguagesProc.running = true;
+            }
+        });
     }
 
     ColumnLayout {

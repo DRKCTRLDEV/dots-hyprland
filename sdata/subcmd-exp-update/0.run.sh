@@ -1160,11 +1160,11 @@ if [[ "$process_files" == true ]]; then
   echo "- New files created: $files_created"
 fi
 
-if [[ ! -f "$XDG_UPDATE_IGNORE_FILE" && ! -f "$UPDATE_IGNORE_FILE" ]]; then
+if [[ ! -f "$HOME_UPDATE_IGNORE_FILE" && ! -f "$UPDATE_IGNORE_FILE" ]]; then
   echo
   log_info "Tip: Create ignore files to exclude files from updates:"
   echo "  - Repository ignore: ${REPO_ROOT}/.updateignore"
-  echo "  - User ignore: ${XDG_UPDATE_IGNORE_FILE}"
+  echo "  - User ignore: ~/.updateignore"
   echo
   echo "Example patterns:"
   echo "  *.log                 # Ignore all .log files"

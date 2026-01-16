@@ -13,7 +13,7 @@ Item {
     case RegionSelection.SnipAction.Edit:
         return Translation.tr("Copy region (LMB) or annotate (RMB)");
     case RegionSelection.SnipAction.Search:
-        return Translation.tr("Search with Google Lens");
+        return Translation.tr("Search with Image Search");
     case RegionSelection.SnipAction.CharRecognition:
         return Translation.tr("Recognize text");
     case RegionSelection.SnipAction.Record:

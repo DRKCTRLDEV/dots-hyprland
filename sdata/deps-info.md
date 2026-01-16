@@ -161,6 +161,17 @@ Tips:
 - `wf-recorder`
   - Used in Quickshell config.
 
+## illogical-impulse-sddm
+- `sddm`
+  - Display manager for login screen.
+- `sddm-sugar-candy-git`
+  - Theme for SDDM that integrates with matugen color scheme.
+- `qt5-graphicaleffects`
+  - Required by Sugar Candy theme.
+- `qt5-quickcontrols2`
+  - Required by Sugar Candy theme.
+- `qt5-svg`
+  - Required by Sugar Candy theme.
 
 ## illogical-impulse-toolkit
 - `upower`
@@ -194,7 +205,6 @@ Tips:
 - `libqalculate`
   - Used in Quickshell config, providing math ability in searchbar.
   - Note that `qalc` is the needed executable. In Arch Linux [libqalculate](https://archlinux.org/packages/extra/x86_64/libqalculate) provides it, but in Fedora [qalculate](https://packages.fedoraproject.org/pkgs/libqalculate/qalculate/fedora-43.html#files) does and [libqalculate](https://packages.fedoraproject.org/pkgs/libqalculate/libqalculate/fedora-43.html#files) does not.
-
 
 # Actual packages
 ## illogical-impulse-quickshell-git

@@ -159,7 +159,7 @@ OverlayBackground {
                     right: parent.right
                 }
                 wrapMode: TextEdit.Wrap
-                placeholderText: Translation.tr("Write something here...\nUse '-' to create copyable bullet points, like this:\n\nSheep fricker\n- 4x Slab\n- 1x Boat\n- 4x Redstone Dust\n- 1x Sticky Piston\n- 1x End Rod\n- 4x Redstone Repeater\n- 1x Redstone Torch\n- 1x Sheep")
+                placeholderText: Translation.tr("Type your notes here.\nStart a line with '-' to make it copyable.")
                 selectByMouse: true
                 persistentSelection: true
                 textFormat: TextEdit.PlainText

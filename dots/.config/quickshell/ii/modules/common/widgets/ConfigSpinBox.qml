@@ -11,9 +11,17 @@ RowLayout {
     property alias stepSize: spinBoxWidget.stepSize
     property alias from: spinBoxWidget.from
     property alias to: spinBoxWidget.to
+    property alias hovered: hoverArea.containsMouse
     spacing: 10
     Layout.leftMargin: 8
     Layout.rightMargin: 8
+
+    MouseArea {
+        id: hoverArea
+        anchors.fill: parent
+        hoverEnabled: true
+        acceptedButtons: Qt.NoButton
+    }
 
     RowLayout {
         spacing: 10

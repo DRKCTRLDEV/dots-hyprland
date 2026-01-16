@@ -77,7 +77,15 @@ install-local-pkgbuild() {
   x pushd $location
 
   source ./PKGBUILD
-  x yay -S --sudoloop $installflags --asdeps "${depends[@]}"
+  
+  # Special handling for SDDM package to handle conflicts with manually installed sugar-candy theme
+  if [[ "$pkgname" == "illogical-impulse-sddm" ]]; then
+    # Add --overwrite flag for sddm-sugar-candy-git to handle existing files from KDE settings
+    x yay -S --sudoloop $installflags --asdeps --overwrite '/usr/share/sddm/themes/sugar-candy/*' "${depends[@]}"
+  else
+    x yay -S --sudoloop $installflags --asdeps "${depends[@]}"
+  fi
+  
   # man makepkg:
   # -A, --ignorearch: Ignore a missing or incomplete arch field in the build script.
   # -s, --syncdeps: Install missing dependencies using pacman. When build-time or run-time dependencies are not found, pacman will try to resolve them.
@@ -93,6 +101,7 @@ metapkgs=(./sdata/dist-arch/illogical-impulse-{audio,backlight,basic,fonts-theme
 metapkgs+=(./sdata/dist-arch/illogical-impulse-hyprland)
 metapkgs+=(./sdata/dist-arch/illogical-impulse-microtex-git)
 metapkgs+=(./sdata/dist-arch/illogical-impulse-quickshell-git)
+metapkgs+=(./sdata/dist-arch/illogical-impulse-sddm)
 # metapkgs+=(./sdata/dist-arch/packages/illogical-impulse-oneui4-icons-git)
 [[ -f /usr/share/icons/Bibata-Modern-Classic/index.theme ]] || \
   metapkgs+=(./sdata/dist-arch/illogical-impulse-bibata-modern-classic-bin)

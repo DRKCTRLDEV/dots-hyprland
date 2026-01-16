@@ -1,0 +1,13 @@
+pkgname=illogical-impulse-sddm
+pkgver=1.0
+pkgrel=1
+pkgdesc='Illogical Impulse SDDM Display Manager and Sugar Candy Theme'
+arch=(any)
+license=(None)
+depends=(
+  sddm
+  sddm-sugar-candy-git
+  qt5-graphicaleffects
+  qt5-quickcontrols2
+  qt5-svg
+)

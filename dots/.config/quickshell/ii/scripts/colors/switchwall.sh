@@ -50,12 +50,41 @@ pre_process() {
     fi
 }
 
+handle_sddm_theming() {
+    local wallpaper_path="$1"
+    local sddm_helper="$XDG_CONFIG_HOME/quickshell/ii/scripts/sddm-theme-helper"
+    
+    # Check if SDDM theming is enabled in config (default to true if not set)
+    if [ -f "$SHELL_CONFIG_FILE" ]; then
+        enable_sddm=$(jq -r '.appearance.wallpaperTheming.enableSddm // true' "$SHELL_CONFIG_FILE")
+        if [ "$enable_sddm" == "false" ]; then
+            return
+        fi
+    fi
+    
+    # Check if sddm-theme-helper exists and sugar-candy theme is installed
+    if [ ! -f "$sddm_helper" ]; then
+        return
+    fi
+    
+    if [ ! -d "/usr/share/sddm/themes/sugar-candy" ]; then
+        return
+    fi
+    
+    # Update SDDM theme colors and wallpaper (requires sudo)
+    # Use pkexec for graphical sudo prompt
+    if command -v pkexec &>/dev/null; then
+        pkexec "$sddm_helper" update-all "$wallpaper_path" &
+    fi
+}
+
 post_process() {
     local screen_width="$1"
     local screen_height="$2"
     local wallpaper_path="$3"
 
     handle_kde_material_you_colors &
+    handle_sddm_theming "$wallpaper_path" &
     "$SCRIPT_DIR/code/material-code-set-color.sh" &
 }
 

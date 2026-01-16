@@ -24,6 +24,10 @@ case "${SKIP_QUICKSHELL}" in
   *)
      # Should overwriting the whole directory not only ~/.config/quickshell/ii/ cuz https://github.com/end-4/dots-hyprland/issues/2294#issuecomment-3448671064
     install_dir__sync dots/.config/quickshell "$XDG_CONFIG_HOME"/quickshell
+    # Make sddm-theme-helper executable
+    if [ -f "${XDG_CONFIG_HOME}/quickshell/ii/scripts/sddm-theme-helper" ]; then
+      chmod +x "${XDG_CONFIG_HOME}/quickshell/ii/scripts/sddm-theme-helper"
+    fi
     ;;
 esac
 

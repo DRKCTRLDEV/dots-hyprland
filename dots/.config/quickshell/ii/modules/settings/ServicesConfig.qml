@@ -82,7 +82,6 @@ ContentPage {
                 Config.options.resources.updateInterval = value;
             }
         }
-        
     }
 
     ContentSection {
@@ -98,7 +97,7 @@ ContentPage {
                 Config.options.screenRecord.savePath = text;
             }
         }
-        
+
         MaterialTextArea {
             Layout.fillWidth: true
             placeholderText: Translation.tr("Screenshot Path (leave empty to just copy)")
@@ -227,7 +226,7 @@ ContentPage {
                 }
             }
         }
-        
+
         MaterialTextArea {
             Layout.fillWidth: true
             placeholderText: Translation.tr("City name")

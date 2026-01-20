@@ -278,6 +278,6 @@ for pattern in "${patterns[@]}"; do
 done
 
 # Post-processing: Make sddm-theme-helper executable
-if [ -f "${XDG_CONFIG_HOME}/quickshell/ii/scripts/sddm-theme-helper" ]; then
-  chmod +x "${XDG_CONFIG_HOME}/quickshell/ii/scripts/sddm-theme-helper"
+if [ -f "${XDG_CONFIG_HOME}/quickshell/ii/scripts/colors/sddm/sddm-theme-helper" ]; then
+  chmod +x "${XDG_CONFIG_HOME}/quickshell/ii/scripts/colors/sddm/sddm-theme-helper"
 fi

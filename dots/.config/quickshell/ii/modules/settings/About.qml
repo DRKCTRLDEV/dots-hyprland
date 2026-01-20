@@ -21,8 +21,14 @@ ContentPage {
             anchors.fill: parent
             gradient: Gradient {
                 orientation: Gradient.Vertical
-                GradientStop { position: 0.0; color: CF.ColorUtils.transparentize(Appearance.colors.colPrimary, 0.15) }
-                GradientStop { position: 1.0; color: "transparent" }
+                GradientStop {
+                    position: 0.0
+                    color: CF.ColorUtils.transparentize(Appearance.colors.colPrimary, 0.15)
+                }
+                GradientStop {
+                    position: 1.0
+                    color: "transparent"
+                }
             }
         }
 
@@ -71,7 +77,7 @@ ContentPage {
                 colBackgroundHover: Appearance.colors.colSecondaryContainerHover
                 colRipple: Appearance.colors.colSecondaryContainerActive
                 onClicked: {
-                    Qt.openUrlExternally("https://end-4.github.io/dots-hyprland-wiki/en/ii-qs/02usage/")
+                    Qt.openUrlExternally("https://end-4.github.io/dots-hyprland-wiki/en/ii-qs/02usage/");
                 }
             }
             RippleButtonWithIcon {
@@ -82,7 +88,7 @@ ContentPage {
                 colBackgroundHover: Appearance.colors.colSecondaryContainerHover
                 colRipple: Appearance.colors.colSecondaryContainerActive
                 onClicked: {
-                    Qt.openUrlExternally("https://github.com/end-4/dots-hyprland")
+                    Qt.openUrlExternally("https://github.com/end-4/dots-hyprland");
                 }
             }
             RippleButtonWithIcon {
@@ -93,7 +99,7 @@ ContentPage {
                 colBackgroundHover: Appearance.colors.colTertiaryContainerHover
                 colRipple: Appearance.colors.colTertiaryContainerActive
                 onClicked: {
-                    Qt.openUrlExternally("https://github.com/end-4/dots-hyprland/discussions")
+                    Qt.openUrlExternally("https://github.com/end-4/dots-hyprland/discussions");
                 }
             }
             RippleButtonWithIcon {
@@ -104,7 +110,7 @@ ContentPage {
                 colBackgroundHover: Appearance.colors.colTertiaryContainerHover
                 colRipple: Appearance.colors.colTertiaryContainerActive
                 onClicked: {
-                    Qt.openUrlExternally("https://github.com/end-4/dots-hyprland/issues")
+                    Qt.openUrlExternally("https://github.com/end-4/dots-hyprland/issues");
                 }
             }
         }
@@ -134,7 +140,7 @@ ContentPage {
                 colBackgroundHover: Appearance.colors.colPrimaryContainerHover
                 colRipple: Appearance.colors.colPrimaryContainerActive
                 onClicked: {
-                    Qt.openUrlExternally("https://github.com/sponsors/end-4")
+                    Qt.openUrlExternally("https://github.com/sponsors/end-4");
                 }
             }
 
@@ -150,7 +156,7 @@ ContentPage {
                     colBackgroundHover: Appearance.colors.colSecondaryContainerHover
                     colRipple: Appearance.colors.colSecondaryContainerActive
                     onClicked: {
-                        Qt.openUrlExternally("https://github.com/end-4/dots-hyprland")
+                        Qt.openUrlExternally("https://github.com/end-4/dots-hyprland");
                     }
                 }
                 RippleButtonWithIcon {
@@ -161,7 +167,7 @@ ContentPage {
                     colBackgroundHover: Appearance.colors.colSecondaryContainerHover
                     colRipple: Appearance.colors.colSecondaryContainerActive
                     onClicked: {
-                        Qt.openUrlExternally("https://github.com/end-4/dots-hyprland")
+                        Qt.openUrlExternally("https://github.com/end-4/dots-hyprland");
                     }
                 }
             }
@@ -171,7 +177,7 @@ ContentPage {
     ContentSection {
         icon: "box"
         title: Translation.tr("Distribution")
-        
+
         Rectangle {
             Layout.fillWidth: true
             Layout.preferredHeight: contentLayout.implicitHeight + 40
@@ -204,8 +210,8 @@ ContentPage {
                         text: SystemInfo.homeUrl
                         textFormat: Text.MarkdownText
                         opacity: 0.7
-                        onLinkActivated: (link) => {
-                            Qt.openUrlExternally(link)
+                        onLinkActivated: link => {
+                            Qt.openUrlExternally(link);
                         }
                         PointingHandLinkHover {}
                     }
@@ -223,7 +229,7 @@ ContentPage {
                 materialIconFill: false
                 mainText: Translation.tr("Docs")
                 onClicked: {
-                    Qt.openUrlExternally(SystemInfo.documentationUrl)
+                    Qt.openUrlExternally(SystemInfo.documentationUrl);
                 }
             }
             RippleButtonWithIcon {
@@ -231,7 +237,7 @@ ContentPage {
                 materialIconFill: false
                 mainText: Translation.tr("Support")
                 onClicked: {
-                    Qt.openUrlExternally(SystemInfo.supportUrl)
+                    Qt.openUrlExternally(SystemInfo.supportUrl);
                 }
             }
             RippleButtonWithIcon {
@@ -239,12 +245,12 @@ ContentPage {
                 materialIconFill: false
                 mainText: Translation.tr("Privacy")
                 onClicked: {
-                    Qt.openUrlExternally(SystemInfo.privacyPolicyUrl)
+                    Qt.openUrlExternally(SystemInfo.privacyPolicyUrl);
                 }
             }
         }
     }
-    
+
     Item {
         Layout.fillWidth: true
         Layout.preferredHeight: versionText.implicitHeight

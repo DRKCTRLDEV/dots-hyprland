@@ -76,12 +76,13 @@ Rectangle {
         id: categoryFolderPopup
         // I don't even know what the fuck is going on at this point
         // I hate point mapping
-        property point originPoint: categoryOpenButtonLoader.mapToItem(root, categoryOpenButtonLoader.width / 2, categoryOpenButtonLoader.height / 2)
+        property point originPoint: (categoryOpenButtonLoader && categoryOpenButtonLoader.item) ? categoryOpenButtonLoader.mapToItem(root, categoryOpenButtonLoader.width / 2, categoryOpenButtonLoader.height / 2) : Qt.point(root.width/2, root.height/2)
         property point windowCenterPoint: {
             const rootContentItem = root.windowRootItem;
+            if (!rootContentItem || !rootContentItem.window) return Qt.point(root.width/2, root.height/2);
             const canvasPosInRoot = root.mapFromItem(rootContentItem, rootContentItem.width / 2, rootContentItem.height / 2);
             const sectionItem = root.parent.parent.parent;
-            const positionInSection = sectionItem.mapFromItem(categoryOpenButtonLoader, categoryOpenButtonLoader.x, categoryOpenButtonLoader.y);
+            const positionInSection = (sectionItem && categoryOpenButtonLoader && categoryOpenButtonLoader.item) ? sectionItem.mapFromItem(categoryOpenButtonLoader, categoryOpenButtonLoader.x, categoryOpenButtonLoader.y) : {x:0, y:0};
             const targetY = Math.max(-positionInSection.y + 212, canvasPosInRoot.y);
             return Qt.point(canvasPosInRoot.x, targetY);
         }

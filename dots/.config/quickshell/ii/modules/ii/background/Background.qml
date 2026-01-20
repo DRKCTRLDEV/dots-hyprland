@@ -71,7 +71,6 @@ Variants {
 
         onWallpaperPathChanged: {
             bgRoot.updateZoomScale();
-            // Clock position gets updated after zoom scale is updated
         }
 
         // Wallpaper zoom scale

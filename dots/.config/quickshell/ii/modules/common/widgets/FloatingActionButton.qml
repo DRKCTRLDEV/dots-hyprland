@@ -1,3 +1,4 @@
+pragma ComponentBehavior: Bound
 import QtQuick
 import QtQuick.Layouts
 import qs.modules.common
@@ -43,6 +44,7 @@ RippleButton {
             visible: root.buttonText?.length > 0
             active: true
             sourceComponent: Revealer {
+                implicitHeight: root.baseSize
                 visible: root.expanded || implicitWidth > 0
                 reveal: root.expanded
                 implicitWidth: reveal ? (buttonText.implicitWidth + root.elementSpacing + contentRowLayout.horizontalMargins) : 0

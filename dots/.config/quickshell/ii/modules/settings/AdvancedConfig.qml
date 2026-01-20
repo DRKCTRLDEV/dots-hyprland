@@ -47,7 +47,7 @@ ContentPage {
                 text: Translation.tr("Force dark mode in terminal")
                 checked: Config.options.appearance.wallpaperTheming.terminalGenerationProps.forceDarkMode
                 onCheckedChanged: {
-                     Config.options.appearance.wallpaperTheming.terminalGenerationProps.forceDarkMode= checked;
+                    Config.options.appearance.wallpaperTheming.terminalGenerationProps.forceDarkMode = checked;
                 }
                 StyledToolTip {
                     text: Translation.tr("Ignored if terminal theming is not enabled")
@@ -89,7 +89,4 @@ ContentPage {
             }
         }
     }
-
-
-
 }

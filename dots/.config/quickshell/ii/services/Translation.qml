@@ -49,8 +49,10 @@ Singleton {
 
     onLanguageCodeChanged: {
         print("[Translation] Language changed to", root.languageCode);
-        translationFileView.languageCode = root.languageCode;
-        generatedTranslationFileView.languageCode = root.languageCode;
+        // Only try to read a language that actually exists, otherwise fall back to en_US
+        const effectiveLang = root.allAvailableLanguages.indexOf(root.languageCode) !== -1 ? root.languageCode : "en_US";
+        translationFileView.languageCode = effectiveLang;
+        generatedTranslationFileView.languageCode = effectiveLang;
         translationFileView.reread();
         generatedTranslationFileView.reread();
     }
@@ -115,6 +117,24 @@ Singleton {
         }
     }
 
+    // Small helper process to check for the existence of a translation file without causing noisy warnings
+    Process {
+        id: translationFileExistsProc
+        property var targetReader: null
+        onExited: (exitCode, exitStatus) => {
+            const target = translationFileExistsProc.targetReader;
+            if (!target) return;
+            if (exitCode === 0) {
+                target.path = "";
+                target.path = `${target.translationsDir}/${target.languageCode}.json`;
+                target.reload();
+            } else {
+                target.contentLoaded({});
+            }
+            translationFileExistsProc.targetReader = null;
+        }
+    }
+
     component TranslationReader: FileView {
         id: translationReader
         required property string translationsDir
@@ -122,10 +142,15 @@ Singleton {
         signal contentLoaded(var data)
 
         function reread() { // Proper reload in case the file was incorrect before
-            translationReader.path = "";
-            translationReader.path = `${translationReader.translationsDir}/${translationReader.languageCode}.json`;
-            translationReader.reload();
+            // Only attempt to load the file if it appears to exist to avoid noisy warnings
+            const candidatePath = `${translationReader.translationsDir}/${translationReader.languageCode}.json`;
+            // Escape single quotes for safe shell quoting
+            function _escapeSingleQuotes(s) { return s.replace(/'/g, "'\"'\"'"); }
+            const escaped = _escapeSingleQuotes(candidatePath);
+            translationFileExistsProc.targetReader = translationReader;
+            translationFileExistsProc.exec(["bash", "-c", `[ -f '${escaped}' ]`]);
         }
+
         path: ""
 
         onLoaded: {

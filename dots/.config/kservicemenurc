@@ -1,0 +1,10 @@
+[Show]
+forgetfileitemaction=false
+hidefileitemaction=false
+installFont=true
+kactivitymanagerd_fileitem_linking_plugin=false
+movetonewfolderitemaction=true
+setfoldericonitemaction=false
+sharefileitemaction=false
+tagsfileitemaction=false
+wallpaperfileitemaction=false

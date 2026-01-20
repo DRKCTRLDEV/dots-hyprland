@@ -19,7 +19,7 @@ ContentPage {
             }
         }
     }
-    
+
     ContentSection {
         icon: "spoke"
         title: Translation.tr("Positioning")
@@ -85,7 +85,7 @@ ContentPage {
         }
 
         ConfigRow {
-            
+
             ContentSubsection {
                 title: Translation.tr("Corner style")
                 Layout.fillWidth: true
@@ -153,7 +153,7 @@ ContentPage {
                 Config.options.tray.invertPinnedItems = checked;
             }
         }
-        
+
         ConfigSwitch {
             buttonIcon: "colors"
             text: Translation.tr('Tint icons')
@@ -312,7 +312,7 @@ ContentPage {
             ConfigSelectionArray {
                 currentValue: JSON.stringify(Config.options.bar.workspaces.numberMap)
                 onSelected: newValue => {
-                    Config.options.bar.workspaces.numberMap = JSON.parse(newValue)
+                    Config.options.bar.workspaces.numberMap = JSON.parse(newValue);
                 }
                 options: [
                     {

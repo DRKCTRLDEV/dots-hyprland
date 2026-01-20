@@ -52,7 +52,7 @@ pre_process() {
 
 handle_sddm_theming() {
     local wallpaper_path="$1"
-    local sddm_helper="$XDG_CONFIG_HOME/quickshell/ii/scripts/sddm-theme-helper"
+    local sddm_helper="$XDG_CONFIG_HOME/quickshell/ii/scripts/colors/sddm/sddm-theme-helper"
     
     # Check if SDDM theming is enabled in config (default to true if not set)
     if [ -f "$SHELL_CONFIG_FILE" ]; then
@@ -72,9 +72,26 @@ handle_sddm_theming() {
     fi
     
     # Update SDDM theme colors and wallpaper (requires sudo)
-    # Use pkexec for graphical sudo prompt
+    # Normalize wallpaper path (accept file:// URIs, expand ~, trim whitespace)
+    normalized_path="$wallpaper_path"
+    normalized_path="${normalized_path#file://}"
+    if [[ "$normalized_path" == "~"* ]]; then
+        normalized_path="${normalized_path/#\~/$HOME}"
+    fi
+    normalized_path="$(printf '%s' "$normalized_path" | sed -e 's/^[[:space:]]*//' -e 's/[[:space:]]*$//')"
+
+    if [ -z "$normalized_path" ] || [ ! -f "$normalized_path" ]; then
+        logger -t switchwall "sddm: wallpaper missing or not a file: $wallpaper_path -> $normalized_path"
+        return
+    fi
+
+    # Use pkexec for graphical sudo prompt (synchronous)
     if command -v pkexec &>/dev/null; then
-        pkexec "$sddm_helper" update-all "$wallpaper_path" &
+        pkexec "$sddm_helper" update-all "$normalized_path"
+        rc=$?
+        if [ $rc -ne 0 ]; then
+            logger -t switchwall "sddm: pkexec failed (exit $rc)"
+        fi
     fi
 }
 

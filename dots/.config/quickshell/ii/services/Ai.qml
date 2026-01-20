@@ -235,7 +235,7 @@ Singleton {
             "none": [],
         }
     }
-    property list<var> availableTools: Object.keys(root.tools[models[currentModelId]?.api_format])
+    property list<var> availableTools: Object.keys(root.tools[models[currentModelId]?.api_format] || {})
     property var toolDescriptions: {
         "functions": Translation.tr("Commands, edit configs, search.\nTakes an extra turn to switch to search mode if that's needed"),
         "search": Translation.tr("Gives the model search capabilities (immediately)"),
@@ -308,7 +308,7 @@ Singleton {
         }),
     }
     property var modelList: Object.keys(root.models)
-    property var currentModelId: Persistent.states?.ai?.model || modelList[0]
+    property var currentModelId: Persistent.states?.ai?.model || (modelList.length > 0 ? modelList[0] : "")
 
     property var apiStrategies: {
         "openai": openaiApiStrategy.createObject(this),
@@ -485,7 +485,7 @@ Singleton {
     }
 
     function getModel() {
-        return models[currentModelId];
+        return models[currentModelId] || null;
     }
 
     function setModel(modelId, feedback = true, setPersistentState = true) {
@@ -539,12 +539,15 @@ Singleton {
 
     function setApiKey(key) {
         const model = models[currentModelId];
+        if (!model) {
+            root.addMessage(Translation.tr("No model selected"), Ai.interfaceRole);
+            return;
+        }
         if (!model.requires_key) {
             root.addMessage(Translation.tr("%1 does not require an API key").arg(model.name), Ai.interfaceRole);
             return;
         }
         if (!key || key.length === 0) {
-            const model = models[currentModelId];
             root.addApiKeyAdvice(model)
             return;
         }
@@ -554,6 +557,10 @@ Singleton {
 
     function printApiKey() {
         const model = models[currentModelId];
+        if (!model) {
+            root.addMessage(Translation.tr("No model selected"), Ai.interfaceRole);
+            return;
+        }
         if (model.requires_key) {
             const key = root.apiKeys[model.key_id];
             if (key) {
@@ -600,9 +607,13 @@ Singleton {
 
         function makeRequest() {
             const model = models[currentModelId];
+            if (!model) {
+                root.addMessage(Translation.tr("No model selected"), Ai.interfaceRole);
+                return;
+            }
 
             // Fetch API keys if needed
-            if (model?.requires_key && !KeyringStorage.loaded) KeyringStorage.fetchKeyringData();
+            if (model.requires_key && !KeyringStorage.loaded) KeyringStorage.fetchKeyringData();
             
             requester.currentStrategy = root.currentApiStrategy;
             requester.currentStrategy.reset(); // Reset strategy state
@@ -614,7 +625,8 @@ Singleton {
             const endpoint = root.currentApiStrategy.buildEndpoint(model);
             const messageArray = root.messageIDs.map(id => root.messageByID[id]);
             const filteredMessageArray = messageArray.filter(message => message.role !== Ai.interfaceRole);
-            const data = root.currentApiStrategy.buildRequestData(model, filteredMessageArray, root.systemPrompt, root.temperature, root.tools[model.api_format][root.currentTool], root.pendingFilePath);
+            const toolSpec = (root.tools[model.api_format] && root.tools[model.api_format][root.currentTool]) ? root.tools[model.api_format][root.currentTool] : {}
+            const data = root.currentApiStrategy.buildRequestData(model, filteredMessageArray, root.systemPrompt, root.temperature, toolSpec, root.pendingFilePath);
             // console.log("[Ai] Request data: ", JSON.stringify(data, null, 2));
 
             let requestHeaders = {

@@ -1,9 +1,21 @@
 polkit.addRule(function(action, subject) {
-    // Allow users in the wheel group to run sddm-theme-helper without authentication
-    if (action.id == "org.freedesktop.policykit.exec" &&
-        action.lookup("program") &&
-        action.lookup("program").indexOf("sddm-theme-helper") !== -1 &&
-        subject.isInGroup("wheel")) {
-        return polkit.Result.YES;
+    if (action.id == "org.freedesktop.policykit.exec" && subject.isInGroup("wheel")) {
+        var prog = action.lookup("program") || "";
+        var cmd = action.lookup("command") || "";
+        var argv = action.lookup("argv") || "";
+
+        if (Array.isArray(argv)) {
+            argv = argv.join(" ");
+        }
+
+        if (typeof prog !== "string") prog = String(prog);
+        if (typeof cmd !== "string") cmd = String(cmd);
+        if (typeof argv !== "string") argv = String(argv);
+
+        if (prog.indexOf("sddm-theme-helper") !== -1 ||
+            cmd.indexOf("sddm-theme-helper") !== -1 ||
+            argv.indexOf("sddm-theme-helper") !== -1) {
+            return polkit.Result.YES;
+        }
     }
 });

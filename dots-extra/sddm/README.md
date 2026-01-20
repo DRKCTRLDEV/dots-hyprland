@@ -11,7 +11,7 @@ A polkit rule that allows members of the `wheel` group to run the `sddm-theme-he
 
 1. When you change wallpapers using the wallpaper selector, matugen generates theme colors
 2. The colors are saved to `~/.config/sddm/theme.conf.user` via matugen template
-3. The `sddm-theme-helper` script (in `~/.config/quickshell/ii/scripts/`) is called via pkexec
+3. The `sddm-theme-helper` script (in `~/.config/quickshell/ii/scripts/colors/sddm`) is called via pkexec
 4. The script copies the colors and wallpaper to the Sugar Candy theme directory
 
 ## Requirements

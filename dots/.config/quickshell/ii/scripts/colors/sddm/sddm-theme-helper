@@ -4,7 +4,7 @@
 
 SDDM_THEME_DIR="/usr/share/sddm/themes/sugar-candy"
 SDDM_BG_DIR="$SDDM_THEME_DIR/Backgrounds"
-THEME_CONF_USER="$SDDM_THEME_DIR/theme.conf.user"
+THEME_CONF_USER="$SDDM_THEME_DIR/theme.conf"
 # Use SUDO_USER to get the actual user home directory
 REAL_USER="${SUDO_USER:-$USER}"
 REAL_HOME=$(getent passwd "$REAL_USER" | cut -d: -f6)

@@ -11,16 +11,18 @@ if status is-interactive # Commands to run in interactive sessions can go here
     # No greeting
     set fish_greeting
 
-    # Use starship
-    starship init fish | source
+    if test -z "$VSCODE_PID" -a "$TERM_PROGRAM" != "vscode"
+        starship init fish | source
+    end
+
     if test -f ~/.local/state/quickshell/user/generated/terminal/sequences.txt
         cat ~/.local/state/quickshell/user/generated/terminal/sequences.txt
     end
 
-    # Aliases
-    alias ls 'eza --icons -la'
-    alias clear "printf '\033[2J\033[3J\033[1;1H'"
-    alias cls clear
-    alias q 'qs -c ii'
+    # Abbreviations
+    abbr ls 'eza --icons -la'
+    abbr clear "printf '\033[2J\033[3J\033[1;1H'"
+    abbr cls 'clear'
+    abbr q 'qs -c ii'
     
 end

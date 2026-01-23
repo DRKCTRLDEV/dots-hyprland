@@ -49,13 +49,19 @@ EOF"
         printf "${STY_CYAN}[$0]: Backgrounds directory already exists.${STY_RST}\n"
       fi
     }
-    
-    # Install polkit rule for passwordless sddm-theme-helper execution
-    if [[ -f "${REPO_ROOT}/dots-extra/sddm/49-sddm-theme-helper.rules" ]]; then
-      sudo mkdir -p "$polkit_rules_dir" 2>/dev/null || true
-      # Use cp with -f to force overwrite if file exists
-      x sudo cp -f "${REPO_ROOT}/dots-extra/sddm/49-sddm-theme-helper.rules" "$polkit_rules_dir/"
-      printf "${STY_GREEN}[$0]: Polkit rule installed for SDDM theming.${STY_RST}\n"
+    printf "${STY_CYAN}[$0]: Polkit rule installation skipped (deprecated). Using sudoers-based install instead.${STY_RST}\n"
+
+    # Install sddm-theme-helper into /usr/local/bin so it can be run via sudo safely
+    if [[ -f "${REPO_ROOT}/dots/.config/quickshell/ii/scripts/colors/sddm/sddm-theme-helper" ]]; then
+      x sudo install -m 0755 "${REPO_ROOT}/dots/.config/quickshell/ii/scripts/colors/sddm/sddm-theme-helper" /usr/local/bin/sddm-theme-helper
+      printf "${STY_GREEN}[$0]: Installed sddm-theme-helper to /usr/local/bin${STY_RST}\n"
+    fi
+
+    # Install sudoers snippet for passwordless sudo of the helper
+    if [[ -f "${REPO_ROOT}/dots-extra/sddm/99-sddm-theme-helper.sudoers" ]]; then
+      x sudo cp -f "${REPO_ROOT}/dots-extra/sddm/99-sddm-theme-helper.sudoers" /etc/sudoers.d/99-sddm-theme-helper
+      x sudo chmod 0440 /etc/sudoers.d/99-sddm-theme-helper
+      printf "${STY_GREEN}[$0]: Sudoers entry installed for sddm-theme-helper.${STY_RST}\n"
     fi
     
     # Enable SDDM service

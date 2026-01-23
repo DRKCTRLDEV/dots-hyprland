@@ -12,7 +12,11 @@ if status is-interactive # Commands to run in interactive sessions can go here
     set fish_greeting
 
     if test -z "$VSCODE_PID" -a "$TERM_PROGRAM" != "vscode"
-        starship init fish | source
+        set _tty (tty)
+        if test "$TERM" != "linux" -a (not string match -r '^/dev/tty[0-9]+$' $_tty)
+            starship init fish | source
+        end
+        set -e _tty
     end
 
     if test -f ~/.local/state/quickshell/user/generated/terminal/sequences.txt

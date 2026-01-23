@@ -2,17 +2,43 @@
 
 This directory contains files for integrating SDDM (Simple Desktop Display Manager) with the dots-hyprland theming system.
 
-## Components
+### installation
 
-### 49-sddm-theme-helper.rules
-A polkit rule that allows members of the `wheel` group to run the `sddm-theme-helper` script without authentication. This enables automatic SDDM theme updates when changing wallpapers.
+- Install the helper:
 
-## How It Works
+```bash
+sudo install -m 0755 path/to/sddm-theme-helper /usr/local/bin/sddm-theme-helper
+```
 
-1. When you change wallpapers using the wallpaper selector, matugen generates theme colors
-2. The colors are saved to `~/.config/sddm/theme.conf.user` via matugen template
-3. The `sddm-theme-helper` script (in `~/.config/quickshell/ii/scripts/colors/sddm`) is called via pkexec
-4. The script copies the colors and wallpaper to the Sugar Candy theme directory
+- Install the sudoers snippet (grants narrowly-scoped, passwordless sudo for the helper):
+
+```bash
+sudo cp path/to/99-sddm-theme-helper.sudoers /etc/sudoers.d/99-sddm-theme-helper
+sudo chmod 0440 /etc/sudoers.d/99-sddm-theme-helper
+```
+
+### Testing
+
+1. Verify installed files:
+
+```bash
+sudo ls -l /usr/local/bin/sddm-theme-helper
+sudo ls -l /etc/sudoers.d/99-sddm-theme-helper
+```
+
+2. Test a manual update (replace the path):
+
+```bash
+sudo /usr/local/bin/sddm-theme-helper update-all /path/to/wallpaper
+```
+
+3. Check logs for failures or diagnostics:
+
+```bash
+journalctl -e -t switchwall
+journalctl -e -t sddm-theme-helper
+```
+
 
 ## Requirements
 
@@ -49,7 +75,14 @@ You can disable SDDM theming in the Quickshell config:
 
 If SDDM theming doesn't work:
 
-1. Ensure Sugar Candy theme is installed at `/usr/share/sddm/themes/sugar-candy`
-2. Verify SDDM is configured to use Sugar Candy: check `/etc/sddm.conf.d/theme.conf`
-3. Make sure the polkit rule is installed: `/etc/polkit-1/rules.d/49-sddm-theme-helper.rules`
-4. Check that the sddm-theme-helper script is executable
+1. Ensure the Sugar Candy theme is installed at `/usr/share/sddm/themes/sugar-candy`.
+2. Verify SDDM is configured to use Sugar Candy: check `/etc/sddm.conf.d/theme.conf`.
+3. Ensure the sudoers snippet is installed: `/etc/sudoers.d/99-sddm-theme-helper`
+4. Check that the helper is installed and executable: `sudo ls -l /usr/local/bin/sddm-theme-helper`.
+5. Verify the per-user colors file exists and has valid keys: `~/.config/sddm/theme.conf`.
+6. Inspect logs for errors:
+
+```bash
+journalctl -e -t switchwall
+journalctl -e -t sddm-theme-helper
+```

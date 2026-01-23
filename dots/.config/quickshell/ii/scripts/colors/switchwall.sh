@@ -52,8 +52,16 @@ pre_process() {
 
 handle_sddm_theming() {
     local wallpaper_path="$1"
-    local sddm_helper="$XDG_CONFIG_HOME/quickshell/ii/scripts/colors/sddm/sddm-theme-helper"
-    
+    # Prefer system-installed helper (/usr/local/bin) for consistent sudo execution; fallback to per-user helper
+    if [ -x "/usr/local/bin/sddm-theme-helper" ]; then
+        local sddm_helper="/usr/local/bin/sddm-theme-helper"
+    elif [ -x "$XDG_CONFIG_HOME/quickshell/ii/scripts/colors/sddm/sddm-theme-helper" ]; then
+        local sddm_helper="$XDG_CONFIG_HOME/quickshell/ii/scripts/colors/sddm/sddm-theme-helper"
+    else
+        local sddm_helper=""
+    fi
+    local rc
+
     # Check if SDDM theming is enabled in config (default to true if not set)
     if [ -f "$SHELL_CONFIG_FILE" ]; then
         enable_sddm=$(jq -r '.appearance.wallpaperTheming.enableSddm // true' "$SHELL_CONFIG_FILE")
@@ -61,19 +69,19 @@ handle_sddm_theming() {
             return
         fi
     fi
-    
+
     # Check if sddm-theme-helper exists and sugar-candy theme is installed
-    if [ ! -f "$sddm_helper" ]; then
+    if [ -z "$sddm_helper" ] || [ ! -x "$sddm_helper" ]; then
+        logger -t switchwall "sddm: no executable sddm-theme-helper found (checked /usr/local/bin and $XDG_CONFIG_HOME/quickshell/ii/scripts/colors/sddm/)"
         return
     fi
-    
+
     if [ ! -d "/usr/share/sddm/themes/sugar-candy" ]; then
         return
     fi
-    
-    # Update SDDM theme colors and wallpaper (requires sudo)
+
     # Normalize wallpaper path (accept file:// URIs, expand ~, trim whitespace)
-    normalized_path="$wallpaper_path"
+    local normalized_path="$wallpaper_path"
     normalized_path="${normalized_path#file://}"
     if [[ "$normalized_path" == "~"* ]]; then
         normalized_path="${normalized_path/#\~/$HOME}"
@@ -85,13 +93,15 @@ handle_sddm_theming() {
         return
     fi
 
-    # Use pkexec for graphical sudo prompt (synchronous)
-    if command -v pkexec &>/dev/null; then
-        pkexec "$sddm_helper" update-all "$normalized_path"
+    # Use sudo only (no pkexec)
+    if command -v sudo &>/dev/null; then
+        sudo "$sddm_helper" update-all "$normalized_path"
         rc=$?
         if [ $rc -ne 0 ]; then
-            logger -t switchwall "sddm: pkexec failed (exit $rc)"
+            logger -t switchwall "sddm: sudo failed (exit $rc)"
         fi
+    else
+        logger -t switchwall "sddm: sudo not available; cannot update SDDM theme"
     fi
 }
 

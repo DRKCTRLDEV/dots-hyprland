@@ -4,14 +4,37 @@
 
 SDDM_THEME_DIR="/usr/share/sddm/themes/sugar-candy"
 SDDM_BG_DIR="$SDDM_THEME_DIR/Backgrounds"
-THEME_CONF_USER="$SDDM_THEME_DIR/theme.conf"
-# Use SUDO_USER to get the actual user home directory
-REAL_USER="${SUDO_USER:-$USER}"
+THEME_CONF="$SDDM_THEME_DIR/theme.conf"
+# Detect the real invoking user (works with sudo and pkexec)
+if [ -n "$SUDO_USER" ]; then
+    REAL_USER="$SUDO_USER"
+elif [ -n "$PKEXEC_UID" ]; then
+    REAL_USER="$(getent passwd "$PKEXEC_UID" | cut -d: -f1)"
+else
+    REAL_USER="$(logname 2>/dev/null || echo "$USER")"
+fi
 REAL_HOME=$(getent passwd "$REAL_USER" | cut -d: -f6)
-USER_COLORS="$REAL_HOME/.config/sddm/theme.conf.user"
+USER_COLORS="$REAL_HOME/.config/sddm/theme.conf"
+# Log which user/home/colors file will be used for debugging
+logger -t sddm-theme-helper "Running as $REAL_USER (home: $REAL_HOME), user colors: $USER_COLORS"
 
 ACTION="$1"
 shift
+
+trim() { echo "$1" | sed -e 's/^[[:space:]]*//' -e 's/[[:space:]]*$//'; }
+
+update_conf_key() {
+    local key="$1" value="$2" key_esc value_esc
+    key="$(trim "$key")"
+    value="$(trim "$value")"
+    key_esc=$(printf '%s' "$key" | sed 's/[\/&]/\\&/g')
+    value_esc=$(printf '%s' "$value" | sed 's/[\/&]/\\&/g')
+    if grep -q -E "^[[:space:]]*$key_esc=" "$THEME_CONF" 2>/dev/null; then
+        sed -i "s|^[[:space:]]*$key_esc=.*|$key=$value_esc|" "$THEME_CONF"
+    else
+        echo "$key=$value" >> "$THEME_CONF"
+    fi
+}
 
 case "$ACTION" in
     set-wallpaper)
@@ -28,20 +51,30 @@ case "$ACTION" in
         
         # Copy wallpaper to SDDM backgrounds dir
         FILENAME="current-wallpaper.${WALLPAPER_PATH##*.}"
-        cp "$WALLPAPER_PATH" "$SDDM_BG_DIR/$FILENAME"
-        chmod 644 "$SDDM_BG_DIR/$FILENAME"
-        
-        # Update theme.conf.user to use this wallpaper (quoted for sugar-candy compatibility)
-        if [ -f "$THEME_CONF_USER" ]; then
-            if grep -q "^Background=" "$THEME_CONF_USER"; then
-                sed -i "s|^Background=.*|Background=\"Backgrounds/$FILENAME\"|" "$THEME_CONF_USER"
+        logger -t sddm-theme-helper "Copying wallpaper '$WALLPAPER_PATH' to '$SDDM_BG_DIR/$FILENAME'"
+        # Use install to set mode atomically and avoid race conditions
+        if install -m 0644 "$WALLPAPER_PATH" "$SDDM_BG_DIR/$FILENAME"; then
+            # Ensure ownership and permissions are sane
+            chown root:root "$SDDM_BG_DIR/$FILENAME" 2>/dev/null || true
+            logger -t sddm-theme-helper "Copied wallpaper to $SDDM_BG_DIR/$FILENAME"
+        else
+            logger -t sddm-theme-helper "Failed to copy wallpaper: $WALLPAPER_PATH -> $SDDM_BG_DIR/$FILENAME"
+            exit 1
+        fi
+        # Update theme.conf to use this wallpaper (quoted for sugar-candy compatibility)
+        if [ -f "$THEME_CONF" ]; then
+            if grep -q "^[[:space:]]*Background=" "$THEME_CONF"; then
+                sed -i "s|^[[:space:]]*Background=.*|Background=\"Backgrounds/$FILENAME\"|" "$THEME_CONF"
             else
-                echo "Background=\"Backgrounds/$FILENAME\"" >> "$THEME_CONF_USER"
+                echo "Background=\"Backgrounds/$FILENAME\"" >> "$THEME_CONF"
             fi
         else
-            echo "[General]" > "$THEME_CONF_USER"
-            echo "Background=\"Backgrounds/$FILENAME\"" >> "$THEME_CONF_USER"
+            echo "[General]" > "$THEME_CONF"
+            echo "Background=\"Backgrounds/$FILENAME\"" >> "$THEME_CONF"
         fi
+        # Log final state for debugging
+        logger -t sddm-theme-helper "Wallpaper set to $FILENAME; destination perms: $(ls -l "$SDDM_BG_DIR/$FILENAME" 2>/dev/null || echo 'not found')"
+        logger -t sddm-theme-helper "Theme Background line: $(grep -n "^[[:space:]]*Background=" "$THEME_CONF" 2>/dev/null || echo 'none')"
         echo "SDDM wallpaper updated: $FILENAME"
         ;;
     
@@ -58,23 +91,19 @@ case "$ACTION" in
         fi
         
         # Ensure [General] section exists
-        if [ ! -f "$THEME_CONF_USER" ]; then
-            echo "[General]" > "$THEME_CONF_USER"
+        if [ ! -f "$THEME_CONF" ]; then
+            echo "[General]" > "$THEME_CONF"
         fi
         
-        # Read colors and update theme.conf.user
+        # Read colors and update theme.conf
         while IFS="=" read -r key value; do
             [[ "$key" =~ ^[[:space:]]*# ]] && continue
             [[ "$key" =~ ^\[.*\]$ ]] && continue
             [[ -z "$key" ]] && continue
-            key=$(echo "$key" | tr -d " ")
-            value=$(echo "$value" | tr -d " ")
+            key="$(trim "$key")"
+            value="$(trim "$value")"
             if [ -n "$key" ] && [ -n "$value" ]; then
-                if grep -q "^$key=" "$THEME_CONF_USER" 2>/dev/null; then
-                    sed -i "s|^$key=.*|$key=$value|" "$THEME_CONF_USER"
-                else
-                    echo "$key=$value" >> "$THEME_CONF_USER"
-                fi
+                update_conf_key "$key" "$value"
             fi
         done < "$USER_COLORS"
         echo "SDDM colors updated from $USER_COLORS"
@@ -86,22 +115,18 @@ case "$ACTION" in
         
         # Update colors first
         if [ -f "$USER_COLORS" ] && [ -d "$SDDM_THEME_DIR" ]; then
-            if [ ! -f "$THEME_CONF_USER" ]; then
-                echo "[General]" > "$THEME_CONF_USER"
+            if [ ! -f "$THEME_CONF" ]; then
+                echo "[General]" > "$THEME_CONF"
             fi
             
             while IFS="=" read -r key value; do
                 [[ "$key" =~ ^[[:space:]]*# ]] && continue
                 [[ "$key" =~ ^\[.*\]$ ]] && continue
                 [[ -z "$key" ]] && continue
-                key=$(echo "$key" | tr -d " ")
-                value=$(echo "$value" | tr -d " ")
+                key="$(trim "$key")"
+                value="$(trim "$value")"
                 if [ -n "$key" ] && [ -n "$value" ]; then
-                    if grep -q "^$key=" "$THEME_CONF_USER" 2>/dev/null; then
-                        sed -i "s|^$key=.*|$key=$value|" "$THEME_CONF_USER"
-                    else
-                        echo "$key=$value" >> "$THEME_CONF_USER"
-                    fi
+                    update_conf_key "$key" "$value"
                 fi
             done < "$USER_COLORS"
             echo "SDDM colors updated"
@@ -114,14 +139,20 @@ case "$ACTION" in
             fi
             
             FILENAME="current-wallpaper.${WALLPAPER_PATH##*.}"
-            cp "$WALLPAPER_PATH" "$SDDM_BG_DIR/$FILENAME"
-            chmod 644 "$SDDM_BG_DIR/$FILENAME"
-            
-            if grep -q "^Background=" "$THEME_CONF_USER" 2>/dev/null; then
-                sed -i "s|^Background=.*|Background=\"Backgrounds/$FILENAME\"|" "$THEME_CONF_USER"
+            logger -t sddm-theme-helper "Copying wallpaper '$WALLPAPER_PATH' to '$SDDM_BG_DIR/$FILENAME' (update-all)"
+            if install -m 0644 "$WALLPAPER_PATH" "$SDDM_BG_DIR/$FILENAME"; then
+                chown root:root "$SDDM_BG_DIR/$FILENAME" 2>/dev/null || true
+                logger -t sddm-theme-helper "Copied wallpaper to $SDDM_BG_DIR/$FILENAME"
             else
-                echo "Background=\"Backgrounds/$FILENAME\"" >> "$THEME_CONF_USER"
+                logger -t sddm-theme-helper "Failed to copy wallpaper (update-all): $WALLPAPER_PATH -> $SDDM_BG_DIR/$FILENAME"
             fi
+            
+            if grep -q "^[[:space:]]*Background=" "$THEME_CONF" 2>/dev/null; then
+                sed -i "s|^[[:space:]]*Background=.*|Background=\"Backgrounds/$FILENAME\"|" "$THEME_CONF"
+            else
+                echo "Background=\"Backgrounds/$FILENAME\"" >> "$THEME_CONF"
+            fi
+            logger -t sddm-theme-helper "Wallpaper set to $FILENAME; destination perms: $(ls -l "$SDDM_BG_DIR/$FILENAME" 2>/dev/null || echo 'not found')"
             echo "SDDM wallpaper updated: $FILENAME"
         fi
         ;;

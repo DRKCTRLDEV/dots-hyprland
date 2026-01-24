@@ -52,57 +52,29 @@ pre_process() {
 
 handle_sddm_theming() {
     local wallpaper_path="$1"
-    # Prefer system-installed helper (/usr/local/bin) for consistent sudo execution; fallback to per-user helper
-    if [ -x "/usr/local/bin/sddm-theme-helper" ]; then
-        local sddm_helper="/usr/local/bin/sddm-theme-helper"
-    elif [ -x "$XDG_CONFIG_HOME/quickshell/ii/scripts/colors/sddm/sddm-theme-helper" ]; then
-        local sddm_helper="$XDG_CONFIG_HOME/quickshell/ii/scripts/colors/sddm/sddm-theme-helper"
+    local sddm_helper="$CONFIG_DIR/scripts/colors/sddm/sddm-theme-helper.sh"
+
+    # Opt out via config
+    [ -f "$SHELL_CONFIG_FILE" ] && [ "$(jq -r '.appearance.wallpaperTheming.enableSddm // true' "$SHELL_CONFIG_FILE" 2>/dev/null)" = "false" ] && return 0
+
+    [ ! -f "$sddm_helper" ] || [ ! -d "/usr/share/sddm/themes" ] && return 0
+
+    # Normalize path
+    local p="${wallpaper_path#file://}"
+    [[ "$p" == "~"* ]] && p="${p/#\~/$HOME}"
+    p="$(printf '%s' "$p" | sed 's/^[[:space:]]*//;s/[[:space:]]*$//')"
+
+    [ -z "$p" ] || [ ! -f "$p" ] && return 0
+
+    # Run helper
+    if [ -x "$sddm_helper" ]; then
+        "$sddm_helper" update "$p" &>/dev/null && return 0
     else
-        local sddm_helper=""
-    fi
-    local rc
-
-    # Check if SDDM theming is enabled in config (default to true if not set)
-    if [ -f "$SHELL_CONFIG_FILE" ]; then
-        enable_sddm=$(jq -r '.appearance.wallpaperTheming.enableSddm // true' "$SHELL_CONFIG_FILE")
-        if [ "$enable_sddm" == "false" ]; then
-            return
-        fi
+        bash "$sddm_helper" update "$p" &>/dev/null && return 0
     fi
 
-    # Check if sddm-theme-helper exists and sugar-candy theme is installed
-    if [ -z "$sddm_helper" ] || [ ! -x "$sddm_helper" ]; then
-        logger -t switchwall "sddm: no executable sddm-theme-helper found (checked /usr/local/bin and $XDG_CONFIG_HOME/quickshell/ii/scripts/colors/sddm/)"
-        return
-    fi
-
-    if [ ! -d "/usr/share/sddm/themes/sugar-candy" ]; then
-        return
-    fi
-
-    # Normalize wallpaper path (accept file:// URIs, expand ~, trim whitespace)
-    local normalized_path="$wallpaper_path"
-    normalized_path="${normalized_path#file://}"
-    if [[ "$normalized_path" == "~"* ]]; then
-        normalized_path="${normalized_path/#\~/$HOME}"
-    fi
-    normalized_path="$(printf '%s' "$normalized_path" | sed -e 's/^[[:space:]]*//' -e 's/[[:space:]]*$//')"
-
-    if [ -z "$normalized_path" ] || [ ! -f "$normalized_path" ]; then
-        logger -t switchwall "sddm: wallpaper missing or not a file: $wallpaper_path -> $normalized_path"
-        return
-    fi
-
-    # Use sudo only (no pkexec)
-    if command -v sudo &>/dev/null; then
-        sudo "$sddm_helper" update-all "$normalized_path"
-        rc=$?
-        if [ $rc -ne 0 ]; then
-            logger -t switchwall "sddm: sudo failed (exit $rc)"
-        fi
-    else
-        logger -t switchwall "sddm: sudo not available; cannot update SDDM theme"
-    fi
+    echo "sddm-theme-helper failed" >&2
+    return 1
 }
 
 post_process() {

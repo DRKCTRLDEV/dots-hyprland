@@ -20,25 +20,25 @@ function setup_user_group(){
   fi
 }
 
-function setup_sddm(){
+function setup_sddm() {
   # Set up SDDM with Sugar Candy theme
   local sddm_conf="/etc/sddm.conf.d/theme.conf"
   local sugar_candy_dir="/usr/share/sddm/themes/sugar-candy"
   local polkit_rules_dir="/etc/polkit-1/rules.d"
-  
+
   # Check if Sugar Candy theme is installed
   if [[ -d "$sugar_candy_dir" ]]; then
     printf "${STY_CYAN}[$0]: Setting up SDDM with Sugar Candy theme...${STY_RST}\n"
-    
+
     # Create SDDM config directory if it doesn't exist (non-fatal if fails)
     sudo mkdir -p /etc/sddm.conf.d 2>/dev/null || true
-    
+
     # Configure SDDM to use Sugar Candy theme
     x sudo bash -c "cat > $sddm_conf << 'EOF'
 [Theme]
 Current=sugar-candy
 EOF"
-    
+
     # Create Backgrounds directory in the theme (non-fatal - might already exist with different perms)
     sudo mkdir -p "$sugar_candy_dir/Backgrounds" 2>/dev/null || {
       # If mkdir fails, try to ensure directory exists anyway
@@ -51,19 +51,13 @@ EOF"
     }
     printf "${STY_CYAN}[$0]: Polkit rule installation skipped (deprecated). Using sudoers-based install instead.${STY_RST}\n"
 
-    # Install sddm-theme-helper into /usr/local/bin so it can be run via sudo safely
-    if [[ -f "${REPO_ROOT}/dots/.config/quickshell/ii/scripts/colors/sddm/sddm-theme-helper" ]]; then
-      x sudo install -m 0755 "${REPO_ROOT}/dots/.config/quickshell/ii/scripts/colors/sddm/sddm-theme-helper" /usr/local/bin/sddm-theme-helper
-      printf "${STY_GREEN}[$0]: Installed sddm-theme-helper to /usr/local/bin${STY_RST}\n"
-    fi
-
     # Install sudoers snippet for passwordless sudo of the helper
     if [[ -f "${REPO_ROOT}/dots-extra/sddm/99-sddm-theme-helper.sudoers" ]]; then
       x sudo cp -f "${REPO_ROOT}/dots-extra/sddm/99-sddm-theme-helper.sudoers" /etc/sudoers.d/99-sddm-theme-helper
       x sudo chmod 0440 /etc/sudoers.d/99-sddm-theme-helper
       printf "${STY_GREEN}[$0]: Sudoers entry installed for sddm-theme-helper.${STY_RST}\n"
     fi
-    
+
     # Enable SDDM service
     if [[ ! -z $(systemctl --version) ]]; then
       # Use || true to not fail if already enabled or if another DM is enabled
@@ -77,6 +71,7 @@ EOF"
     printf "${STY_YELLOW}[$0]: You can install it manually (Arch: yay -S sddm-sugar-candy-git)${STY_RST}\n"
   fi
 }
+
 #####################################################################################
 # These python packages are installed using uv into the venv (virtual environment). Once the folder of the venv gets deleted, they are all gone cleanly. So it's considered as setups, not dependencies.
 showfun install-python-packages

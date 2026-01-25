@@ -48,10 +48,10 @@ else
 fi
 
 for p in "${settings_paths[@]}"; do
-  mkdir -p "$(dirname "$p")"
-  [[ ! -f "$p" ]] && printf '{}' > "$p"
-  t="$(mktemp)"
-  jq --argjson p "$payload" '. * $p' "$p" > "$t" && mv "$t" "$p"
+  if [[ -f "$p" ]]; then
+    t="$(mktemp)"
+    jq --argjson p "$payload" '. * $p' "$p" > "$t" && mv "$t" "$p"
+  fi
 done
 
 echo "Updated VS Code settings with material colors."

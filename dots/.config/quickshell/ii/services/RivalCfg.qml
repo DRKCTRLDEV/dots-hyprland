@@ -243,10 +243,9 @@ Singleton {
             readCurrentSettingsProc.configData = ""
             root.loading = false
 
-            // If we have battery support, check battery level
-            if (root.hasBattery) {
-                checkBatteryProc.running = true
-            }
+            // Always probe battery level; treat a successful probe as definitive battery support.
+            // Fallback remains to textual detection performed during device parsing.
+            checkBatteryProc.running = true
         }
     }
 
@@ -261,12 +260,19 @@ Singleton {
         }
         property string batteryOutput: ""
         onExited: (exitCode, exitStatus) => {
+            // If the probe succeeds and returns a numeric battery level, we
+            // consider this device to have battery support.
             if (exitCode === 0) {
                 const match = checkBatteryProc.batteryOutput.match(/(\d+)/)
                 if (match) {
+                    root.hasBattery = true
                     root.batteryLevel = parseInt(match[1])
                 }
                 root.isCharging = checkBatteryProc.batteryOutput.toLowerCase().includes("charging")
+            } else {
+                // Probe failed — leave existing textual detection in place.
+                // As a fallback, check for the word "battery" in any output (best-effort).
+                root.hasBattery = root.hasBattery || (checkBatteryProc.batteryOutput.toLowerCase().includes("battery"))
             }
             checkBatteryProc.batteryOutput = ""
         }

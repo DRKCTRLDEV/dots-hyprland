@@ -10,7 +10,7 @@ Singleton {
 
     property var translations: ({})
     property var generatedTranslations: ({})
-    property var availableLanguages: ["en_US"]
+    property var availableLanguages: ["en_US", "en_GB"]
     property var availableGeneratedLanguages: []
     property var allAvailableLanguages: {
         const combined = new Set([...root.availableLanguages, ...root.availableGeneratedLanguages]);
@@ -49,7 +49,6 @@ Singleton {
 
     onLanguageCodeChanged: {
         print("[Translation] Language changed to", root.languageCode);
-        // Only try to read a language that actually exists, otherwise fall back to en_US
         const effectiveLang = root.allAvailableLanguages.indexOf(root.languageCode) !== -1 ? root.languageCode : "en_US";
         translationFileView.languageCode = effectiveLang;
         generatedTranslationFileView.languageCode = effectiveLang;

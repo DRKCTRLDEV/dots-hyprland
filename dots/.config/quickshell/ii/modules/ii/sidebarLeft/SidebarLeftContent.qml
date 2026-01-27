@@ -12,12 +12,10 @@ Item {
     required property var scopeRoot
     property int sidebarPadding: 10
     anchors.fill: parent
-    property bool aiChatEnabled: Config.options.policies.ai !== 0
     property bool translatorEnabled: Config.options.sidebar.translator.enable
     property bool mouseConfigEnabled: Config.options.sidebar.mouseConfig.enable
 
     property var tabButtonList: [
-        ...(root.aiChatEnabled ? [{"icon": "neurology", "name": Translation.tr("Intelligence")}] : []),
         ...(root.translatorEnabled ? [{"icon": "translate", "name": Translation.tr("Translator")}] : []),
         ...(root.mouseConfigEnabled ? [{"icon": "mouse", "name": Translation.tr("Mouse")}] : [])
     ]
@@ -84,18 +82,13 @@ Item {
                 }
 
                 contentChildren: [
-                    ...(root.aiChatEnabled ? [aiChat.createObject()] : []),
                     ...(root.translatorEnabled ? [translator.createObject()] : []),
                     ...(root.mouseConfigEnabled ? [mouseConfig.createObject()] : []),
-                    ...((root.tabButtonList.length === 0 || (!root.aiChatEnabled && !root.translatorEnabled && !root.mouseConfigEnabled)) ? [placeholder.createObject()] : []),
+                    ...((root.tabButtonList.length === 0 || (!root.translatorEnabled && !root.mouseConfigEnabled)) ? [placeholder.createObject()] : []),
                 ]
             }
         }
 
-        Component {
-            id: aiChat
-            AiChat {}
-        }
         Component {
             id: translator
             Translator {}

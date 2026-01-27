@@ -27,7 +27,6 @@ PanelWindow {
         bottom: true
     }
 
-    // TODO: Ask: sidebar AI
     enum SnipAction { Copy, Edit, Search, CharRecognition, Record, RecordWithSound } 
     enum SelectionMode { RectCorners, Circle }
     property var action: RegionSelection.SnipAction.Copy

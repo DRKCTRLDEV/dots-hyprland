@@ -153,38 +153,7 @@ ApplicationWindow {
                                 })]
                         }
                     }
-
-                    NoticeBox {
-                        Layout.fillWidth: true
-                        text: Translation.tr("Language not listed or incomplete translations?\nYou can choose to generate translations for it with Gemini.\n1. Open the left sidebar with Super+A, set model to Gemini (if it isn't already)\n2. Type /key, hit Enter and follow the instructions\n3. Type /key YOUR_API_KEY\n4. Type the locale of your language below and press Generate")
-                    }
-
-                    ContentSubsection {
-                        title: Translation.tr("Generate translation with Gemini")
-                        
-                        ConfigRow {
-                            MaterialTextArea {
-                                id: localeInput
-                                Layout.fillWidth: true
-                                placeholderText: Translation.tr("Locale code, e.g. fr_FR, de_DE, zh_CN...")
-                                text: Config.options.language.ui === "auto" ? Qt.locale().name : Config.options.language.ui
-                            }
-                            RippleButtonWithIcon {
-                                id: generateTranslationBtn
-                                Layout.fillHeight: true
-                                nerdIcon: ""
-                                enabled: !translationProc.running || (translationProc.locale !== localeInput.text.trim())
-                                mainText: enabled ? Translation.tr("Generate\nTypically takes 2 minutes") : Translation.tr("Generating...\nDon't close this window!")
-                                onClicked: {
-                                    translationProc.locale = localeInput.text.trim();
-                                    translationProc.running = false;
-                                    translationProc.running = true;
-                                }
-                            }
-                        }
-                    }
                 }
-
                 ContentSection {
                     icon: "screenshot_monitor"
                     title: Translation.tr("Bar")
@@ -310,44 +279,6 @@ ApplicationWindow {
                         text: Translation.tr("Change any time later with /dark, /light, /wallpaper in the launcher\nIf the shell's colors aren't changing:\n    1. Open the right sidebar with Super+N\n    2. Click \"Reload Hyprland & Quickshell\" in the top-right corner")
                     }
                 }
-
-                ContentSection {
-                    icon: "rule"
-                    title: Translation.tr("Policies")
-
-                    ConfigRow {
-                        Layout.fillWidth: true
-
-                        ContentSubsection {
-                            title: "AI"
-
-                            ConfigSelectionArray {
-                                currentValue: Config.options.policies.ai
-                                onSelected: newValue => {
-                                    Config.options.policies.ai = newValue;
-                                }
-                                options: [
-                                    {
-                                        displayName: Translation.tr("No"),
-                                        icon: "close",
-                                        value: 0
-                                    },
-                                    {
-                                        displayName: Translation.tr("Yes"),
-                                        icon: "check",
-                                        value: 1
-                                    },
-                                    {
-                                        displayName: Translation.tr("Local only"),
-                                        icon: "sync_saved_locally",
-                                        value: 2
-                                    }
-                                ]
-                            }
-                        }
-                    }
-                }
-
                 ContentSection {
                     icon: "info"
                     title: Translation.tr("Info")

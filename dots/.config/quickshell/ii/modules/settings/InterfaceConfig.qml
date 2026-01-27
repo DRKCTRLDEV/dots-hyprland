@@ -186,7 +186,7 @@ ContentPage {
                     Config.options.lock.security.unlockKeyring = checked;
                 }
                 StyledToolTip {
-                    text: Translation.tr("This is usually safe and needed for your browser and AI sidebar anyway\nMostly useful for those who use lock on startup instead of a display manager that does it (GDM, SDDM, etc.)")
+                    text: Translation.tr("This is usually safe and needed for your browser anyways. \nMostly useful for those who use lock on startup instead of a display manager that does it (GDM, SDDM, etc.)")
                 }
             }
         }
@@ -356,7 +356,7 @@ ContentPage {
                         Config.options.regionSelector.targetRegions.content = checked;
                     }
                     StyledToolTip {
-                        text: Translation.tr("Could be images or parts of the screen that have some containment.\nMight not always be accurate.\nThis is done with an image processing algorithm run locally and no AI is used.")
+                        text: Translation.tr("Could be images or parts of the screen that have some containment.\nMight not always be accurate.\nThis is done with an image processing algorithm run locally.")
                     }
                 }
             }

@@ -50,40 +50,13 @@ pre_process() {
     fi
 }
 
-handle_sddm_theming() {
-    local wallpaper_path="$1"
-    local sddm_helper="$CONFIG_DIR/scripts/colors/sddm/sddm-theme-helper.sh"
-
-    # Opt out via config
-    [ -f "$SHELL_CONFIG_FILE" ] && [ "$(jq -r '.appearance.wallpaperTheming.enableSddm // true' "$SHELL_CONFIG_FILE" 2>/dev/null)" = "false" ] && return 0
-
-    [ ! -f "$sddm_helper" ] || [ ! -d "/usr/share/sddm/themes" ] && return 0
-
-    # Normalize path
-    local p="${wallpaper_path#file://}"
-    [[ "$p" == "~"* ]] && p="${p/#\~/$HOME}"
-    p="$(printf '%s' "$p" | sed 's/^[[:space:]]*//;s/[[:space:]]*$//')"
-
-    [ -z "$p" ] || [ ! -f "$p" ] && return 0
-
-    # Run helper
-    if [ -x "$sddm_helper" ]; then
-        "$sddm_helper" update "$p" &>/dev/null && return 0
-    else
-        bash "$sddm_helper" update "$p" &>/dev/null && return 0
-    fi
-
-    echo "sddm-theme-helper failed" >&2
-    return 1
-}
-
 post_process() {
     local screen_width="$1"
     local screen_height="$2"
     local wallpaper_path="$3"
 
     handle_kde_material_you_colors &
-    handle_sddm_theming "$wallpaper_path" &
+    "$SCRIPT_DIR/sddm/sddm-set-theme.sh" "$wallpaper_path" &
     "$SCRIPT_DIR/code/material-code-set-color.sh" &
 }
 
@@ -115,9 +88,9 @@ check_and_prompt_upscale() {
                         -c "im.error" \
                         -A "install_upscayl=Install Upscayl (Arch)" \
                         "Install Upscayl?" \
-                        "yay -S upscayl-bin")
+                        "paru -S upscayl-bin")
                     if [[ "$action2" == "install_upscayl" ]]; then
-                        kitty -1 yay -S upscayl-bin
+                        kitty -1 paru -S upscayl-bin
                         if command -v upscayl &>/dev/null; then
                             nohup upscayl > /dev/null 2>&1 &
                         fi
@@ -189,12 +162,6 @@ switch() {
     type_flag="$3"
     color_flag="$4"
     color="$5"
-
-    # Start Gemini auto-categorization if enabled
-    aiStylingEnabled=$(jq -r '.background.clock.cookie.aiStyling' "$SHELL_CONFIG_FILE")
-    if [[ "$aiStylingEnabled" == "true" ]]; then
-        "$SCRIPT_DIR/../ai/gemini-categorize-wallpaper.sh" "$imgpath" > "$STATE_DIR/user/generated/wallpaper/category.txt" &
-    fi
 
     read scale screenx screeny screensizey < <(hyprctl monitors -j | jq '.[] | select(.focused) | .scale, .x, .y, .height' | xargs)
     cursorposx=$(hyprctl cursorpos -j | jq '.x' 2>/dev/null) || cursorposx=960

@@ -68,7 +68,7 @@ EOF"
     fi
   else
     printf "${STY_YELLOW}[$0]: Sugar Candy theme not found. Skipping SDDM theme setup.${STY_RST}\n"
-    printf "${STY_YELLOW}[$0]: You can install it manually (Arch: yay -S sddm-sugar-candy-git)${STY_RST}\n"
+    printf "${STY_YELLOW}[$0]: You can install it manually (Arch: paru -S sddm-sugar-candy-git)${STY_RST}\n"
   fi
 }
 

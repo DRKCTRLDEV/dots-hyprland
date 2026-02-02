@@ -54,9 +54,14 @@ post_process() {
     local screen_width="$1"
     local screen_height="$2"
     local wallpaper_path="$3"
+    local thumbnail_path="$4"
 
     handle_kde_material_you_colors &
-    "$SCRIPT_DIR/sddm/sddm-set-theme.sh" "$wallpaper_path" &
+    local args=("$wallpaper_path")
+    if [ -n "$thumbnail_path" ]; then
+        args+=("$thumbnail_path")
+    fi
+    sudo "$(eval echo $ILLOGICAL_IMPULSE_VIRTUAL_ENV)/bin/python3" "$SCRIPT_DIR/sddm/sddm-set-theme.py" "${args[@]}" &
     "$SCRIPT_DIR/code/material-code-set-color.sh" &
 }
 
@@ -162,6 +167,7 @@ switch() {
     type_flag="$3"
     color_flag="$4"
     color="$5"
+    thumbnail_path=""
 
     read scale screenx screeny screensizey < <(hyprctl monitors -j | jq '.[] | select(.focused) | .scale, .x, .y, .height' | xargs)
     cursorposx=$(hyprctl cursorpos -j | jq '.x' 2>/dev/null) || cursorposx=960
@@ -227,6 +233,7 @@ switch() {
 
             # Set thumbnail path
             set_thumbnail_path "$thumbnail"
+            thumbnail_path="$thumbnail"
 
             if [ -f "$thumbnail" ]; then
                 matugen_args=(image "$thumbnail")
@@ -300,7 +307,7 @@ switch() {
     # Pass screen width, height, and wallpaper path to post_process
     max_width_desired="$(hyprctl monitors -j | jq '([.[].width] | min)' | xargs)"
     max_height_desired="$(hyprctl monitors -j | jq '([.[].height] | min)' | xargs)"
-    post_process "$max_width_desired" "$max_height_desired" "$imgpath"
+    post_process "$max_width_desired" "$max_height_desired" "$imgpath" "$thumbnail_path"
 }
 
 main() {

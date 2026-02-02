@@ -33,7 +33,7 @@ fi
 arch=$(portageq envvar ACCEPT_KEYWORDS)
 
 # Exclude hyprland, will deal with that separately
-metapkgs=(illogical-impulse-{audio,backlight,basic,bibata-modern-classic-bin,fonts-themes,hyprland,kde,microtex-git,oneui4-icons-git,portal,python,quickshell-git,screencapture,sddm,toolkit,widgets})
+metapkgs=(illogical-impulse-{audio,backlight,basic,bibata-modern-classic-bin,fonts-themes,hyprland,kde,microtex-git,oneui4-icons-git,portal,python,quickshell-git,screencapture,toolkit,widgets})
 
 ebuild_dir="/var/db/repos/ii-dots"
 

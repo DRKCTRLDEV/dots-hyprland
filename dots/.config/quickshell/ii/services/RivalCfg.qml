@@ -10,11 +10,15 @@ import Quickshell.Io
 
 /**
  * Service for interfacing with rivalcfg to configure SteelSeries mice.
+ * Uses Python API via wrapper script for more reliable operation.
  * Handles device detection, sensitivity presets, polling rate, and button bindings.
  */
 Singleton {
     id: root
 
+    // Active state - when false, no processes run (saves resources when sidebar closed)
+    property bool active: false
+    
     // State properties
     property bool loading: true
     property bool available: false
@@ -22,6 +26,7 @@ Singleton {
 
     // Device info
     property string deviceName: ""
+    property string devicePid: "" // e.g., "1038_1852"
     property string connectionType: "" // "wired", "wireless", "bluetooth"
 
     // Battery info
@@ -35,32 +40,46 @@ Singleton {
     property var buttonBindings: ({})
     property var availableButtons: []
 
-    // Config file path - use home directory to avoid file:// prefix issues
-    readonly property string configDir: FileUtils.trimFileProtocol(Directories.config) + "/rivalcfg"
-    readonly property string configFile: configDir + "/current_settings.json"
+    // Capabilities from device profile
+    property bool hasSensitivity: false
+    property bool hasPollingRate: false
+    property bool hasButtons: false
+    property var sensitivityRange: ({ "min": 100, "max": 18000 })
+    property var pollingRates: [125, 250, 500, 1000]
+
+    // Python wrapper script path
+    readonly property string scriptDir: Qt.resolvedUrl("../scripts/rivalcfg").toString().replace("file://", "")
+    readonly property string wrapperScript: scriptDir + "/rivalcfg_wrapper.py"
 
     // Signals for UI feedback
     signal settingsApplied()
     signal settingsError(string error)
 
-    Component.onCompleted: {
-        refresh()
+    // Only refresh when activated, not on Component.onCompleted
+    onActiveChanged: {
+        if (active) {
+            refresh()
+        } else {
+            batteryTimer.running = false
+        }
     }
 
     function refresh() {
+        if (!root.active) return; // Don't refresh if not active
         root.loading = true
         root.errorMessage = ""
-        ensureConfigDirProc.running = true
+        detectProc.running = true
     }
 
     function setSensitivity(presets: var) {
         root.sensitivityPresets = presets
-        applySensitivityProc.running = true
+        sensitivityProc.presetArg = presets.join(",")
+        sensitivityProc.running = true
     }
 
     function setPollingRate(rate: int) {
         root.pollingRate = rate
-        applyPollingRateProc.running = true
+        pollingRateProc.running = true
     }
 
     function setButtonBinding(button: string, action: string) {
@@ -71,374 +90,299 @@ Singleton {
     }
 
     function applyButtonBindings() {
-        // Build the full buttons mapping string for rivalcfg
-        // Format: buttons(button1=action1; button2=action2; ...)
-        let mappings = []
+        let mappedBindings = {}
         for (let button in root.buttonBindings) {
-            mappings.push(`${button}=${root.buttonBindings[button]}`)
+            const action = root.buttonBindings[button]
+            mappedBindings[button] = mapKeyToRivalcfgAlias(action)
         }
-        if (mappings.length > 0) {
-            applyButtonBindingProc.buttonArg = `buttons(${mappings.join("; ")})`
-            applyButtonBindingProc.running = true
+        buttonsProc.mappingsArg = JSON.stringify(mappedBindings)
+        buttonsProc.running = true
+    }
+
+    function mapKeyToRivalcfgAlias(key: string): string {
+        // Map special characters that conflict with rivalcfg syntax to their aliases
+        // Also map generic modifier names to rivalcfg format
+        const keyAliases = {
+            // Characters that conflict with syntax
+            ";": "semicolon",
+            "'": "quote",
+            ",": "comma",
+            ".": "dot",
+            "/": "slash",
+            "\\": "backslash",
+            "[": "leftbracket",
+            "]": "rightbracket",
+            "`": "backtick",
+            "-": "dash",
+            "=": "equal",
+            "#": "hash",
+            
+            // Generic modifier names to rivalcfg format
+            "Shift": "LeftShift",
+            "Ctrl": "LeftCtrl",
+            "Alt": "LeftAlt",
+            
+            // Already correct format (pass through)
+            "LeftShift": "LeftShift",
+            "RightShift": "RightShift",
+            "LeftCtrl": "LeftCtrl",
+            "RightCtrl": "RightCtrl",
+            "LeftAlt": "LeftAlt",
+            "RightAlt": "RightAlt",
+            "LeftSuper": "LeftSuper",
+            "RightSuper": "RightSuper",
+            
+            // Lowercase variants (legacy support)
+            "lalt": "LeftAlt",
+            "ralt": "RightAlt",
+            "lctrl": "LeftCtrl",
+            "rctrl": "RightCtrl",
+            "lshift": "LeftShift",
+            "rshift": "RightShift",
+            "lmeta": "LeftMeta",
+            "rmeta": "RightMeta"
         }
+        
+        return keyAliases[key] || key
     }
 
     function resetToDefaults() {
         resetProc.running = true
     }
 
-    // Ensure config directory exists
+    // Detect mouse using Python wrapper
     Process {
-        id: ensureConfigDirProc
-        command: ["bash", "-c", `mkdir -p "${root.configDir}" && echo "ok"`]
-        onExited: (exitCode, exitStatus) => {
-            if (exitCode === 0) {
-                detectMouseProc.running = true
-            } else {
-                root.loading = false
-                root.available = false
-                root.errorMessage = Translation.tr("Failed to create config directory")
-            }
-        }
-    }
-
-    // Detect connected SteelSeries mouse using rivalcfg
-    Process {
-        id: detectMouseProc
-        command: ["rivalcfg", "--print-debug"]
+        id: detectProc
+        command: [root.wrapperScript, "detect"]
         stdout: SplitParser {
-            onRead: data => {
-                detectMouseProc.debugOutput += data + "\n"
-            }
+            onRead: data => detectProc.output += data
         }
         stderr: SplitParser {
-            onRead: data => {
-                detectMouseProc.debugOutput += data + "\n"
-            }
+            onRead: data => { if (data.trim()) console.warn("[RivalCfg]", data) }
         }
-        property string debugOutput: ""
-        onExited: (exitCode, exitStatus) => {
-            // Check for device in PLUGGED STEELSERIES DEVICES ENDPOINTS section
-            // Format: "1038:1852| 00 | SteelSeries Aerox 5 Wireless (firmware"
-            const hasSteelSeriesSection = detectMouseProc.debugOutput.includes("PLUGGED STEELSERIES DEVICES")
-            const hasDeviceLine = /\b1038:[0-9a-f]{4}\b.*SteelSeries/i.test(detectMouseProc.debugOutput)
-            const hasDevice = (hasSteelSeriesSection && /\b1038:[0-9a-f]{4}\b/i.test(detectMouseProc.debugOutput)) || hasDeviceLine
-
-            if (hasDevice) {
-                // Parse device info from debug output
-                parseDeviceInfo(detectMouseProc.debugOutput)
-                root.available = true
-                // Query help to get available buttons
-                queryHelpProc.running = true
-            } else {
-                root.loading = false
-                root.available = false
-                if (detectMouseProc.debugOutput.includes("PLUGGED STEELSERIES DEVICES ENDPOINTS") && 
-                    !hasDevice) {
-                    root.errorMessage = Translation.tr("No SteelSeries mouse detected.\nMake sure your mouse is connected.")
-                } else if (detectMouseProc.debugOutput.includes("rivalcfg: command not found") || 
-                           detectMouseProc.debugOutput.includes("rivalcfg: not found") ||
-                           detectMouseProc.debugOutput.includes("No module named")) {
-                    root.errorMessage = Translation.tr("rivalcfg is not installed.\\nInstall with: paru -S rivalcfg")
-                } else {
-                    root.errorMessage = Translation.tr("Failed to detect mouse.\n") + detectMouseProc.debugOutput.substring(0, 500)
-                }
-            }
-            detectMouseProc.debugOutput = ""
-        }
-    }
-
-    function parseDeviceInfo(output: string) {
-        // Parse device name from PLUGGED STEELSERIES DEVICES ENDPOINTS section
-        // Format: "1038:1852| 00 | SteelSeries Aerox 5 Wireless (firmware"
-        const deviceMatch = output.match(/\d{4}:\d{4}\|[^|]+\|\s*([^(\n]+)/)
-        if (deviceMatch) {
-            root.deviceName = deviceMatch[1].trim()
-        }
-
-        // Determine connection type based on device name or USB info
-        if (output.toLowerCase().includes("wireless") || output.toLowerCase().includes("2.4ghz")) {
-            root.connectionType = "wireless"
-        } else if (output.toLowerCase().includes("bluetooth")) {
-            root.connectionType = "bluetooth"
-        } else {
-            root.connectionType = "wired"
-        }
-
-        // Check for battery support
-        root.hasBattery = output.toLowerCase().includes("battery")
-    }
-
-    // Query rivalcfg --help to get available buttons for this device
-    Process {
-        id: queryHelpProc
-        command: ["rivalcfg", "--help"]
-        stdout: SplitParser {
-            onRead: data => {
-                queryHelpProc.helpOutput += data + "\n"
-            }
-        }
-        property string helpOutput: ""
-        onExited: (exitCode, exitStatus) => {
-            // Parse buttons from --buttons help text
-            // Format: "buttons(button1=button1; button2=button2; ...)"
-            const buttonsMatch = queryHelpProc.helpOutput.match(/buttons\(([^)]+)\)/i)
-            if (buttonsMatch) {
-                const buttonsPart = buttonsMatch[1]
-                // Extract button names (keys before =)
-                const buttonPairs = buttonsPart.split(";")
-                let buttons = []
-                buttonPairs.forEach(pair => {
-                    const trimmed = pair.trim()
-                    const eqIdx = trimmed.indexOf("=")
-                    if (eqIdx > 0) {
-                        const btnName = trimmed.substring(0, eqIdx).trim()
-                        // Filter out non-button entries like scrollup, scrolldown, layout
-                        if (btnName.startsWith("button") && !buttons.includes(btnName)) {
-                            buttons.push(btnName)
-                        }
-                    }
-                })
-                if (buttons.length > 0) {
-                    root.availableButtons = buttons
-                }
-            }
-            
-            // If no buttons found, provide sensible defaults
-            if (root.availableButtons.length === 0) {
-                root.availableButtons = ["button1", "button2", "button3", "button4", "button5", "button6"]
-            }
-            
-            queryHelpProc.helpOutput = ""
-            // Now read saved settings
-            readCurrentSettingsProc.running = true
-        }
-    }
-
-    // Read current settings from rivalcfg or saved config
-    Process {
-        id: readCurrentSettingsProc
-        command: ["bash", "-c", `cat "${root.configFile}" 2>/dev/null || echo "{}"`]
-        stdout: SplitParser {
-            onRead: data => {
-                readCurrentSettingsProc.configData += data
-            }
-        }
-        property string configData: ""
+        property string output: ""
         onExited: (exitCode, exitStatus) => {
             try {
-                const config = JSON.parse(readCurrentSettingsProc.configData || "{}")
-                if (config.sensitivityPresets && Array.isArray(config.sensitivityPresets)) {
-                    root.sensitivityPresets = config.sensitivityPresets
-                }
-                if (config.pollingRate) {
-                    root.pollingRate = config.pollingRate
-                }
-                if (config.buttonBindings) {
-                    root.buttonBindings = config.buttonBindings
+                const result = JSON.parse(detectProc.output)
+                
+                if (result.available) {
+                    root.available = true
+                    root.deviceName = result.device.name || ""
+                    root.devicePid = result.device.pid || ""
+                    root.connectionType = result.device.connection_type || "unknown"
+                    
+                    // Battery info
+                    root.hasBattery = result.battery.supported || false
+                    root.batteryLevel = result.battery.level || 100
+                    root.isCharging = result.battery.is_charging || false
+                    
+                    // Capabilities
+                    root.hasSensitivity = result.capabilities.has_sensitivity || false
+                    root.hasPollingRate = result.capabilities.has_polling_rate || false
+                    root.hasButtons = result.capabilities.has_buttons || false
+                    root.availableButtons = result.capabilities.buttons || []
+                    root.sensitivityRange = result.capabilities.sensitivity_range || { "min": 100, "max": 18000 }
+                    root.pollingRates = result.capabilities.polling_rates || [125, 250, 500, 1000]
+                    
+                    // Ensure we have default buttons if none detected
+                    if (root.availableButtons.length === 0) {
+                        root.availableButtons = ["Button1", "Button2", "Button3", "Button4", "Button5", "Button6", "Button7", "Button8", "Button9"]
+                    }
+                    
+                    // Load saved settings
+                    settingsProc.running = true
+                } else {
+                    root.available = false
+                    root.errorMessage = result.error || Translation.tr("No SteelSeries mouse detected.\nMake sure your mouse is connected.")
+                    root.loading = false
                 }
             } catch (e) {
-                console.warn("RivalCfg: Failed to parse config:", e)
+                console.error("[RivalCfg] Failed to parse detect output:", e)
+                root.available = false
+                root.errorMessage = Translation.tr("Failed to detect mouse. Check if rivalcfg is installed in the Python environment.")
+                root.loading = false
             }
-            readCurrentSettingsProc.configData = ""
-            root.loading = false
-
-            // Always probe battery level; treat a successful probe as definitive battery support.
-            // Fallback remains to textual detection performed during device parsing.
-            checkBatteryProc.running = true
+            
+            detectProc.output = ""
         }
     }
 
-    // Check battery level
+    // Get current settings
     Process {
-        id: checkBatteryProc
-        command: ["rivalcfg", "--battery-level"]
+        id: settingsProc
+        command: [root.wrapperScript, "settings"]
         stdout: SplitParser {
-            onRead: data => {
-                checkBatteryProc.batteryOutput += data
-            }
+            onRead: data => settingsProc.output += data
         }
-        property string batteryOutput: ""
+        property string output: ""
         onExited: (exitCode, exitStatus) => {
-            // If the probe succeeds and returns a numeric battery level, we
-            // consider this device to have battery support.
-            if (exitCode === 0) {
-                const match = checkBatteryProc.batteryOutput.match(/(\d+)/)
-                if (match) {
-                    root.hasBattery = true
-                    root.batteryLevel = parseInt(match[1])
+            try {
+                const result = JSON.parse(settingsProc.output)
+                if (result.success && result.settings) {
+                    if (result.settings.sensitivity && result.settings.sensitivity.length > 0) {
+                        root.sensitivityPresets = result.settings.sensitivity
+                    }
+                    if (result.settings.polling_rate) {
+                        root.pollingRate = result.settings.polling_rate
+                    }
+                    if (result.settings.buttons) {
+                        root.buttonBindings = result.settings.buttons
+                    }
                 }
-                root.isCharging = checkBatteryProc.batteryOutput.toLowerCase().includes("charging")
-            } else {
-                // Probe failed — leave existing textual detection in place.
-                // As a fallback, check for the word "battery" in any output (best-effort).
-                root.hasBattery = root.hasBattery || (checkBatteryProc.batteryOutput.toLowerCase().includes("battery"))
+            } catch (e) {
+                console.error("[RivalCfg] Failed to parse settings:", e)
             }
-            checkBatteryProc.batteryOutput = ""
+            
+            settingsProc.output = ""
+            root.loading = false
+            
+            // Start battery monitoring if supported
+            if (root.hasBattery) {
+                batteryProc.running = true
+            }
         }
     }
 
-    // Apply sensitivity settings
+    // Battery check
     Process {
-        id: applySensitivityProc
-        property string dpiArgs: root.sensitivityPresets.join(",")
-        command: ["rivalcfg", "--sensitivity", dpiArgs]
+        id: batteryProc
+        command: [root.wrapperScript, "battery"]
         stdout: SplitParser {
-            onRead: data => {
-                applySensitivityProc.output += data + "\n"
-            }
+            onRead: data => batteryProc.output += data
         }
         property string output: ""
         onExited: (exitCode, exitStatus) => {
-            if (exitCode === 0) {
-                saveCurrentSettings()
-                root.settingsApplied()
-            } else {
-                root.settingsError(Translation.tr("Failed to apply sensitivity settings"))
+            try {
+                const result = JSON.parse(batteryProc.output)
+                if (result.supported) {
+                    root.hasBattery = true
+                    root.batteryLevel = result.level || 100
+                    root.isCharging = result.is_charging || false
+                }
+            } catch (e) {
+                console.error("[RivalCfg] Failed to parse battery:", e)
             }
-            applySensitivityProc.output = ""
+            batteryProc.output = ""
         }
     }
 
-    // Apply polling rate
+    // Set sensitivity
     Process {
-        id: applyPollingRateProc
-        command: ["rivalcfg", "--polling-rate", root.pollingRate.toString()]
+        id: sensitivityProc
+        property string presetArg: ""
+        command: [root.wrapperScript, "sensitivity", presetArg]
         stdout: SplitParser {
-            onRead: data => {
-                applyPollingRateProc.output += data + "\n"
-            }
-        }
-        property string output: ""
-        onExited: (exitCode, exitStatus) => {
-            if (exitCode === 0) {
-                saveCurrentSettings()
-                root.settingsApplied()
-            } else {
-                root.settingsError(Translation.tr("Failed to apply polling rate"))
-            }
-            applyPollingRateProc.output = ""
-        }
-    }
-
-    // Apply button binding
-    Process {
-        id: applyButtonBindingProc
-        property string buttonArg: ""
-        command: ["rivalcfg", "--buttons", buttonArg]
-        stdout: SplitParser {
-            onRead: data => {
-                applyButtonBindingProc.output += data + "\n"
-            }
+            onRead: data => sensitivityProc.output += data
         }
         stderr: SplitParser {
-            onRead: data => {
-                applyButtonBindingProc.output += data + "\n"
-            }
+            onRead: data => { if (data.trim()) console.warn("[RivalCfg]", data) }
         }
         property string output: ""
         onExited: (exitCode, exitStatus) => {
-            if (exitCode === 0 && !applyButtonBindingProc.output.toLowerCase().includes("error")) {
-                saveCurrentSettings()
-                root.settingsApplied()
-            } else {
-                root.settingsError(Translation.tr("Failed to apply button binding: ") + applyButtonBindingProc.output)
+            try {
+                const result = JSON.parse(sensitivityProc.output)
+                if (result.success) {
+                    root.settingsApplied()
+                } else {
+                    root.settingsError(result.error || Translation.tr("Failed to apply sensitivity settings"))
+                }
+            } catch (e) {
+                root.settingsError(Translation.tr("Failed to apply sensitivity settings"))
             }
-            applyButtonBindingProc.output = ""
+            sensitivityProc.output = ""
+        }
+    }
+
+    // Set polling rate
+    Process {
+        id: pollingRateProc
+        command: [root.wrapperScript, "polling-rate", root.pollingRate.toString()]
+        stdout: SplitParser {
+            onRead: data => pollingRateProc.output += data
+        }
+        stderr: SplitParser {
+            onRead: data => { if (data.trim()) console.warn("[RivalCfg]", data) }
+        }
+        property string output: ""
+        onExited: (exitCode, exitStatus) => {
+            try {
+                const result = JSON.parse(pollingRateProc.output)
+                if (result.success) {
+                    root.settingsApplied()
+                } else {
+                    root.settingsError(result.error || Translation.tr("Failed to apply polling rate"))
+                }
+            } catch (e) {
+                root.settingsError(Translation.tr("Failed to apply polling rate"))
+            }
+            pollingRateProc.output = ""
+        }
+    }
+
+    // Set button mappings
+    Process {
+        id: buttonsProc
+        property string mappingsArg: "{}"
+        command: [root.wrapperScript, "buttons", mappingsArg]
+        stdout: SplitParser {
+            onRead: data => buttonsProc.output += data
+        }
+        stderr: SplitParser {
+            onRead: data => { if (data.trim()) console.warn("[RivalCfg]", data) }
+        }
+        property string output: ""
+        onExited: (exitCode, exitStatus) => {
+            try {
+                const result = JSON.parse(buttonsProc.output)
+                if (result.success) {
+                    root.settingsApplied()
+                } else {
+                    root.settingsError(result.error || Translation.tr("Failed to apply button binding"))
+                }
+            } catch (e) {
+                root.settingsError(Translation.tr("Failed to apply button binding"))
+            }
+            buttonsProc.output = ""
         }
     }
 
     // Reset to defaults
     Process {
         id: resetProc
-        command: ["rivalcfg", "--reset"]
+        command: [root.wrapperScript, "reset"]
         stdout: SplitParser {
-            onRead: data => {
-                resetProc.output += data + "\n"
-            }
+            onRead: data => resetProc.output += data
+        }
+        stderr: SplitParser {
+            onRead: data => { if (data.trim()) console.warn("[RivalCfg]", data) }
         }
         property string output: ""
         onExited: (exitCode, exitStatus) => {
-            if (exitCode === 0) {
-                // Clear saved config and reload defaults from device
-                root.buttonBindings = {}
-                clearConfigProc.running = true
-            } else {
+            try {
+                const result = JSON.parse(resetProc.output)
+                if (result.success) {
+                    // Reload settings after reset
+                    root.buttonBindings = {}
+                    root.sensitivityPresets = [800, 1600, 3200]
+                    root.pollingRate = 1000
+                    root.settingsApplied()
+                } else {
+                    root.settingsError(result.error || Translation.tr("Failed to reset settings"))
+                }
+            } catch (e) {
                 root.settingsError(Translation.tr("Failed to reset settings"))
             }
             resetProc.output = ""
         }
     }
 
-    // Clear config file after reset, then reload device defaults
-    Process {
-        id: clearConfigProc
-        command: ["bash", "-c", `rm -f "${root.configFile}"`]
-        onExited: (exitCode, exitStatus) => {
-            // Query device for actual default values after reset
-            queryDefaultsProc.running = true
-        }
-    }
-
-    // Query device defaults after reset
-    Process {
-        id: queryDefaultsProc
-        command: ["rivalcfg", "--print-debug"]
-        stdout: SplitParser {
-            onRead: data => {
-                queryDefaultsProc.output += data + "\n"
-            }
-        }
-        property string output: ""
-        onExited: (exitCode, exitStatus) => {
-            // Parse default sensitivity and polling rate from debug output
-            const sensMatch = queryDefaultsProc.output.match(/sensitivity\d*.*?default:\s*([\d,]+)/i)
-            if (sensMatch) {
-                const defaultSens = sensMatch[1].split(",").map(s => parseInt(s.trim())).filter(n => !isNaN(n))
-                if (defaultSens.length > 0) {
-                    root.sensitivityPresets = defaultSens
-                } else {
-                    root.sensitivityPresets = [800, 1600, 3200]
-                }
-            } else {
-                root.sensitivityPresets = [800, 1600, 3200]
-            }
-
-            const pollMatch = queryDefaultsProc.output.match(/polling[_-]?rate.*?default:\s*(\d+)/i)
-            if (pollMatch) {
-                root.pollingRate = parseInt(pollMatch[1])
-            } else {
-                root.pollingRate = 1000
-            }
-
-            queryDefaultsProc.output = ""
-            saveCurrentSettings()
-            root.settingsApplied()
-        }
-    }
-
-    // Save current settings to file
-    Process {
-        id: saveSettingsProc
-        property string configJson: ""
-        command: ["bash", "-c", `echo '${configJson}' > "${root.configFile}"`]
-    }
-
-    function saveCurrentSettings() {
-        const config = {
-            sensitivityPresets: root.sensitivityPresets,
-            pollingRate: root.pollingRate,
-            buttonBindings: root.buttonBindings
-        }
-        saveSettingsProc.configJson = JSON.stringify(config, null, 2)
-        saveSettingsProc.running = true
-    }
-
     // Periodic battery check timer (if battery supported)
+    // Checks more frequently since service only runs when sidebar is open
     Timer {
-        interval: 60000 // Check every minute
-        running: root.available && root.hasBattery
+        id: batteryTimer
+        interval: 10000 // Check every 10 seconds
+        running: root.active && root.available && root.hasBattery
         repeat: true
-        onTriggered: checkBatteryProc.running = true
+        onTriggered: batteryProc.running = true
     }
 }

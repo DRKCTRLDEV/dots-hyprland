@@ -147,7 +147,7 @@ ContentPage {
                         displayName: Translation.tr("Auto (System)"),
                         value: "auto"
                     },
-                    ...Translation.allAvailableLanguages.map(lang => {
+                    ...Translation.availableLanguages.map(lang => {
                         return {
                             displayName: lang,
                             value: lang

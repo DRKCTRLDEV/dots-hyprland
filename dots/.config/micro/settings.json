@@ -1,0 +1,11 @@
+{
+  "colorscheme": "matugen",
+  "clipboard": "external",
+  "tabsize": 4,
+  "indentchar": " ",
+  "eofnewline": true,
+  "ruler": true,
+  "statusline": true,
+  "syntax": true,
+  "tabstospaces": true
+}

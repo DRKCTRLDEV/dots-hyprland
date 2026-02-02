@@ -205,13 +205,3 @@ packages = [
   "unzip"
 ]
 install_opts = ["--setopt=install_weak_deps=False"]
-
-# SDDM Display Manager with theming
-[groups.sddm]
-packages = [
-  "sddm",
-  "qt5-qtgraphicaleffects",
-  "qt5-qtquickcontrols2",
-  "qt5-qtsvg"
-]
-

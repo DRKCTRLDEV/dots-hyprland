@@ -2,6 +2,7 @@ import QtQuick
 import QtQuick.Controls
 import QtQuick.Layouts
 import Quickshell
+import Quickshell.Io
 import qs.modules.common
 import qs.modules.common.functions
 import qs.modules.common.widgets
@@ -9,7 +10,7 @@ import qs.modules.ii.sidebarLeft.mouseConfig
 import qs.services
 
 /**
- * MouseCtrl - Mouse configuration widget using rivalcfg for SteelSeries mice.
+ * MouseConfig - Mouse configuration widget using rivalcfg for SteelSeries mice.
  * Provides device info, DPI settings, polling rate, and button bindings.
  */
 Item {
@@ -22,55 +23,44 @@ Item {
     // Status message
     property string statusMessage: ""
     property bool statusIsError: false
-    // Reference to the main content loader
-    property var contentLoader: mainContentLoader
-
-    function mapKeyToAction(key: int, modifiers: int) : string {
-        // Common key mappings for rivalcfg
+    // Convert a Qt key code to rivalcfg key name
+    function keyToRivalcfg(key: int) : string {
+        // rivalcfg only supports base keys - NOT shifted characters like !@#$%
+        // So we map Qt key codes directly, ignoring event.text for shifted chars
         const keyMap = {
-            [Qt.Key_Escape]: "disabled",
-            [Qt.Key_Space]: "space",
-            [Qt.Key_Return]: "enter",
-            [Qt.Key_Enter]: "enter",
-            [Qt.Key_Tab]: "tab",
-            [Qt.Key_Backspace]: "backspace",
-            [Qt.Key_Delete]: "delete",
-            [Qt.Key_Insert]: "insert",
-            [Qt.Key_Home]: "home",
-            [Qt.Key_End]: "end",
-            [Qt.Key_PageUp]: "pageup",
-            [Qt.Key_PageDown]: "pagedown",
-            [Qt.Key_Left]: "left",
-            [Qt.Key_Right]: "right",
-            [Qt.Key_Up]: "up",
-            [Qt.Key_Down]: "down",
-            [Qt.Key_F1]: "F1",
-            [Qt.Key_F2]: "F2",
-            [Qt.Key_F3]: "F3",
-            [Qt.Key_F4]: "F4",
-            [Qt.Key_F5]: "F5",
-            [Qt.Key_F6]: "F6",
-            [Qt.Key_F7]: "F7",
-            [Qt.Key_F8]: "F8",
-            [Qt.Key_F9]: "F9",
-            [Qt.Key_F10]: "F10",
-            [Qt.Key_F11]: "F11",
-            [Qt.Key_F12]: "F12",
-            [Qt.Key_Super_L]: "super",
-            [Qt.Key_Super_R]: "super",
-            [Qt.Key_Meta]: "super"
+            // Modifier keys (use Qt.Key_ constants only - hex codes are identical)
+            [Qt.Key_Shift]: "Shift", [Qt.Key_Control]: "Ctrl", [Qt.Key_Alt]: "Alt",
+            [Qt.Key_Meta]: "LeftSuper", [Qt.Key_AltGr]: "RightAlt",
+            [Qt.Key_Super_L]: "LeftSuper", [Qt.Key_Super_R]: "RightSuper",
+            // Context Menu
+            [Qt.Key_Menu]: "ContextMenu",
+            // Special keys
+            [Qt.Key_Escape]: "Escape", [Qt.Key_Space]: "Space", [Qt.Key_Return]: "Enter",
+            [Qt.Key_Enter]: "Enter", [Qt.Key_Tab]: "Tab", [Qt.Key_Backspace]: "BackSpace",
+            [Qt.Key_Delete]: "Delete", [Qt.Key_Insert]: "Insert", [Qt.Key_Home]: "Home",
+            [Qt.Key_End]: "End", [Qt.Key_PageUp]: "PageUp", [Qt.Key_PageDown]: "PageDown",
+            [Qt.Key_CapsLock]: "CapsLock", [Qt.Key_NumLock]: "NumLock",
+            [Qt.Key_ScrollLock]: "ScrollLock", [Qt.Key_Pause]: "PauseBreak", [Qt.Key_Print]: "PrintScreen",
+            // Arrow keys
+            [Qt.Key_Left]: "Left", [Qt.Key_Right]: "Right", [Qt.Key_Up]: "Up", [Qt.Key_Down]: "Down",
+            // Function keys
+            [Qt.Key_F1]: "F1", [Qt.Key_F2]: "F2", [Qt.Key_F3]: "F3", [Qt.Key_F4]: "F4",
+            [Qt.Key_F5]: "F5", [Qt.Key_F6]: "F6", [Qt.Key_F7]: "F7", [Qt.Key_F8]: "F8",
+            [Qt.Key_F9]: "F9", [Qt.Key_F10]: "F10", [Qt.Key_F11]: "F11", [Qt.Key_F12]: "F12",
+            // Punctuation
+            [Qt.Key_Apostrophe]: "quote", [Qt.Key_Comma]: "comma", [Qt.Key_Minus]: "dash",
+            [Qt.Key_Period]: "dot", [Qt.Key_Slash]: "slash", [Qt.Key_Semicolon]: "semicolon",
+            [Qt.Key_Equal]: "equal", [Qt.Key_BracketLeft]: "leftbracket", [Qt.Key_Backslash]: "backslash",
+            [Qt.Key_BracketRight]: "rightbracket", [Qt.Key_QuoteLeft]: "backtick", [Qt.Key_NumberSign]: "hash"
         };
-        if (keyMap[key])
-            return keyMap[key];
-
-        // For letter keys
-        if (key >= Qt.Key_A && key <= Qt.Key_Z)
-            return String.fromCharCode(key).toLowerCase();
-
-        // For number keys
-        if (key >= Qt.Key_0 && key <= Qt.Key_9)
-            return String.fromCharCode(key);
-
+        
+        if (keyMap[key]) return keyMap[key];
+        
+        // Letters A-Z (uppercase for rivalcfg)
+        if (key >= Qt.Key_A && key <= Qt.Key_Z) return String.fromCharCode(key);
+        // Numbers 0-9
+        if (key >= Qt.Key_0 && key <= Qt.Key_9) return String.fromCharCode(key);
+        
         return null;
     }
 
@@ -83,17 +73,16 @@ Item {
             });
         }
     }
-    // Key capture for button binding
+    // Key capture for button binding - bind directly on key press
     Keys.onPressed: (event) => {
-        if (root.listeningButton.length > 0) {
-            // Map key to rivalcfg action
-            const action = mapKeyToAction(event.key, event.modifiers);
-            if (action) {
-                RivalCfg.setButtonBinding(root.listeningButton, action);
-                root.listeningButton = "";
-            }
-            event.accepted = true;
+        if (root.listeningButton.length === 0) return; // Not recording, ignore
+        
+        const keyName = keyToRivalcfg(event.key);
+        if (keyName) {
+            RivalCfg.setButtonBinding(root.listeningButton, keyName);
+            root.listeningButton = "";
         }
+        event.accepted = true;
     }
 
     // Listen for settings applied/error signals
@@ -138,6 +127,9 @@ Item {
 
             sourceComponent: Item {
                 anchors.fill: parent
+                Accessible.role: Accessible.Pane
+                Accessible.name: Translation.tr("Loading")
+                Accessible.description: Translation.tr("Detecting mouse device")
 
                 ColumnLayout {
                     anchors.centerIn: parent
@@ -170,6 +162,9 @@ Item {
 
             sourceComponent: Item {
                 anchors.fill: parent
+                Accessible.role: Accessible.AlertMessage
+                Accessible.name: Translation.tr("Error")
+                Accessible.description: RivalCfg.errorMessage
 
                 ColumnLayout {
                     anchors.centerIn: parent

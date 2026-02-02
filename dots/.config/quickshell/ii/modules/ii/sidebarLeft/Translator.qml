@@ -169,7 +169,9 @@ Item {
                         onClicked: {
                             let url = Config.options.search.engineBaseUrl + outputCanvas.displayedText;
                             for (let site of Config.options.search.excludedSites) {
-                                url += ` -site:${site}`;
+                                if (site.trim() !== "") {
+                                    url += ` -site:${site}`;
+                                }
                             }
                             Qt.openUrlExternally(url);
                         }

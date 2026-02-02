@@ -9,18 +9,11 @@ Singleton {
     id: root
 
     property var translations: ({})
-    property var generatedTranslations: ({})
-    property var availableLanguages: ["en_US", "en_GB"]
-    property var availableGeneratedLanguages: []
-    property var allAvailableLanguages: {
-        const combined = new Set([...root.availableLanguages, ...root.availableGeneratedLanguages]);
-        return Array.from(combined).sort();
-    }
+    property var availableLanguages: ["en_US"]
     property bool isScanning: scanLanguagesProcess.running
     property bool isLoading: false
     property string translationKeepSuffix: "/*keep*/"
     property string translationsDir: Quickshell.shellPath("translations")
-    property string generatedTranslationsDir: Directories.shellConfig + "/translations"
 
     property string languageCode: {
         var configLang = Config?.options.language.ui ?? "auto";
@@ -35,25 +28,13 @@ Singleton {
         id: scanLanguagesProcess
         translationsDir: root.translationsDir
         onLanguagesScanned: (languages) => {
-            root.availableLanguages = [...languages];
-        }
-    }
-
-    TranslationScanner {
-        id: scanGeneratedLanguagesProcess
-        translationsDir: root.generatedTranslationsDir
-        onLanguagesScanned: (languages) => {
-            root.availableGeneratedLanguages = [...languages];
+            root.availableLanguages = ["en_US", ...languages];
         }
     }
 
     onLanguageCodeChanged: {
-        print("[Translation] Language changed to", root.languageCode);
-        const effectiveLang = root.allAvailableLanguages.indexOf(root.languageCode) !== -1 ? root.languageCode : "en_US";
-        translationFileView.languageCode = effectiveLang;
-        generatedTranslationFileView.languageCode = effectiveLang;
+        translationFileView.languageCode = root.languageCode;
         translationFileView.reread();
-        generatedTranslationFileView.reread();
     }
 
     TranslationReader {
@@ -66,26 +47,13 @@ Singleton {
         }
     }
 
-    TranslationReader {
-        id: generatedTranslationFileView
-        translationsDir: root.generatedTranslationsDir
-        languageCode: root.languageCode
-        onContentLoaded: (data) => {
-            root.generatedTranslations = data;
-            root.isLoading = false;
-        }
-    }
-
     function tr(text) {
-        // Special cases
         if (!text) return "";
         var key = text.toString();
-        if (root.isLoading || (!root?.translations?.hasOwnProperty(key) && !root?.generatedTranslations?.hasOwnProperty(key)))
+        if (root.isLoading || !root.translations.hasOwnProperty(key))
             return key;
         
-        // Normal cases
-        var translation = root.translations[key] || root.generatedTranslations[key] || key;
-        // print(key, "-> [", root.translations[key], root.generatedTranslations[key], key, "] ->", translation);
+        var translation = root.translations[key];
         if (translation.endsWith(root.translationKeepSuffix)) {
             translation = translation.substring(0, translation.length - root.translationKeepSuffix.length).trim();
         }
@@ -116,24 +84,6 @@ Singleton {
         }
     }
 
-    // Small helper process to check for the existence of a translation file without causing noisy warnings
-    Process {
-        id: translationFileExistsProc
-        property var targetReader: null
-        onExited: (exitCode, exitStatus) => {
-            const target = translationFileExistsProc.targetReader;
-            if (!target) return;
-            if (exitCode === 0) {
-                target.path = "";
-                target.path = `${target.translationsDir}/${target.languageCode}.json`;
-                target.reload();
-            } else {
-                target.contentLoaded({});
-            }
-            translationFileExistsProc.targetReader = null;
-        }
-    }
-
     component TranslationReader: FileView {
         id: translationReader
         required property string translationsDir
@@ -141,15 +91,14 @@ Singleton {
         signal contentLoaded(var data)
 
         function reread() { // Proper reload in case the file was incorrect before
-            // Only attempt to load the file if it appears to exist to avoid noisy warnings
-            const candidatePath = `${translationReader.translationsDir}/${translationReader.languageCode}.json`;
-            // Escape single quotes for safe shell quoting
-            function _escapeSingleQuotes(s) { return s.replace(/'/g, "'\"'\"'"); }
-            const escaped = _escapeSingleQuotes(candidatePath);
-            translationFileExistsProc.targetReader = translationReader;
-            translationFileExistsProc.exec(["bash", "-c", `[ -f '${escaped}' ]`]);
+            if (translationReader.languageCode === "en_US") {
+                translationReader.contentLoaded({});
+            } else {
+                translationReader.path = "";
+                translationReader.path = `${translationReader.translationsDir}/${translationReader.languageCode}.json`;
+                translationReader.reload();
+            }
         }
-
         path: ""
 
         onLoaded: {

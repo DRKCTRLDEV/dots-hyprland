@@ -147,108 +147,32 @@ Rectangle {
 
                 RowLayout {
                     id: batteryRow
-
                     spacing: 8
+                    anchors { fill: parent; margins: 8 }
 
-                    anchors {
-                        fill: parent
-                        margins: 8
-                    }
-
-                    MaterialSymbol {
-                        text: {
-                            if (RivalCfg.isCharging)
-                                return "battery_charging_full";
-
-                            if (RivalCfg.batteryLevel <= 20)
-                                return "battery_alert";
-
-                            if (RivalCfg.batteryLevel <= 50)
-                                return "battery_3_bar";
-
-                            if (RivalCfg.batteryLevel <= 80)
-                                return "battery_5_bar";
-
-                            return "battery_full";
-                        }
-                        iconSize: Appearance.font.pixelSize.larger
-                        color: {
-                            if (RivalCfg.isCharging)
-                                return Appearance.colors.colOnPrimaryContainer;
-
-                            if (RivalCfg.batteryLevel <= 20)
-                                return Appearance.colors.colOnErrorContainer;
-
-                            if (RivalCfg.batteryLevel <= 40)
-                                return Appearance.colors.colOnTertiaryContainer;
-
-                            return Appearance.colors.colOnLayer1;
-                        }
-                    }
-
+                    // Battery text on the left
                     StyledText {
                         Layout.fillWidth: true
                         text: RivalCfg.isCharging ? Translation.tr("Charging - %1%").arg(RivalCfg.batteryLevel) : Translation.tr("Battery: %1%").arg(RivalCfg.batteryLevel)
-                        color: {
-                            if (RivalCfg.isCharging)
-                                return Appearance.colors.colOnPrimaryContainer;
-
-                            if (RivalCfg.batteryLevel <= 20)
-                                return Appearance.colors.colOnErrorContainer;
-
-                            if (RivalCfg.batteryLevel <= 40)
-                                return Appearance.colors.colOnTertiaryContainer;
-
-                            return Appearance.colors.colOnLayer1;
-                        }
+                        color: RivalCfg.isCharging ? Appearance.colors.colOnPrimaryContainer :
+                               RivalCfg.batteryLevel <= 20 ? Appearance.colors.colOnErrorContainer :
+                               RivalCfg.batteryLevel <= 40 ? Appearance.colors.colOnTertiaryContainer :
+                               Appearance.colors.colOnLayer1
                         font.pixelSize: Appearance.font.pixelSize.small
                     }
 
-                    // Battery percentage indicator
-                    Rectangle {
-                        implicitWidth: 40
-                        implicitHeight: 6
-                        radius: 3
-                        color: Appearance.colors.colLayer0
-
-                        Rectangle {
-                            width: parent.width * (RivalCfg.batteryLevel / 100)
-                            radius: 3
-                            color: {
-                                if (RivalCfg.isCharging)
-                                    return Appearance.colors.colPrimary;
-
-                                if (RivalCfg.batteryLevel <= 20)
-                                    return Appearance.colors.colError;
-
-                                if (RivalCfg.batteryLevel <= 40)
-                                    return Appearance.colors.colTertiary;
-
-                                return Appearance.colors.colPrimary;
-                            }
-
-                            anchors {
-                                left: parent.left
-                                top: parent.top
-                                bottom: parent.bottom
-                            }
-
-                            Behavior on width {
-                                NumberAnimation {
-                                    duration: 300
-                                    easing.type: Easing.OutCubic
-                                }
-
-                            }
-
-                            Behavior on color {
-                                animation: Appearance.animation.elementMoveFast.colorAnimation.createObject(this)
-                            }
-
-                        }
-
+                    // Battery icon on the right
+                    MaterialSymbol {
+                        text: RivalCfg.isCharging ? "battery_charging_full" :
+                              RivalCfg.batteryLevel <= 20 ? "battery_alert" :
+                              RivalCfg.batteryLevel <= 50 ? "battery_3_bar" :
+                              RivalCfg.batteryLevel <= 80 ? "battery_5_bar" : "battery_full"
+                        iconSize: Appearance.font.pixelSize.larger
+                        color: RivalCfg.isCharging ? Appearance.colors.colOnPrimaryContainer :
+                               RivalCfg.batteryLevel <= 20 ? Appearance.colors.colOnErrorContainer :
+                               RivalCfg.batteryLevel <= 40 ? Appearance.colors.colOnTertiaryContainer :
+                               Appearance.colors.colOnLayer1
                     }
-
                 }
 
                 Behavior on color {

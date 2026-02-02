@@ -161,18 +161,6 @@ Tips:
 - `wf-recorder`
   - Used in Quickshell config.
 
-## illogical-impulse-sddm
-- `sddm`
-  - Display manager for login screen.
-- `sddm-sugar-candy-git`
-  - Theme for SDDM that integrates with matugen color scheme.
-- `qt5-graphicaleffects`
-  - Required by Sugar Candy theme.
-- `qt5-quickcontrols2`
-  - Required by Sugar Candy theme.
-- `qt5-svg`
-  - Required by Sugar Candy theme.
-
 ## illogical-impulse-toolkit
 - `upower`
   - Used in Quickshell config.

@@ -8,8 +8,8 @@ import QtQuick.Layouts
 Item {
     id: root
     property var tabButtonList: [
-        {"name": Translation.tr("Pomodoro"), "icon": "search_activity"},
-        {"name": Translation.tr("Stopwatch"), "icon": "timer"}
+        {"name": Translation.tr("Stopwatch"), "icon": "timer"},
+        {"name": Translation.tr("Pomodoro"), "icon": "search_activity"}
     ]
 
     // These are keybinds for stopwatch and pomodoro
@@ -68,8 +68,8 @@ Item {
             currentIndex: tabBar.currentIndex
 
             // Tabs
-            PomodoroTimer {}
             Stopwatch {}
+            PomodoroTimer {}
         }
     }
 }

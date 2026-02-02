@@ -42,6 +42,6 @@ output_path = '~/.config/cava/config'
 input_path = '~/.config/matugen/templates/vesktop/midnight.theme.css'
 output_path = '~/.config/vesktop/themes/midnight.theme.css'
 
-[templates.sddm]
-input_path = '~/.config/matugen/templates/sddm/theme.conf'
-output_path = '~/.config/sddm/theme.conf'
+[templates.micro]
+input_path = '~/.config/matugen/templates/micro/colorscheme.micro'
+output_path = '~/.config/micro/colorschemes/matugen.micro'

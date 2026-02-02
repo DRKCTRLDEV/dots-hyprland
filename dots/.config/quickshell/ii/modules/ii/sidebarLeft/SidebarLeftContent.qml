@@ -1,3 +1,4 @@
+import qs
 import qs.services
 import qs.modules.common
 import qs.modules.common.widgets
@@ -5,7 +6,6 @@ import QtQuick
 import QtQuick.Controls
 import QtQuick.Layouts
 import Qt5Compat.GraphicalEffects
-import Qt.labs.synchronizer
 
 Item {
     id: root
@@ -20,6 +20,31 @@ Item {
         ...(root.mouseConfigEnabled ? [{"icon": "mouse", "name": Translation.tr("Mouse")}] : [])
     ]
     property int tabCount: swipeView.count
+    
+    // Control service active state based on sidebar visibility
+    Connections {
+        target: GlobalStates
+        function onSidebarLeftOpenChanged() {
+            // Activate/deactivate RivalCfg service when sidebar opens/closes
+            if (root.mouseConfigEnabled) {
+                RivalCfg.active = GlobalStates.sidebarLeftOpen
+            }
+        }
+    }
+    
+    // Also set initial state when component is created
+    Component.onCompleted: {
+        if (root.mouseConfigEnabled && GlobalStates.sidebarLeftOpen) {
+            RivalCfg.active = true
+        }
+    }
+    
+    // Cleanup when destroyed
+    Component.onDestruction: {
+        if (root.mouseConfigEnabled) {
+            RivalCfg.active = false
+        }
+    }
 
     function focusActiveItem() {
         swipeView.currentItem.forceActiveFocus()
@@ -46,7 +71,7 @@ Item {
         spacing: sidebarPadding
 
         Toolbar {
-            visible: tabButtonList.length > 0
+            visible: tabButtonList.length > 1
             Layout.alignment: Qt.AlignHCenter
             enableShadow: false
             ToolbarTabBar {

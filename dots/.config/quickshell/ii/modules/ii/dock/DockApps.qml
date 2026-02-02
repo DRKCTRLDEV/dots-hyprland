@@ -113,14 +113,8 @@ Item {
             implicitHeight: root.maxWindowPreviewHeight + root.windowControlsHeight + Appearance.sizes.elevationMargin * 2
             hoverEnabled: true
             x: {
-                // Guard in case the hovered button or window isn't ready yet
-                if (!root.lastHoveredButton || !root.QsWindow || !root.lastHoveredButton.window) return 0;
-                try {
-                    const itemCenter = root.QsWindow.mapFromItem(root.lastHoveredButton, root.lastHoveredButton.width / 2, 0);
-                    return itemCenter.x - width / 2;
-                } catch (e) {
-                    return 0;
-                }
+                const itemCenter = root.QsWindow?.mapFromItem(root.lastHoveredButton, root.lastHoveredButton?.width / 2, 0);
+                return itemCenter.x - width / 2
             }
             StyledRectangularShadow {
                 target: popupBackground

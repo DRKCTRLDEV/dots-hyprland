@@ -81,26 +81,20 @@ Rectangle {
 
             Layout.fillWidth: true
             buttonIcon: "timer"
-            model: [{
-                "displayText": "125 Hz (8ms)",
-                "value": 125
-            }, {
-                "displayText": "250 Hz (4ms)",
-                "value": 250
-            }, {
-                "displayText": "500 Hz (2ms)",
-                "value": 500
-            }, {
-                "displayText": "1000 Hz (1ms)",
-                "value": 1000
-            }]
+            // Use device-supported polling rates from RivalCfg service
+            model: RivalCfg.pollingRates.map(rate => ({
+                "displayText": rate >= 1000 
+                    ? `${rate} Hz (${1000/rate}ms)` 
+                    : `${rate} Hz (${Math.round(1000/rate)}ms)`,
+                "value": rate
+            }))
             textRole: "displayText"
             valueRole: "value"
             currentIndex: {
                 const idx = model.findIndex((item) => {
                     return item.value === RivalCfg.pollingRate;
                 });
-                return idx >= 0 ? idx : 3; // Default to 1000Hz
+                return idx >= 0 ? idx : model.length - 1; // Default to highest rate
             }
             onActivated: (index) => {
                 const newRate = model[index].value;

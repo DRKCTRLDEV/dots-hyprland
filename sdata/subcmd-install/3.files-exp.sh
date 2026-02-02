@@ -235,7 +235,7 @@ for pattern in "${patterns[@]}"; do
       fi
       ;;
     "hard")
-      v cp -r "$from" "$to"
+      v cp -rp "$from" "$to"
       ;;
     "hard-backup")
       if [[ -e "$to" ]]; then
@@ -244,10 +244,10 @@ for pattern in "${patterns[@]}"; do
         else
           backup_number=$(get_next_backup_number "$to")
           v mv "$to" "$to.old.$backup_number"
-          v cp -r "$from" "$to"
+          v cp -rp "$from" "$to"
         fi
       else
-        v cp -r "$from" "$to"
+        v cp -rp "$from" "$to"
       fi
       ;;
     "soft-backup")
@@ -268,7 +268,7 @@ for pattern in "${patterns[@]}"; do
       if [[ -e "$to" ]]; then
         echo "Skipping $from (destination exists)"
       else
-        v cp -r "$from" "$to"
+        v cp -rp "$from" "$to"
       fi
       ;;
     *)

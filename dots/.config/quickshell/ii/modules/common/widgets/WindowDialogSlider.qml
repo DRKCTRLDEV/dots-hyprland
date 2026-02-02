@@ -16,6 +16,7 @@ Column {
     property alias value: sliderWidget.value
     property alias tooltipContent: sliderWidget.tooltipContent
     property alias stopIndicatorValues: sliderWidget.stopIndicatorValues
+    property alias stepSize: sliderWidget.stepSize
 
     signal moved()
     

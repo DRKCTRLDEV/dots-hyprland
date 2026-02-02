@@ -65,6 +65,7 @@ WindowDialog {
         }
 
         WindowDialogSlider {
+            id: temperatureSlider
             anchors {
                 left: parent.left
                 right: parent.right
@@ -74,10 +75,21 @@ WindowDialog {
             text: Translation.tr("Intensity")
             from: 6500
             to: 1200
+            stepSize: 100
             stopIndicatorValues: [5000, to]
             value: Config.options.light.night.colorTemperature
-            onMoved: Config.options.light.night.colorTemperature = value
+            onMoved: {
+                temperatureUpdateTimer.restart()
+            }
             tooltipContent: `${Math.round(value)}K`
+        }
+
+        Timer {
+            id: temperatureUpdateTimer
+            interval: 300
+            onTriggered: {
+                Config.options.light.night.colorTemperature = temperatureSlider.value
+            }
         }
     }
 

@@ -5,28 +5,6 @@
 
 #####################################################################################
 
-printf "${STY_CYAN}[$0]: Hi there! Before we start:${STY_RST}\n"
-printf "\n"
-printf "${STY_PURPLE}${STY_BOLD}[NEW] illogical-impulse is now powered by Quickshell.${STY_RST}\n"
-printf "\n"
-pause
-printf "${STY_CYAN}${STY_BOLD}Quick overview about what this script does:${STY_RST}\n"
-printf "${STY_CYAN}"
-printf "  1. Install dependencies.\n"
-printf "  2. Setup permissions/services etc.\n"
-printf "  3. Copying config files.${STY_RST}\n"
-pause
-printf "${STY_CYAN}${STY_BOLD}Tips:${STY_RST}\n"
-printf "${STY_CYAN}"
-printf "  a) It has been designed to be idempotent which means you can run it multiple times.\n"
-printf "  b) Use ${STY_INVERT} --help ${STY_RST}${STY_CYAN} for more options.${STY_RST}\n"
-printf "${STY_YELLOW}${STY_BOLD}Note: ${STY_RST}"
-printf "${STY_YELLOW}"
-printf "It does not handle system-level/hardware stuff like Nvidia drivers. Please do it by yourself.\n"
-printf "${STY_RST}"
-printf "\n"
-pause
-
 case $ask in
   false) sleep 0 ;;
   *) 

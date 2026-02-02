@@ -12,11 +12,7 @@ set -e
 
 #####################################################################################
 showhelp_global(){
-printf "${STY_CYAN}NOTE:
-  The old \"./install.sh\"   is now \"./setup install\"
-  The old \"./update.sh\"    is now \"./setup exp-update\"
-  The old \"./uninstall.sh\" is now \"./setup uninstall\"${STY_RST}
-
+printf "
 [$0]: Handle setup for illogical-impulse.
 
 Syntax:

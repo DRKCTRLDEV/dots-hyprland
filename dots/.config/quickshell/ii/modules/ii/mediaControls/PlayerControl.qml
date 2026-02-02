@@ -250,9 +250,27 @@ Item { // Player instance
                                     highlightColor: blendedColors.colPrimary
                                     trackColor: blendedColors.colSecondaryContainer
                                     handleColor: blendedColors.colPrimary
-                                    value: root.player?.position / root.player?.length
+                                    property real sliderValue: root.player?.position / root.player?.length ?? 0
+                                    value: sliderValue
+                                    onPressedChanged: {
+                                        if (!pressed && !seekTimer.running) {
+                                            sliderValue = root.player?.position / root.player?.length ?? 0;
+                                        }
+                                    }
                                     onMoved: {
-                                        root.player.position = value * root.player.length;
+                                        sliderValue = value;
+                                        seekTimer.pendingValue = value;
+                                        seekTimer.restart();
+                                    }
+
+                                    Timer {
+                                        id: seekTimer
+                                        property real pendingValue: 0
+                                        interval: 200 // 200ms delay
+                                        repeat: false
+                                        onTriggered: {
+                                            root.player.position = pendingValue * root.player.length;
+                                        }
                                     }
                                 }
                             }

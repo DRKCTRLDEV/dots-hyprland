@@ -5,6 +5,8 @@ import qs.modules.common
 import qs.modules.common.widgets
 import qs.services
 
+pragma ComponentBehavior: Bound
+
 /**
  * Button bindings configuration section.
  * Allows editing mouse button assignments.
@@ -16,85 +18,76 @@ Rectangle {
     // Common button actions for the dropdown
     property var buttonActions: [{
         "value": "disabled",
-        "display": Translation.tr("Disabled")
+        "displayText": Translation.tr("Disabled")
     }, {
         "value": "button1",
-        "display": Translation.tr("Left Click")
+        "displayText": Translation.tr("Left Click (Button 1)")
     }, {
         "value": "button2",
-        "display": Translation.tr("Right Click")
+        "displayText": Translation.tr("Right Click (Button 2)")
     }, {
         "value": "button3",
-        "display": Translation.tr("Middle Click")
+        "displayText": Translation.tr("Middle Click")
     }, {
         "value": "button4",
-        "display": Translation.tr("Back")
+        "displayText": Translation.tr("Back (Button 4)")
     }, {
         "value": "button5",
-        "display": Translation.tr("Forward")
+        "displayText": Translation.tr("Forward (Button 5)")
+    }, {
+        "value": "button6",
+        "displayText": Translation.tr("Button 6")
+    }, {
+        "value": "button7",
+        "displayText": Translation.tr("Button 7")
+    }, {
+        "value": "button8",
+        "displayText": Translation.tr("Button 8")
+    }, {
+        "value": "button9",
+        "displayText": Translation.tr("Button 9")
     }, {
         "value": "dpi",
-        "display": Translation.tr("DPI Cycle")
+        "displayText": Translation.tr("DPI Cycle")
     }, {
-        "value": "dpi+",
-        "display": Translation.tr("DPI Up")
+        "value": "scrollup",
+        "displayText": Translation.tr("Scroll Up")
     }, {
-        "value": "dpi-",
-        "display": Translation.tr("DPI Down")
+        "value": "scrolldown",
+        "displayText": Translation.tr("Scroll Down")
     }, {
-        "value": "space",
-        "display": Translation.tr("Space")
+        "value": "LeftSuper",
+        "displayText": Translation.tr("Super/Win Key")
     }, {
-        "value": "enter",
-        "display": Translation.tr("Enter")
+        "value": "Ctrl",
+        "displayText": Translation.tr("Ctrl")
     }, {
-        "value": "tab",
-        "display": Translation.tr("Tab")
+        "value": "Shift",
+        "displayText": Translation.tr("Shift")
     }, {
-        "value": "backspace",
-        "display": Translation.tr("Backspace")
+        "value": "Alt",
+        "displayText": Translation.tr("Alt")
     }, {
-        "value": "delete",
-        "display": Translation.tr("Delete")
+        "value": "ContextMenu",
+        "displayText": Translation.tr("Context Menu")
     }, {
-        "value": "F1",
-        "display": "F1"
+        "value": "PlayPause",
+        "displayText": Translation.tr("Play/Pause")
     }, {
-        "value": "F2",
-        "display": "F2"
+        "value": "VolumeUp",
+        "displayText": Translation.tr("Volume Up")
     }, {
-        "value": "F3",
-        "display": "F3"
+        "value": "VolumeDown",
+        "displayText": Translation.tr("Volume Down")
     }, {
-        "value": "F4",
-        "display": "F4"
+        "value": "Mute",
+        "displayText": Translation.tr("Mute")
     }, {
-        "value": "F5",
-        "display": "F5"
+        "value": "Next",
+        "displayText": Translation.tr("Next Track")
     }, {
-        "value": "F6",
-        "display": "F6"
-    }, {
-        "value": "F7",
-        "display": "F7"
-    }, {
-        "value": "F8",
-        "display": "F8"
-    }, {
-        "value": "F9",
-        "display": "F9"
-    }, {
-        "value": "F10",
-        "display": "F10"
-    }, {
-        "value": "F11",
-        "display": "F11"
-    }, {
-        "value": "F12",
-        "display": "F12"
-    }, {
-        "value": "super",
-        "display": Translation.tr("Super/Win")
+        "value": "Previous",
+        "displayText": Translation.tr("Previous Track")
     }]
 
     signal startListening(string button)
@@ -105,32 +98,103 @@ Rectangle {
             return a.value === actionValue;
         });
         if (action)
-            return action.display;
+            return action.displayText;
 
         // For custom values (like key letters)
-        if (actionValue && actionValue.length === 1)
+        if (actionValue && actionValue.length === 1 && /^[A-Z0-9]$/.test(actionValue))
             return actionValue.toUpperCase() + " " + Translation.tr("key");
+        
+        // For modifier keys - use generic names since Qt/Wayland can't reliably distinguish left/right
+        const modifierNames = {
+            "Shift": Translation.tr("Shift"),
+            "LeftShift": Translation.tr("Shift"),
+            "RightShift": Translation.tr("Shift"),
+            "Ctrl": Translation.tr("Ctrl"),
+            "LeftCtrl": Translation.tr("Ctrl"),
+            "RightCtrl": Translation.tr("Ctrl"),
+            "Alt": Translation.tr("Alt"),
+            "LeftAlt": Translation.tr("Alt"),
+            "RightAlt": Translation.tr("Alt (Right)"),
+            "LeftSuper": Translation.tr("Super/Win"),
+            "RightSuper": Translation.tr("Super/Win")
+        };
+        if (modifierNames[actionValue])
+            return modifierNames[actionValue];
+        
+        // For special keys and aliases
+        const specialKeys = {
+            "Escape": Translation.tr("Escape"),
+            "Space": Translation.tr("Space"),
+            "Enter": Translation.tr("Enter"),
+            "Tab": Translation.tr("Tab"),
+            "BackSpace": Translation.tr("Backspace"),
+            "Delete": Translation.tr("Delete"),
+            "Insert": Translation.tr("Insert"),
+            "Home": Translation.tr("Home"),
+            "End": Translation.tr("End"),
+            "PageUp": Translation.tr("Page Up"),
+            "PageDown": Translation.tr("Page Down"),
+            "Up": Translation.tr("Arrow Up"),
+            "Down": Translation.tr("Arrow Down"),
+            "Left": Translation.tr("Arrow Left"),
+            "Right": Translation.tr("Arrow Right"),
+            "ContextMenu": Translation.tr("Context Menu"),
+            "PrintScreen": Translation.tr("Print Screen"),
+            "PauseBreak": Translation.tr("Pause/Break"),
+            "ScrollLock": Translation.tr("Scroll Lock"),
+            "NumLock": Translation.tr("Num Lock"),
+            "quote": "'",
+            "comma": ",",
+            "dash": "-",
+            "dot": ".",
+            "slash": "/",
+            "semicolon": ";",
+            "equal": "=",
+            "leftbracket": "[",
+            "backslash": "\\\\",
+            "rightbracket": "]",
+            "backtick": "`",
+            "hash": "#",
+            // Media keys (use rivalcfg names)
+            "PlayPause": Translation.tr("Play/Pause"),
+            "VolumeUp": Translation.tr("Volume Up"),
+            "VolumeDown": Translation.tr("Volume Down"),
+            "Mute": Translation.tr("Mute"),
+            "Next": Translation.tr("Next Track"),
+            "Previous": Translation.tr("Previous Track"),
+            // Scroll actions
+            "scrollup": Translation.tr("Scroll Up"),
+            "scrolldown": Translation.tr("Scroll Down")
+        };
+        if (specialKeys[actionValue])
+            return specialKeys[actionValue] + (specialKeys[actionValue].length === 1 ? " " + Translation.tr("key") : "");
+        
+        // F-keys
+        if (/^F\d+$/.test(actionValue))
+            return actionValue + " " + Translation.tr("key");
 
         return actionValue || Translation.tr("Unknown");
     }
 
     function getButtonDisplayName(buttonId: string) : string {
-        // Return friendly names
+        // Return friendly names with button numbers - handle both "Button1" and "button1" formats
+        const id = buttonId.toLowerCase();
         const names = {
-            "button1": Translation.tr("Left Click"),
-            "button2": Translation.tr("Right Click"),
-            "button3": Translation.tr("Middle Click"),
-            "button4": Translation.tr("Back Btn"),
-            "button5": Translation.tr("Forward Btn"),
-            "button6": Translation.tr("DPI Button"),
+            "button1": Translation.tr("Left Click (Button 1)"),
+            "button2": Translation.tr("Right Click (Button 2)"),
+            "button3": Translation.tr("Middle Click (Button 3)"),
+            "button4": Translation.tr("Back (Button 4)"),
+            "button5": Translation.tr("Forward (Button 5)"),
+            "button6": Translation.tr("DPI (Button 6)"),
             "button7": Translation.tr("Button 7"),
             "button8": Translation.tr("Button 8"),
             "button9": Translation.tr("Button 9")
         };
-        return names[buttonId] || buttonId;
+        return names[id] || buttonId;
     }
 
     function getButtonIcon(buttonId: string) : string {
+        const id = buttonId.toLowerCase();
         const icons = {
             "button1": "mouse",
             "button2": "mouse",
@@ -142,7 +206,45 @@ Rectangle {
             "button8": "radio_button_unchecked",
             "button9": "radio_button_unchecked"
         };
-        return icons[buttonId] || "radio_button_unchecked";
+        return icons[id] || "radio_button_unchecked";
+    }
+
+    function getDefaultAction(buttonId: string) : string {
+        const id = buttonId.toLowerCase();
+        const defaults = {
+            "button1": "button1", // LMB
+            "button2": "button2", // RMB
+            "button3": "button3", // MMB
+            "button4": "button4", // Back
+            "button5": "button5", // Forward
+            "button6": "dpi"      // DPI Cycle
+        };
+        return defaults[id] || id;
+    }
+
+    function getAvailableActionsForButton(buttonId: string, currentAction: string) : var {
+        let actions = buttonActions.slice();
+        const id = buttonId.toLowerCase();
+        // Check if buttonId is already in actions
+        const hasButtonAction = actions.some(action => action.value === id);
+        if (!hasButtonAction && id !== "button6") {
+            // Add the button itself as an option (default behavior)
+            const buttonNumber = id.replace("button", "");
+            actions.push({
+                "value": id,
+                "displayText": Translation.tr("Default (Button %1)").arg(buttonNumber)
+            });
+        }
+        // Check if currentAction is in actions
+        const hasCurrentAction = actions.some(action => action.value === currentAction);
+        if (!hasCurrentAction && currentAction && currentAction !== "disabled") {
+            // Add the current action as an option
+            actions.push({
+                "value": currentAction,
+                "displayText": root.getActionDisplay(currentAction)
+            });
+        }
+        return actions;
     }
 
     implicitHeight: bindingsColumn.implicitHeight + 24
@@ -225,10 +327,10 @@ Rectangle {
                     buttonId: modelData
                     buttonName: root.getButtonDisplayName(modelData)
                     buttonIcon: root.getButtonIcon(modelData)
-                    currentAction: RivalCfg.buttonBindings[modelData] || "disabled"
+                    currentAction: RivalCfg.buttonBindings[modelData] || root.getDefaultAction(modelData)
                     actionDisplay: root.getActionDisplay(currentAction)
                     isListening: root.listeningButton === modelData
-                    availableActions: root.buttonActions
+                    availableActions: root.getAvailableActionsForButton(modelData, currentAction)
                     onStartListeningClicked: {
                         root.startListening(modelData);
                     }
@@ -309,7 +411,7 @@ Rectangle {
                 enabled: !bindingRow.isListening
                 opacity: enabled ? 1 : 0.5
                 model: bindingRow.availableActions
-                textRole: "display"
+                textRole: "displayText"
                 valueRole: "value"
                 currentIndex: {
                     const idx = model.findIndex((item) => {

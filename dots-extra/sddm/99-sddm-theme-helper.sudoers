@@ -1,4 +1,4 @@
 # Allow members of wheel or sudo group to run sddm-set-theme for specific commands without password
-Cmnd_Alias SDDM_SET_THEME = /home/alfie/.config/quickshell/ii/scripts/colors/sddm/sddm-set-theme.sh
+Cmnd_Alias SDDM_SET_THEME = /home/alfie/.local/state/quickshell/.venv/bin/python3 /home/alfie/.config/quickshell/ii/scripts/colors/sddm/sddm-set-theme.py *
 %wheel ALL=(root) NOPASSWD: SDDM_SET_THEME
 %sudo  ALL=(root) NOPASSWD: SDDM_SET_THEME

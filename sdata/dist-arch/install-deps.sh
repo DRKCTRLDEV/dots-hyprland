@@ -58,19 +58,20 @@ case $SKIP_SYSUPDATE in
   *) v sudo pacman -Syu;;
 esac
 
-# Use paru. Because paru does not support cleanbuild.
-# Also see https://wiki.hyprland.org/FAQ/#how-do-i-update
 if ! command -v paru >/dev/null 2>&1;then
   echo -e "${STY_YELLOW}[$0]: \"paru\" not found.${STY_RST}"
   showfun install-paru
   v install-paru
 fi
 
+# Ensure devtools is installed for cleanbuild
+if ! command -v arch-nspawn >/dev/null 2>&1; then
+  x sudo pacman -S --needed --noconfirm devtools
+fi
+
 showfun implicitize_old_dependencies
 v implicitize_old_dependencies
 
-# https://github.com/end-4/dots-hyprland/issues/581
-# paru -Bi is kinda hit or miss, instead cd into the relevant directory and manually source and install deps
 install-local-pkgbuild() {
   local location=$1
   local installflags=$2
@@ -79,21 +80,10 @@ install-local-pkgbuild() {
 
   source ./PKGBUILD
   
-  # Special handling for SDDM package to handle conflicts with manually installed sugar-candy theme
-  if [[ "$pkgname" == "illogical-impulse-sddm" ]]; then
-    # Add --overwrite flag for sddm-sugar-candy-git to handle existing files from KDE settings
-    x paru -S --sudoloop $installflags --asdeps --overwrite '/usr/share/sddm/themes/sugar-candy/*' "${depends[@]}"
-  else
-    x paru -S --sudoloop $installflags --asdeps "${depends[@]}"
-  fi
+  x paru -S --sudoloop $installflags --asdeps "${depends[@]}"
   
-  # man makepkg:
-  # -A, --ignorearch: Ignore a missing or incomplete arch field in the build script.
-  # -s, --syncdeps: Install missing dependencies using pacman. When build-time or run-time dependencies are not found, pacman will try to resolve them.
-  # -f, --force: build a package even if it already exists in the PKGDEST
-  # -i, --install: Install or upgrade the package after a successful build using pacman(8).
-  # In https://github.com/end-4/dots-hyprland/issues/823#issuecomment-3394774645 it's suggested to use `sudo pacman -U --noconfirm *.pkg.tar.zst` instead of `makepkg -i`, however it's possible that multiple *.pkg.tar.zst exist, which makes this command not reliable.
-  x makepkg -Afsi --noconfirm
+  # Using paru --chroot -Bi for cleanbuild integration
+  x paru --chroot --sudoloop -Bi --noconfirm .
   x popd
 }
 
@@ -102,7 +92,6 @@ metapkgs=(./sdata/dist-arch/illogical-impulse-{audio,backlight,basic,fonts-theme
 metapkgs+=(./sdata/dist-arch/illogical-impulse-hyprland)
 metapkgs+=(./sdata/dist-arch/illogical-impulse-microtex-git)
 metapkgs+=(./sdata/dist-arch/illogical-impulse-quickshell-git)
-metapkgs+=(./sdata/dist-arch/illogical-impulse-sddm)
 # metapkgs+=(./sdata/dist-arch/packages/illogical-impulse-oneui4-icons-git)
 [[ -f /usr/share/icons/Bibata-Modern-Classic/index.theme ]] || \
   metapkgs+=(./sdata/dist-arch/illogical-impulse-bibata-modern-classic-bin)

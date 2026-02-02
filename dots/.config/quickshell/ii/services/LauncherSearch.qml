@@ -277,7 +277,9 @@ Singleton {
                 let query = StringUtils.cleanPrefix(root.query, Config.options.search.prefix.webSearch);
                 let url = Config.options.search.engineBaseUrl + query;
                 for (let site of Config.options.search.excludedSites) {
-                    url += ` -site:${site}`;
+                    if (site.trim() !== "") {
+                        url += ` -site:${site}`;
+                    }
                 }
                 Qt.openUrlExternally(url);
             }

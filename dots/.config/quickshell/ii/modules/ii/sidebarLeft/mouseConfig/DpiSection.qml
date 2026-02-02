@@ -163,20 +163,25 @@ Rectangle {
                         required property int index
                         required property var modelData
                         
+                        property var parentRoot: root
+                        
                         dpiValue: modelData
-                        isSelected: root.selectedPresetIndex === index
-                        canRemove: root.editablePresets.length > 1
+                        isSelected: parentRoot.selectedPresetIndex === index
+                        canRemove: parentRoot.editablePresets.length > 1
                         
                         onClicked: {
-                            root.selectedPresetIndex = index
+                            parentRoot.selectedPresetIndex = index
                         }
                         
                         onRemoveClicked: {
-                            if (root.editablePresets && root.editablePresets.length > 1) {
-                                let newPresets = root.editablePresets.slice()
+                            if (parentRoot.editablePresets && parentRoot.editablePresets.length > 1) {
+                                let newPresets = parentRoot.editablePresets.slice()
                                 newPresets.splice(index, 1)
-                                root.editablePresets = newPresets
-                                root.selectedPresetIndex = Math.min(root.selectedPresetIndex, newPresets.length - 1)
+                                parentRoot.editablePresets = newPresets
+                                // Adjust selected preset index
+                                if (parentRoot.selectedPresetIndex >= index) {
+                                    parentRoot.selectedPresetIndex = Math.max(0, parentRoot.selectedPresetIndex - 1)
+                                }
                                 RivalCfg.setSensitivity(newPresets)
                             }
                         }
@@ -208,9 +213,23 @@ Rectangle {
                     }
 
                     onClicked: {
-                        // Add a new preset with a reasonable default
+                        // Add a new preset with a reasonable default, avoiding duplicates
                         const lastValue = root.editablePresets[root.editablePresets.length - 1] || 800
-                        const newValue = Math.min(lastValue + 400, root.maxDpi)
+                        let newValue = Math.min(lastValue + 400, root.maxDpi)
+                        
+                        // Find unique value if this one already exists
+                        while (root.editablePresets.includes(newValue) && newValue < root.maxDpi) {
+                            newValue += 50
+                        }
+                        if (root.editablePresets.includes(newValue)) {
+                            // Try going down instead
+                            newValue = Math.max(100, lastValue - 400)
+                            while (root.editablePresets.includes(newValue) && newValue > 100) {
+                                newValue -= 50
+                            }
+                        }
+                        if (root.editablePresets.includes(newValue)) return // Can't add unique preset
+                        
                         let newPresets = root.editablePresets.slice()
                         newPresets.push(newValue)
                         newPresets.sort((a, b) => a - b)
@@ -238,25 +257,34 @@ Rectangle {
         property int dpiValue: 800
         property bool isSelected: false
         property bool canRemove: true
+        property bool showRemoveButton: canRemove && (chipMouseArea.containsMouse || removeButtonMouseArea.containsMouse || isSelected)
         
         signal clicked()
         signal removeClicked()
         
-        implicitWidth: chipRow.implicitWidth + 16
+        implicitWidth: chipContent.implicitWidth + 16
         implicitHeight: 32
         radius: Appearance.rounding.full
         color: isSelected ? Appearance.colors.colPrimary : Appearance.colors.colSecondaryContainer
+        
+        Behavior on implicitWidth {
+            NumberAnimation {
+                duration: 150
+                easing.type: Easing.OutCubic
+            }
+        }
         
         Behavior on color {
             animation: Appearance.animation.elementMoveFast.colorAnimation.createObject(this)
         }
         
-        RowLayout {
-            id: chipRow
+        Row {
+            id: chipContent
             anchors.centerIn: parent
             spacing: 4
             
             StyledText {
+                anchors.verticalCenter: parent.verticalCenter
                 text: chip.dpiValue.toString()
                 color: chip.isSelected ? Appearance.colors.colOnPrimary : Appearance.colors.colOnSecondaryContainer
                 font.pixelSize: Appearance.font.pixelSize.small
@@ -268,15 +296,34 @@ Rectangle {
                 }
             }
             
-            // Remove button (shown on hover when not selected)
-            Loader {
-                active: chip.canRemove
-                visible: active && (chipMouseArea.containsMouse || chip.isSelected)
+            // Remove button (smoothly shown on hover)
+            Item {
+                id: removeButtonContainer
+                anchors.verticalCenter: parent.verticalCenter
+                implicitWidth: chip.showRemoveButton ? 18 : 0
+                implicitHeight: 18
+                clip: true
+                visible: chip.canRemove
                 
-                sourceComponent: Rectangle {
-                    implicitWidth: 18
-                    implicitHeight: 18
+                Behavior on implicitWidth {
+                    NumberAnimation {
+                        duration: 150
+                        easing.type: Easing.OutCubic
+                    }
+                }
+                
+                Rectangle {
+                    id: removeButtonBg
+                    width: 18
+                    height: 18
                     color: "transparent"
+                    opacity: chip.showRemoveButton ? 1 : 0
+                    
+                    Behavior on opacity {
+                        NumberAnimation {
+                            duration: 100
+                        }
+                    }
                     
                     MaterialSymbol {
                         anchors.centerIn: parent
@@ -284,17 +331,24 @@ Rectangle {
                         iconSize: Appearance.font.pixelSize.small
                         color: chip.isSelected ? Appearance.colors.colOnPrimary : Appearance.colors.colOnSecondaryContainer
                     }
-                    
-                    MouseArea {
-                        anchors.fill: parent
-                        cursorShape: Qt.PointingHandCursor
-                        z: 1
-                        onClicked: (event) => {
-                            event.accepted = true
-                            chip.removeClicked()
-                        }
-                    }
                 }
+            }
+        }
+        
+        // Remove button MouseArea - separate from chip MouseArea for proper click handling
+        MouseArea {
+            id: removeButtonMouseArea
+            x: chip.width - removeButtonContainer.width - 8
+            anchors.verticalCenter: parent.verticalCenter
+            width: removeButtonContainer.width
+            height: removeButtonContainer.height
+            visible: chip.showRemoveButton
+            enabled: chip.showRemoveButton
+            cursorShape: Qt.PointingHandCursor
+            z: 10
+            hoverEnabled: true
+            onClicked: {
+                chip.removeClicked()
             }
         }
         
@@ -303,23 +357,12 @@ Rectangle {
             anchors.fill: parent
             hoverEnabled: true
             cursorShape: Qt.PointingHandCursor
-            propagateComposedEvents: true
-            onClicked: (mouse) => {
-                // Check if click is on the close button area
-                const closeButton = chip.children[0].children[1] // RowLayout -> Loader
-                if (closeButton && closeButton.visible) {
-                    const closeButtonItem = closeButton.item
-                    if (closeButtonItem) {
-                        const mappedPos = mapToItem(closeButtonItem, mouse.x, mouse.y)
-                        if (mappedPos.x >= 0 && mappedPos.x <= closeButtonItem.width &&
-                            mappedPos.y >= 0 && mappedPos.y <= closeButtonItem.height) {
-                            mouse.accepted = false
-                            return
-                        }
-                    }
-                }
+            z: 0
+            onClicked: {
                 chip.clicked()
             }
+            // Make sure this MouseArea doesn't interfere with the remove button
+            propagateComposedEvents: true
         }
         
         Accessible.role: Accessible.Button

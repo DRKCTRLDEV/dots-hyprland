@@ -23,10 +23,9 @@ if status is-interactive # Commands to run in interactive sessions can go here
         cat ~/.local/state/quickshell/user/generated/terminal/sequences.txt
     end
 
-    # Abbreviations
-    abbr ls 'eza --icons -la'
-    abbr clear "printf '\033[2J\033[3J\033[1;1H'"
-    abbr cls 'clear'
-    abbr q 'qs -c ii'
+    alias ls 'eza --icons'
+    alias clear "printf '\033[2J\033[3J\033[1;1H'"
+    alias cls 'clear'
+    alias q 'qs -c ii'
     
 end

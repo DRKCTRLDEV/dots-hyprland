@@ -36,12 +36,12 @@ Item {
 
     function showLanguageSelectorDialog(isTargetLang: bool) {
         root.languageSelectorTarget = isTargetLang;
-        root.showLanguageSelector = true
+        root.showLanguageSelector = true;
     }
 
-    onFocusChanged: (focus) => {
+    onFocusChanged: focus => {
         if (focus) {
-            root.inputField.forceActiveFocus()
+            root.inputField.forceActiveFocus();
         }
     }
 
@@ -63,10 +63,7 @@ Item {
 
     Process {
         id: translateProc
-        command: ["bash", "-c", `trans -brief`
-            + ` -source '${StringUtils.shellSingleQuoteEscape(root.sourceLanguage)}'`
-            + ` -target '${StringUtils.shellSingleQuoteEscape(root.targetLanguage)}'`
-            + ` '${StringUtils.shellSingleQuoteEscape(root.inputField.text.trim())}'`]
+        command: ["bash", "-c", `trans -brief` + ` -source '${StringUtils.shellSingleQuoteEscape(root.sourceLanguage)}'` + ` -target '${StringUtils.shellSingleQuoteEscape(root.targetLanguage)}'` + ` '${StringUtils.shellSingleQuoteEscape(root.inputField.text.trim())}'`]
         property string buffer: ""
         stdout: SplitParser {
             onRead: data => {
@@ -83,7 +80,7 @@ Item {
         id: getLanguagesProc
         command: ["trans", "-list-languages", "-no-bidi"]
         property list<string> bufferList: ["auto"]
-        running: false
+        running: true
         stdout: SplitParser {
             onRead: data => {
                 getLanguagesProc.bufferList.push(data.trim());
@@ -91,22 +88,11 @@ Item {
         }
         onExited: (exitCode, exitStatus) => {
             // Ensure "auto" is always the first language
-            let langs = getLanguagesProc.bufferList
-                .filter(lang => lang.trim().length > 0 && lang !== "auto")
-                .sort((a, b) => a.localeCompare(b));
+            let langs = getLanguagesProc.bufferList.filter(lang => lang.trim().length > 0 && lang !== "auto").sort((a, b) => a.localeCompare(b));
             langs.unshift("auto");
             root.languages = langs;
             getLanguagesProc.bufferList = []; // Clear the buffer
         }
-    }
-
-    Component.onCompleted: {
-        // Load languages asynchronously after component is ready
-        Qt.callLater(() => {
-            if (!getLanguagesProc.running) {
-                getLanguagesProc.running = true;
-            }
-        });
     }
 
     ColumnLayout {
@@ -115,70 +101,91 @@ Item {
             margins: root.padding
         }
 
-        StyledFlickable {
+        LanguageSelectorButton { // Target language button
+            id: targetLanguageButton
+            displayText: root.targetLanguage
+            onClicked: {
+                root.showLanguageSelectorDialog(true);
+            }
+        }
+
+        Item {
             Layout.fillWidth: true
-            Layout.fillHeight: true
-            contentHeight: contentColumn.implicitHeight
+            Layout.preferredHeight: outputCanvas.implicitHeight
+            // Layout.fillHeight: true
+            Layout.maximumHeight: root.height * 0.4
 
-            ColumnLayout {
-                id: contentColumn
+            StyledFlickable {
                 anchors.fill: parent
-
-                LanguageSelectorButton { // Target language button
-                    id: targetLanguageButton
-                    displayText: root.targetLanguage
-                    onClicked: {
-                        root.showLanguageSelectorDialog(true);
-                    }
-                }
+                contentHeight: outputCanvas.implicitHeight
+                clip: true
 
                 TextCanvas { // Content translation
                     id: outputCanvas
+                    width: parent.width
+                    height: implicitHeight
+
                     isInput: false
                     placeholderText: Translation.tr("Translation goes here...")
                     property bool hasTranslation: (root.translatedText.trim().length > 0)
                     text: hasTranslation ? root.translatedText : ""
-                    GroupButton {
-                        id: copyButton
-                        baseWidth: height
-                        buttonRadius: Appearance.rounding.small
-                        enabled: outputCanvas.displayedText.trim().length > 0
-                        contentItem: MaterialSymbol {
-                            anchors.centerIn: parent
-                            horizontalAlignment: Text.AlignHCenter
-                            iconSize: Appearance.font.pixelSize.larger
-                            text: "content_copy"
-                            color: copyButton.enabled ? Appearance.colors.colOnLayer1 : Appearance.colors.colSubtext
-                        }
-                        onClicked: {
-                            Quickshell.clipboardText = outputCanvas.displayedText
-                        }
-                    }
-                    GroupButton {
-                        id: searchButton
-                        baseWidth: height
-                        buttonRadius: Appearance.rounding.small
-                        enabled: outputCanvas.displayedText.trim().length > 0
-                        contentItem: MaterialSymbol {
-                            anchors.centerIn: parent
-                            horizontalAlignment: Text.AlignHCenter
-                            iconSize: Appearance.font.pixelSize.larger
-                            text: "travel_explore"
-                            color: searchButton.enabled ? Appearance.colors.colOnLayer1 : Appearance.colors.colSubtext
-                        }
-                        onClicked: {
-                            let url = Config.options.search.engineBaseUrl + outputCanvas.displayedText;
-                            for (let site of Config.options.search.excludedSites) {
-                                if (site.trim() !== "") {
-                                    url += ` -site:${site}`;
-                                }
-                            }
-                            Qt.openUrlExternally(url);
-                        }
-                    }
                 }
+            }
 
-            }    
+            GroupButton {
+                id: copyButton
+                anchors {
+                    right: searchButton.left
+                    bottom: parent.bottom
+                    margins: 8
+                }
+                baseWidth: height
+                buttonRadius: Appearance.rounding.small
+                colBackground: Appearance.colors.colLayer1Base
+                enabled: outputCanvas.displayedText.trim().length > 0
+                contentItem: MaterialSymbol {
+                    anchors.centerIn: parent
+                    horizontalAlignment: Text.AlignHCenter
+                    iconSize: Appearance.font.pixelSize.larger
+                    text: "content_copy"
+                    color: copyButton.enabled ? Appearance.colors.colOnLayer1 : Appearance.colors.colSubtext
+                }
+                onClicked: {
+                    Quickshell.clipboardText = outputCanvas.displayedText;
+                }
+            }
+            GroupButton {
+                id: searchButton
+                anchors {
+                    right: parent.right
+                    bottom: parent.bottom
+                    margins: 8
+                }
+                baseWidth: height
+                buttonRadius: Appearance.rounding.small
+                colBackground: Appearance.colors.colLayer1Base
+                enabled: outputCanvas.displayedText.trim().length > 0
+                contentItem: MaterialSymbol {
+                    anchors.centerIn: parent
+                    horizontalAlignment: Text.AlignHCenter
+                    iconSize: Appearance.font.pixelSize.larger
+                    text: "travel_explore"
+                    color: searchButton.enabled ? Appearance.colors.colOnLayer1 : Appearance.colors.colSubtext
+                }
+                onClicked: {
+                    let url = Config.options.search.engineBaseUrl + outputCanvas.displayedText;
+                    for (let site of Config.options.search.excludedSites) {
+                        if (site.trim() !== "") {
+                            url += ` -site:${site}`;
+                        }
+                    }
+                    Qt.openUrlExternally(url);
+                }
+            }
+        }
+
+        Item {
+            Layout.fillHeight: true
         }
 
         LanguageSelectorButton { // Source language button
@@ -189,17 +196,43 @@ Item {
             }
         }
 
-        TextCanvas { // Content input
-            id: inputCanvas
-            isInput: true
-            placeholderText: Translation.tr("Enter text to translate...")
-            onInputTextChanged: {
-                translateTimer.restart();
+        Item {
+            Layout.fillWidth: true
+            Layout.preferredHeight: inputCanvas.implicitHeight
+            Layout.maximumHeight: root.height * 0.5
+
+            StyledFlickable {
+                anchors.fill: parent
+                contentHeight: inputCanvas.implicitHeight
+                clip: true
+
+                TextCanvas { // Content input
+                    id: inputCanvas
+                    width: parent.width
+                    height: implicitHeight
+
+                    isInput: true
+                    placeholderText: Translation.tr("Enter text to translate...")
+                    onInputTextChanged: {
+                        translateTimer.restart();
+                    }
+
+                    Item {
+                        height: 35
+                    }
+                }
             }
+
             GroupButton {
                 id: pasteButton
+                anchors {
+                    right: deleteButton.left
+                    bottom: parent.bottom
+                    margins: 8
+                }
                 baseWidth: height
                 buttonRadius: Appearance.rounding.small
+                colBackground: Appearance.colors.colLayer1Base
                 contentItem: MaterialSymbol {
                     anchors.centerIn: parent
                     horizontalAlignment: Text.AlignHCenter
@@ -208,13 +241,19 @@ Item {
                     color: deleteButton.enabled ? Appearance.colors.colOnLayer1 : Appearance.colors.colSubtext
                 }
                 onClicked: {
-                    root.inputField.text = Quickshell.clipboardText
+                    root.inputField.text = Quickshell.clipboardText;
                 }
             }
             GroupButton {
                 id: deleteButton
+                anchors {
+                    right: parent.right
+                    bottom: parent.bottom
+                    margins: 8
+                }
                 baseWidth: height
                 buttonRadius: Appearance.rounding.small
+                colBackground: Appearance.colors.colLayer1Base
                 enabled: inputCanvas.inputTextArea.text.length > 0
                 contentItem: MaterialSymbol {
                     anchors.centerIn: parent
@@ -224,7 +263,7 @@ Item {
                     color: deleteButton.enabled ? Appearance.colors.colOnLayer1 : Appearance.colors.colSubtext
                 }
                 onClicked: {
-                    root.inputField.text = ""
+                    root.inputField.text = "";
                 }
             }
         }
@@ -243,9 +282,10 @@ Item {
             onCanceled: () => {
                 root.showLanguageSelector = false;
             }
-            onSelected: (result) => {
+            onSelected: result => {
                 root.showLanguageSelector = false;
-                if (!result || result.length === 0) return; // No selection made
+                if (!result || result.length === 0)
+                    return; // No selection made
 
                 if (root.languageSelectorTarget) {
                     root.targetLanguage = result;

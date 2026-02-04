@@ -258,7 +258,6 @@
   "Background": "Background",
   "Failed to reset settings": "Failed to reset settings",
   "Open the shell config file\nAlternatively right-click to copy path": "Open the shell config file\nAlternatively right-click to copy path",
-  "Enable the MouseCtrl tab in the left sidebar for configuring SteelSeries mice using rivalcfg.\nInstall with: paru -S rivalcfg": "Enable the MouseCtrl tab in the left sidebar for configuring SteelSeries mice using rivalcfg.\nInstall with: paru -S rivalcfg",
   "OK": "OK",
   "Polling Rate": "Polling Rate",
   "Backspace": "Backspace",

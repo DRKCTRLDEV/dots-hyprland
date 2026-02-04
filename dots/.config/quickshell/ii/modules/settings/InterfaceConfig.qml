@@ -459,9 +459,6 @@ ContentPage {
             onCheckedChanged: {
                 Config.options.sidebar.mouseConfig.enable = checked;
             }
-            StyledToolTip {
-                text: Translation.tr("Enable the MouseCtrl tab in the left sidebar for configuring SteelSeries mice using rivalcfg.\nInstall with: paru -S rivalcfg")
-            }
         }
 
         ConfigSpinBox {

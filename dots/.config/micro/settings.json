@@ -7,5 +7,7 @@
   "ruler": true,
   "statusline": true,
   "syntax": true,
-  "tabstospaces": true
+  "tabstospaces": true,
+  "wordwrap": true,
+  "softwrap": true
 }

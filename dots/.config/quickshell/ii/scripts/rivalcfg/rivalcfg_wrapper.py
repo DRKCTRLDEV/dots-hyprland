@@ -86,13 +86,24 @@ def cmd_detect() -> Dict[str, Any]:
             settings = profile["settings"]
             
             # Check sensitivity/DPI support
+            # Newer mice use a combined "sensitivity" key; older ones use "sensitivity1", "sensitivity2", etc.
             if "sensitivity" in settings:
                 result["capabilities"]["has_sensitivity"] = True
                 sens_info = settings["sensitivity"]
-                if "range_min" in sens_info:
-                    result["capabilities"]["sensitivity_range"]["min"] = sens_info["range_min"]
-                if "range_max" in sens_info:
-                    result["capabilities"]["sensitivity_range"]["max"] = sens_info["range_max"]
+                if "input_range" in sens_info:
+                    result["capabilities"]["sensitivity_range"]["min"] = sens_info["input_range"][0]
+                    result["capabilities"]["sensitivity_range"]["max"] = sens_info["input_range"][1]
+            elif "sensitivity1" in settings:
+                result["capabilities"]["has_sensitivity"] = True
+                sens_info = settings["sensitivity1"]
+                if "input_range" in sens_info:
+                    result["capabilities"]["sensitivity_range"]["min"] = sens_info["input_range"][0]
+                    result["capabilities"]["sensitivity_range"]["max"] = sens_info["input_range"][1]
+                elif "choices" in sens_info:
+                    choices = sorted(sens_info["choices"].keys())
+                    if choices:
+                        result["capabilities"]["sensitivity_range"]["min"] = choices[0]
+                        result["capabilities"]["sensitivity_range"]["max"] = choices[-1]
             
             # Check polling rate support
             if "polling_rate" in settings:
@@ -156,12 +167,25 @@ def cmd_set_sensitivity(presets: List[int]) -> Dict[str, Any]:
     
     try:
         # The method is dynamically generated as set_<setting_name>
+        # Newer mice use a combined "set_sensitivity"; older ones use "set_sensitivity1", etc.
         if hasattr(mouse, 'set_sensitivity'):
             mouse.set_sensitivity(presets)
             mouse.save()
             result["success"] = True
         else:
-            result["error"] = "Device does not support sensitivity adjustment"
+            # Try individual sensitivity1, sensitivity2, etc.
+            profile_settings = mouse.mouse_profile.get("settings", {})
+            any_set = False
+            for i, dpi in enumerate(presets, start=1):
+                setting_name = f"sensitivity{i}"
+                if setting_name in profile_settings:
+                    getattr(mouse, f"set_{setting_name}")(dpi)
+                    any_set = True
+            if any_set:
+                mouse.save()
+                result["success"] = True
+            else:
+                result["error"] = "Device does not support sensitivity adjustment"
         mouse.close()
     except Exception as e:
         result["error"] = str(e)
@@ -342,10 +366,10 @@ def cmd_get_settings() -> Dict[str, Any]:
         # Read settings using mouse_settings.get() method
         settings = mouse.mouse_settings
         
-        # Get sensitivity - returns list or comma-separated string
+        # Get sensitivity - handle both combined "sensitivity" and individual "sensitivityN" keys
         try:
             sens = settings.get("sensitivity")
-            if sens:
+            if sens is not None:
                 if isinstance(sens, (list, tuple)):
                     result["settings"]["sensitivity"] = [int(s) for s in sens]
                 elif isinstance(sens, str):
@@ -353,8 +377,21 @@ def cmd_get_settings() -> Dict[str, Any]:
                     result["settings"]["sensitivity"] = [int(s.strip()) for s in sens.split(",")]
                 elif isinstance(sens, int):
                     result["settings"]["sensitivity"] = [sens]
-        except Exception:
+        except (KeyError, TypeError, ValueError):
             pass
+        
+        # Fall back to sensitivity1/sensitivity2/... pattern (older mice)
+        if not result["settings"]["sensitivity"]:
+            presets = []
+            for i in range(1, 6):  # Try sensitivity1 through sensitivity5
+                try:
+                    val = settings.get(f"sensitivity{i}")
+                    if val is not None:
+                        presets.append(int(val))
+                except (KeyError, TypeError, ValueError):
+                    break
+            if presets:
+                result["settings"]["sensitivity"] = presets
         
         # Get polling rate
         try:

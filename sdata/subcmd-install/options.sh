@@ -30,12 +30,14 @@ Options for install:
 ${STY_CYAN}
 New features (experimental):
       --exp-files             Use yaml-based config for the third step copying files.
-                              This feature is ${STY_YELLOW}still on early stage${STY_CYAN},
+      --exp-files-path <path> Use <path> as the yaml config instead of the default.
+      --exp-files-regen       Force regenerate the yaml config from the default template.
+      --exp-files-no-strict   Ignore errors when only the minor version number differs.
+      --exp-symlink           Use symlinks instead of copying where mode is \"symlink\".
+      --exp-reset-symlinks    Remove all symlinks in .config/.local that point to the repo.
+                              These features are ${STY_YELLOW}still on early stage${STY_CYAN},
                               feedback and contribution welcomed,
                               see https://github.com/end-4/dots-hyprland/issues/2137 for details.
-      --via-nix               Use Nix and Home-manager to install dependencies.
-                              This feature is ${STY_RED}working in progress${STY_CYAN}. Contribution is welcomed,
-                              see https://github.com/end-4/dots-hyprland/issues/1061 for details.
 ${STY_RST}"
 }
 
@@ -46,7 +48,7 @@ cleancache(){
 # `man getopt` to see more
 para=$(getopt \
   -o hfFk:cs \
-  -l help,force,firstrun,fontset:,clean,skip-allgreeting,skip-alldeps,skip-allsetups,skip-allfiles,ignore-outdate,skip-sysupdate,skip-plasmaintg,skip-backup,skip-quickshell,skip-fish,skip-hyprland,skip-fontconfig,skip-miscconf,core,exp-files,via-nix \
+  -l help,force,firstrun,fontset:,clean,skip-allgreeting,skip-alldeps,skip-allsetups,skip-allfiles,ignore-outdate,skip-sysupdate,skip-plasmaintg,skip-backup,skip-quickshell,skip-fish,skip-hyprland,skip-fontconfig,skip-miscconf,core,exp-files,exp-files-path:,exp-files-regen,exp-files-no-strict,exp-symlink,exp-reset-symlinks \
   -n "$0" -- "$@")
 [ $? != 0 ] && echo "$0: Error when getopt, please recheck parameters." && exit 1
 #####################################################################################
@@ -87,7 +89,10 @@ while true ; do
     --skip-miscconf) SKIP_MISCCONF=true;shift;;
     --core) SKIP_PLASMAINTG=true;SKIP_FISH=true;SKIP_FONTCONFIG=true;SKIP_MISCCONF=true;shift;;
     --exp-files) EXPERIMENTAL_FILES_SCRIPT=true;shift;;
-    --via-nix) INSTALL_VIA_NIX=true;shift;;
+    --exp-files-regen) EXP_FILES_REGEN=true;shift;;
+    --exp-files-no-strict) EXP_FILES_NO_STRICT=true;shift;;
+    --exp-symlink) EXP_SYMLINK=true;shift;;
+    --exp-reset-symlinks) EXP_RESET_SYMLINKS=true;shift;;
     
     ## Ones with parameter
     --fontset)
@@ -95,6 +100,8 @@ while true ; do
       then echo "Using fontset \"$2\".";FONTSET_DIR_NAME="$2";shift 2
       else echo "Wrong argument for $1.";exit 1
     fi;;
+    --exp-files-path)
+    EXP_FILES_PATH="$2";shift 2;;
 
     ## Ending
     --) shift;break ;;

@@ -61,48 +61,32 @@ id: imageDetectionProcess
 ```
 In this example, python script `find_regions.py` is called and receives some arguments.
 
-#### Solution A: shebang
+#### Solution: shebang (preferred)
 
 Add the shebang below to the beginning of python script:
 ```python
 #!/usr/bin/env -S\_/bin/sh\_-c\_"source\_\$(eval\_echo\_\$ILLOGICAL_IMPULSE_VIRTUAL_ENV)/bin/activate&&exec\_python\_-E\_"\$0"\_"\$@""
 ```
-And that's it!
+And that's it! The script activates the venv, then `exec`s python with the script and all
+arguments. No wrapper shell script needed.
 
-**Note:** This is the simplest solution as it only modifies the shebang of python script.
-**However:**
-- It's only for python script, not the command provided by python package.
-- It can not deal with complex argument (e.g. filename containing spaces) passed to the python script.
-  - If we apply this solution to the example above, it may cause problem, considering that `--image '${StringUtils.shellSingleQuoteEscape(panelWindow.screenshotPath)}'` could be a rather complex argument passed to `find_regions.py`.
-- This solution rely on shebang to activate the correct python venv, but the shebang will be ignored if the script is directly passed to the interpreter, e.g. `python3 foo.py`.
-
-#### Solution B: bash script as wrapper
-
-First make sure the python script is using the shebang `#!/usr/bin/env python3`, instead of `#!/usr/bin/python3` or something else.
-
-Then write a wrapper script in bash.
-Let's continue the `screenshot.qml` example, in the same directory as `find_regions.py`, write a `find-regions-venv.sh`:
-```bash
-#!/usr/bin/env bash
-
-# Specify the path of the python script.
-# The example below only applies when `find_regions.py` and this wrapper script are under the same folder.
-PY_SCRIPT="$(cd $(dirname "${BASH_SOURCE[0]}") && pwd)/find_regions.py"
-
-source $(eval echo $ILLOGICAL_IMPULSE_VIRTUAL_ENV)/bin/activate
-"$PY_SCRIPT" "$@"
-deactivate
-```
-**Not done yet!** Do not forget to update the code calling the original python script.
-In this example, in `~/‎.config/quickshell/ii/screenshot.qml` we should modify `find_regions.py` to the wrapper script `find-regions-venv.sh`:
+The QML caller doesn't need to change — it still calls the `.py` file directly:
 ```qml
 Process {
 id: imageDetectionProcess
-                command: ["bash", "-c", `${Directories.scriptPath}/images/find-regions-venv.sh ` 
+                command: ["bash", "-c", `${Directories.scriptPath}/images/find_regions.py ` 
 + `--hyprctl ` 
 + `--image '${StringUtils.shellSingleQuoteEscape(panelWindow.screenshotPath)}' ` 
 + `--max-width ${Math.round(panelWindow.screen.width * root.falsePositivePreventionRatio)} ` 
 ```
+
+**Notes:**
+- This shebang uses `env -S` to split the argument and invoke `/bin/sh -c` which activates
+  the venv and then `exec`s `python -E` with the script and its arguments.
+- `\_` is `env -S`'s escape for a space character (avoids kernel shebang splitting issues).
+- `\$` is `env -S`'s escape for a literal `$` (deferred to the shell for expansion).
+- The shebang is ignored if the script is run directly via `python3 foo.py`; use `./foo.py` instead.
+- This approach is used by `thumbgen.py`, `find_regions.py`, and `rivalcfg_wrapper.py`.
 
 ### Situation 2: Inside a bash script
 Note: the solutions for `Situation 1: As a single command` also apply here; but **not** vice versa.
@@ -119,19 +103,18 @@ Inside a bash script,
 **Example:**
 
 For running a python script,
-take `generate_colors_material.py` as example:
+take `scheme_for_image.py` as example:
 ```bash
 source "$(eval echo $ILLOGICAL_IMPULSE_VIRTUAL_ENV)/bin/activate"
-python3 "$SCRIPT_DIR/generate_colors_material.py" "${generate_colors_material_args[@]}" \
-  > "$STATE_DIR"/user/generated/material_colors.scss
-"$SCRIPT_DIR"/applycolor.sh
+python3 "$SCRIPT_DIR/scheme_for_image.py" "$imgpath"
+deactivate
 ```
 
-For running a python script provided by python package,
-take `kde-material-you-colors` as example:
+For running a command provided by python package,
+take `rivalcfg` as example:
 ```bash
 source "$(eval echo $ILLOGICAL_IMPULSE_VIRTUAL_ENV)/bin/activate"
-kde-material-you-colors "$mode_flag" --color "$color" -sv "$sv_num"
+rivalcfg --sensitivity 800
 deactivate
 ```
 

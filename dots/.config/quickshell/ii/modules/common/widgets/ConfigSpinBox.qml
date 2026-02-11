@@ -11,9 +11,12 @@ RowLayout {
     property alias stepSize: spinBoxWidget.stepSize
     property alias from: spinBoxWidget.from
     property alias to: spinBoxWidget.to
+    property bool hovered: hoverHandler.hovered
     spacing: 10
     Layout.leftMargin: 8
     Layout.rightMargin: 8
+
+    HoverHandler { id: hoverHandler }
 
     RowLayout {
         spacing: 10

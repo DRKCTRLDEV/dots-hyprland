@@ -9,6 +9,7 @@ Flow {
     id: root
     Layout.fillWidth: true
     spacing: 2
+    opacity: enabled ? 1 : 0.4
     property list<var> options: [
         {
             "displayName": "Option 1",

@@ -2,26 +2,112 @@
 # It's not for directly running.
 
 # See https://github.com/end-4/dots-hyprland/issues/2137
-#
-# Stage 1 todos:
-# TODO: Properly handle hyprland config, ~/.config/hypr/hyprland.conf should be overwritten only when firstrun
-# TODO: add --exp-files-path <path>   Use <path> instead of the default yaml config
-# TODO: add --exp-files-regen         Force copy the default config to ${EXP_FILE_PATH} (auto do this when not existed)
-# TODO: Implement versioning, i.e. when user-defined yaml config file has version number mismatch with the default one, produce error. If only minor version number is not the same, the error can be ommitted via --exp-file-no-strict .
-# TODO: add --exp-files-no-strict     Ignore error when minor version number is not the same
-# TODO: When --via-nix is specified, use dots-extra/vianix/hypridle.conf instead
-#
-# Stage 2 todos:
-# TODO: Implement bool key symlink (both read-write and read-only), when the value of `symlink` is true, then instead using `rsync` or `cp`, use `ln`.
-# TODO: add --exp-file-reset-symlink  Try to remove all symlink in .config and .local, which point to the local repo
-# TODO: Update help and doc about `--exp-files` and the yaml config, including the possible values of mode.
-#
-# Stage 3 todos:
-# TODO: Implement user-define yaml with merging (override) ability for user who only wants little customization and is satisfied with most of the defaults. User can use `./install-files.yaml` as custom config. When `./install-files.yaml` exists and have correct major version number, merge it together with `sdata/step/3.install-files.yaml` to generate a `cache/install-files.final.yaml` to determine how to copy files. About how to merge two yaml files, I know some software such as rime input method and docker supports a override yaml config, which we may reference from. See also https://github.com/mikefarah/yq/discussions/1437
-# TODO: Implement variants like keybindings, terminals, etc under user_preferences.
 
 # Configuration file
-CONFIG_FILE="sdata/subcmd-install/3.files-exp.yaml"
+DEFAULT_CONFIG_FILE="sdata/subcmd-install/3.files-exp.yaml"
+CONFIG_FILE="${EXP_FILES_PATH:-$DEFAULT_CONFIG_FILE}"
+
+# =============================================================================
+# Version checking
+# =============================================================================
+EXPECTED_MAJOR_VERSION="1"
+
+check_config_version() {
+  local config="$1"
+  local file_version
+  file_version=$(yq -r '.version // ""' "$config")
+
+  if [[ -z "$file_version" ]]; then
+    echo "Warning: No version found in config file $config"
+    return 0
+  fi
+
+  local file_major="${file_version%%.*}"
+  local file_minor="${file_version#*.}"
+  local expected_minor="0"
+
+  if [[ "$file_major" != "$EXPECTED_MAJOR_VERSION" ]]; then
+    echo "Error: Config version mismatch. Expected major version $EXPECTED_MAJOR_VERSION but got $file_major (file version: $file_version)"
+    echo "The config format has changed incompatibly. Please regenerate with --exp-files-regen or update manually."
+    exit 1
+  fi
+
+  if [[ "$file_minor" != "$expected_minor" ]]; then
+    if [[ "${EXP_FILES_NO_STRICT:-}" == "true" ]]; then
+      echo "Warning: Minor version mismatch (expected 1.$expected_minor, got $file_version). Continuing due to --exp-files-no-strict."
+    else
+      echo "Error: Minor version mismatch. Expected 1.$expected_minor but got $file_version"
+      echo "Use --exp-files-no-strict to ignore minor version differences, or --exp-files-regen to regenerate."
+      exit 1
+    fi
+  fi
+}
+
+# =============================================================================
+# Config file management (--exp-files-regen, --exp-files-path)
+# =============================================================================
+handle_config_file() {
+  # If using custom path, ensure it exists or regen
+  if [[ "$CONFIG_FILE" != "$DEFAULT_CONFIG_FILE" ]] && [[ ! -f "$CONFIG_FILE" ]]; then
+    echo "Custom config file not found: $CONFIG_FILE"
+    echo "Copying default config..."
+    mkdir -p "$(dirname "$CONFIG_FILE")"
+    cp "$DEFAULT_CONFIG_FILE" "$CONFIG_FILE"
+    echo "Created $CONFIG_FILE from default template."
+  fi
+
+  # Force regenerate if requested
+  if [[ "${EXP_FILES_REGEN:-}" == "true" ]]; then
+    if [[ "$CONFIG_FILE" == "$DEFAULT_CONFIG_FILE" ]]; then
+      echo "Warning: --exp-files-regen with default config path has no effect (it IS the template)."
+    else
+      echo "Regenerating config from default template..."
+      mkdir -p "$(dirname "$CONFIG_FILE")"
+      cp "$DEFAULT_CONFIG_FILE" "$CONFIG_FILE"
+      echo "Regenerated $CONFIG_FILE"
+    fi
+  fi
+
+  # Validate config exists
+  if [[ ! -f "$CONFIG_FILE" ]]; then
+    echo "Error: Config file not found: $CONFIG_FILE"
+    exit 1
+  fi
+
+  # Check version compatibility
+  check_config_version "$CONFIG_FILE"
+}
+
+handle_config_file
+
+# =============================================================================
+# Symlink reset (--exp-reset-symlinks)
+# =============================================================================
+reset_symlinks_to_repo() {
+  local repo_abs
+  repo_abs="$(cd "${REPO_ROOT}" && pwd)"
+  local targets=("${XDG_CONFIG_HOME:-$HOME/.config}" "${HOME}/.local")
+
+  echo "Searching for symlinks pointing to the repo ($repo_abs)..."
+  local count=0
+  for dir in "${targets[@]}"; do
+    [[ -d "$dir" ]] || continue
+    while IFS= read -r -d '' link; do
+      local target
+      target=$(readlink -f "$link" 2>/dev/null || true)
+      if [[ "$target" == "$repo_abs"* ]]; then
+        echo "  Removing symlink: $link -> $target"
+        rm "$link"
+        ((count++))
+      fi
+    done < <(find "$dir" -type l -print0 2>/dev/null)
+  done
+  echo "Removed $count symlink(s) pointing to the repo."
+}
+
+if [[ "${EXP_RESET_SYMLINKS:-}" == "true" ]]; then
+  reset_symlinks_to_repo
+fi
 
 # =============================================================================
 wizard_update_preferences() {
@@ -259,6 +345,69 @@ for pattern in "${patterns[@]}"; do
         fi
       else
         v cp -r "$from" "$to"
+      fi
+      ;;
+    "symlink")
+      # Create a read-write symlink (target points back to repo source)
+      local abs_from
+      abs_from="$(cd "$(dirname "$from")" && pwd)/$(basename "$from")"
+      if [[ -L "$to" ]]; then
+        local existing_target
+        existing_target=$(readlink -f "$to")
+        if [[ "$existing_target" == "$abs_from" ]]; then
+          echo "Symlink already correct: $to -> $abs_from"
+        else
+          echo "Updating symlink: $to -> $abs_from (was $existing_target)"
+          rm "$to"
+          v ln -s "$abs_from" "$to"
+        fi
+      elif [[ -e "$to" ]]; then
+        echo "Warning: $to exists and is not a symlink. Backing up and symlinking."
+        backup_number=$(get_next_backup_number "$to")
+        v mv "$to" "$to.old.$backup_number"
+        v ln -s "$abs_from" "$to"
+      else
+        v mkdir -p "$(dirname "$to")"
+        v ln -s "$abs_from" "$to"
+      fi
+      ;;
+    "symlink-ro")
+      # Create a read-only symlink — same as symlink but sets source to read-only
+      local abs_from_ro
+      abs_from_ro="$(cd "$(dirname "$from")" && pwd)/$(basename "$from")"
+      if [[ -L "$to" ]]; then
+        local existing_target_ro
+        existing_target_ro=$(readlink -f "$to")
+        if [[ "$existing_target_ro" == "$abs_from_ro" ]]; then
+          echo "Symlink already correct: $to -> $abs_from_ro"
+        else
+          echo "Updating symlink: $to -> $abs_from_ro (was $existing_target_ro)"
+          rm "$to"
+          v ln -s "$abs_from_ro" "$to"
+        fi
+      elif [[ -e "$to" ]]; then
+        echo "Warning: $to exists and is not a symlink. Backing up and symlinking."
+        backup_number=$(get_next_backup_number "$to")
+        v mv "$to" "$to.old.$backup_number"
+        v ln -s "$abs_from_ro" "$to"
+      else
+        v mkdir -p "$(dirname "$to")"
+        v ln -s "$abs_from_ro" "$to"
+      fi
+      # Make source read-only
+      if [[ -d "$abs_from_ro" ]]; then
+        chmod -R a-w "$abs_from_ro"
+      else
+        chmod a-w "$abs_from_ro"
+      fi
+      ;;
+    "firstrun-only")
+      # Only install on first run (e.g., hyprland.conf should not be overwritten on updates)
+      if [[ "${INSTALL_FIRSTRUN:-}" == "true" ]] || [[ ! -e "$to" ]]; then
+        echo "First run or target missing: installing $from -> $to"
+        v cp -rp "$from" "$to"
+      else
+        echo "Skipping $from (not first run and $to already exists)"
       fi
       ;;
     "skip")

@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+set -euo pipefail
 curr_workspace="$(hyprctl activeworkspace -j | jq -r ".id")"
 dispatcher="$1"
 shift ## The target is now in $1, not $2

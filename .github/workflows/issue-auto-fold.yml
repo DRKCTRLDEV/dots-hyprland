@@ -1,0 +1,73 @@
+name: Auto-fold long issue logs
+
+on:
+  issues:
+    types: [opened, edited]
+
+permissions:
+  issues: write
+
+jobs:
+  auto-fold:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Auto-fold long code blocks
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const MAX_LINES = 15;
+            const body = context.payload.issue.body;
+            if (!body) return;
+
+            // Match bare code blocks (``` ... ```) that are NOT already inside <details> tags
+            // We process the body in segments to avoid folding already-folded blocks
+            let newBody = '';
+            let lastIndex = 0;
+            let modified = false;
+
+            // Split by <details>...</details> to skip already-folded sections
+            const detailsRegex = /<details[\s\S]*?<\/details>/gi;
+            const segments = [];
+            let match;
+
+            // Build a list of "safe" (non-details) and "details" segments
+            while ((match = detailsRegex.exec(body)) !== null) {
+              if (match.index > lastIndex) {
+                segments.push({ type: 'text', content: body.slice(lastIndex, match.index) });
+              }
+              segments.push({ type: 'details', content: match[0] });
+              lastIndex = match.index + match[0].length;
+            }
+            if (lastIndex < body.length) {
+              segments.push({ type: 'text', content: body.slice(lastIndex) });
+            }
+
+            // Process only 'text' segments for bare code blocks
+            const codeBlockRegex = /(```[\w]*\n)([\s\S]*?)(```)/g;
+            for (const seg of segments) {
+              if (seg.type === 'details') {
+                newBody += seg.content;
+                continue;
+              }
+              const processed = seg.content.replace(codeBlockRegex, (fullMatch, opener, code, closer) => {
+                const lineCount = code.split('\n').length;
+                if (lineCount > MAX_LINES) {
+                  modified = true;
+                  return `<details><summary>Log output (${lineCount} lines)</summary>\n\n${opener}${code}${closer}\n\n</details>`;
+                }
+                return fullMatch;
+              });
+              newBody += processed;
+            }
+
+            if (modified) {
+              await github.rest.issues.update({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: context.issue.number,
+                body: newBody,
+              });
+              console.log(`Folded long code blocks in issue #${context.issue.number}`);
+            } else {
+              console.log('No long code blocks found to fold.');
+            }

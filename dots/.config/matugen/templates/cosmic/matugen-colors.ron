@@ -1,0 +1,17 @@
+(
+    name: "Matugen",
+    bg_color: Some({{colors.background.default.hex}}),
+    bg_component_color: Some({{colors.surface_container.default.hex}}),
+    primary_container_bg: Some({{colors.primary_container.default.hex}}),
+    secondary_container_bg: Some({{colors.secondary_container.default.hex}}),
+    text_tint: Some({{colors.on_background.default.hex}}),
+    neutral_tint: Some({{colors.outline.default.hex}}),
+    accent_bg: Some({{colors.primary.default.hex}}),
+    accent_text: Some({{colors.on_primary.default.hex}}),
+    success_bg: Some({{colors.tertiary.default.hex}}),
+    success_text: Some({{colors.on_tertiary.default.hex}}),
+    warning_bg: Some({{colors.secondary.default.hex}}),
+    warning_text: Some({{colors.on_secondary.default.hex}}),
+    destructive_bg: Some({{colors.error.default.hex}}),
+    destructive_text: Some({{colors.on_error.default.hex}}),
+)

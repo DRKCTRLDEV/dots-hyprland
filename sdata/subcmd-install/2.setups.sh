@@ -36,18 +36,15 @@ if [[ ! -z $(systemctl --version) ]]; then
   else
     v bash -c "echo i2c-dev | sudo tee /etc/modules-load.d/i2c-dev.conf"
   fi
-  # TODO: find a proper way for enable Nix installed ydotool. When running `systemctl --user enable ydotool, it errors "Failed to enable unit: Unit ydotool.service does not exist".
-  if [[ ! "${INSTALL_VIA_NIX}" == true ]]; then
-    if [[ "$OS_GROUP_ID" == "fedora" ]]; then
-      v prepare_systemd_user_service
-    fi
+  if [[ "$OS_GROUP_ID" == "fedora" ]]; then
+    v prepare_systemd_user_service
+  fi
     # When $DBUS_SESSION_BUS_ADDRESS and $XDG_RUNTIME_DIR are empty, it commonly means that the current user has been logged in with `su - user` or `ssh user@hostname`. In such case `systemctl --user enable <service>` is not usable. It should be `sudo systemctl --machine=$(whoami)@.host --user enable <service>` instead.
     if [[ ! -z "${DBUS_SESSION_BUS_ADDRESS}" ]]; then
       v systemctl --user enable ydotool --now
     else
       v sudo systemctl --machine=$(whoami)@.host --user enable ydotool --now
     fi
-  fi
   v sudo systemctl enable bluetooth --now
 elif [[ ! -z $(openrc --version) ]]; then
   v bash -c "echo 'modules=i2c-dev' | sudo tee -a /etc/conf.d/modules"

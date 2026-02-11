@@ -24,14 +24,9 @@ ApplicationWindow {
     property bool showNextTime: false
     property var pages: [
         {
-            name: Translation.tr("Quick"),
-            icon: "instant_mix",
-            component: "modules/settings/QuickConfig.qml"
-        },
-        {
-            name: Translation.tr("General"),
-            icon: "browse",
-            component: "modules/settings/GeneralConfig.qml"
+            name: Translation.tr("Appearance"),
+            icon: "palette",
+            component: "modules/settings/AppearanceConfig.qml"
         },
         {
             name: Translation.tr("Bar"),
@@ -40,19 +35,34 @@ ApplicationWindow {
             component: "modules/settings/BarConfig.qml"
         },
         {
-            name: Translation.tr("Background"),
-            icon: "texture",
-            component: "modules/settings/BackgroundConfig.qml"
+            name: Translation.tr("Desktop"),
+            icon: "desktop_windows",
+            component: "modules/settings/DesktopConfig.qml"
         },
         {
-            name: Translation.tr("Interface"),
-            icon: "bottom_app_bar",
-            component: "modules/settings/InterfaceConfig.qml"
+            name: Translation.tr("Panels"),
+            icon: "view_sidebar",
+            component: "modules/settings/PanelsConfig.qml"
         },
         {
-            name: Translation.tr("Services"),
-            icon: "settings",
-            component: "modules/settings/ServicesConfig.qml"
+            name: Translation.tr("Input"),
+            icon: "keyboard",
+            component: "modules/settings/InputConfig.qml"
+        },
+        {
+            name: Translation.tr("Apps"),
+            icon: "apps",
+            component: "modules/settings/AppsServicesConfig.qml"
+        },
+        {
+            name: Translation.tr("System"),
+            icon: "tune",
+            component: "modules/settings/SystemConfig.qml"
+        },
+        {
+            name: Translation.tr("Access"),
+            icon: "accessible",
+            component: "modules/settings/AccessibilityConfig.qml"
         },
         {
             name: Translation.tr("Advanced"),
@@ -76,7 +86,7 @@ ApplicationWindow {
         Config.readWriteDelay = 0; // Settings app always only sets one var at a time so delay isn't needed
     }
 
-    minimumWidth: 750
+    minimumWidth: 900
     minimumHeight: 500
     width: 1100
     height: 750
@@ -114,11 +124,10 @@ ApplicationWindow {
             implicitHeight: Math.max(titleText.implicitHeight, windowControlsRow.implicitHeight)
             StyledText {
                 id: titleText
-                anchors {
-                    left: Config.options.windows.centerTitle ? undefined : parent.left
-                    horizontalCenter: Config.options.windows.centerTitle ? parent.horizontalCenter : undefined
-                    verticalCenter: parent.verticalCenter
-                    leftMargin: 12
+                anchors.verticalCenter: parent.verticalCenter
+                x: Config.options.windows.centerTitle ? (parent.width - width) / 2 : 12
+                Behavior on x {
+                    animation: Appearance.animation.elementMoveFast.numberAnimation.createObject(this)
                 }
                 color: Appearance.colors.colOnLayer0
                 text: Translation.tr("Settings")
@@ -156,73 +165,50 @@ ApplicationWindow {
                 id: navRailWrapper
                 Layout.fillHeight: true
                 Layout.margins: 5
-                implicitWidth: navRail.expanded ? 150 : fab.baseSize
+                implicitWidth: navRail.expanded ? 150 : 56
                 Behavior on implicitWidth {
                     animation: Appearance.animation.elementMoveFast.numberAnimation.createObject(this)
                 }
-                NavigationRail { // Window content with navigation rail and content pane
-                    id: navRail
+                Flickable {
+                    id: navFlickable
                     anchors {
                         left: parent.left
                         top: parent.top
                         bottom: parent.bottom
                     }
-                    spacing: 10
-                    expanded: root.width > 900
+                    width: navRail.implicitWidth
+                    contentHeight: navRail.implicitHeight
+                    clip: true
+                    boundsBehavior: Flickable.StopAtBounds
 
-                    NavigationRailExpandButton {
-                        focus: root.visible
-                    }
+                    NavigationRail {
+                        id: navRail
+                        width: navFlickable.width
+                        spacing: 4
+                        expanded: root.width > 950
 
-                    FloatingActionButton {
-                        id: fab
-                        property bool justCopied: false
-                        iconText: justCopied ? "check" : "edit"
-                        buttonText: justCopied ? Translation.tr("Path copied") : Translation.tr("Config file")
-                        expanded: navRail.expanded
-                        downAction: () => {
-                            Qt.openUrlExternally(`${Directories.config}/illogical-impulse/config.json`);
-                        }
-                        altAction: () => {
-                            Quickshell.clipboardText = CF.FileUtils.trimFileProtocol(`${Directories.config}/illogical-impulse/config.json`);
-                            fab.justCopied = true;
-                            revertTextTimer.restart();
+                        NavigationRailExpandButton {
+                            focus: root.visible
                         }
 
-                        Timer {
-                            id: revertTextTimer
-                            interval: 1500
-                            onTriggered: {
-                                fab.justCopied = false;
+                        NavigationRailTabArray {
+                            currentIndex: root.currentPage
+                            expanded: navRail.expanded
+                            Repeater {
+                                model: root.pages
+                                NavigationRailButton {
+                                    required property var index
+                                    required property var modelData
+                                    toggled: root.currentPage === index
+                                    onPressed: root.currentPage = index
+                                    expanded: navRail.expanded
+                                    buttonIcon: modelData.icon
+                                    buttonIconRotation: modelData.iconRotation || 0
+                                    buttonText: modelData.name
+                                    showToggledHighlight: false
+                                }
                             }
                         }
-
-                        StyledToolTip {
-                            text: Translation.tr("Open the shell config file\nAlternatively right-click to copy path")
-                        }
-                    }
-
-                    NavigationRailTabArray {
-                        currentIndex: root.currentPage
-                        expanded: navRail.expanded
-                        Repeater {
-                            model: root.pages
-                            NavigationRailButton {
-                                required property var index
-                                required property var modelData
-                                toggled: root.currentPage === index
-                                onPressed: root.currentPage = index
-                                expanded: navRail.expanded
-                                buttonIcon: modelData.icon
-                                buttonIconRotation: modelData.iconRotation || 0
-                                buttonText: modelData.name
-                                showToggledHighlight: false
-                            }
-                        }
-                    }
-
-                    Item {
-                        Layout.fillHeight: true
                     }
                 }
             }

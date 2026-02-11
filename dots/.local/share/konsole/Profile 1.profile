@@ -1,5 +1,5 @@
 [Appearance]
-ColorScheme=MaterialYou
+ColorScheme=Matugen
 
 [General]
 Command=/bin/fish

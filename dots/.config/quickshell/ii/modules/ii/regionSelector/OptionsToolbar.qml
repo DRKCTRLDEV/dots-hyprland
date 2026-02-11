@@ -25,12 +25,19 @@ Toolbar {
 
     ToolbarTabBar {
         id: tabBar
+        property bool ready: false
         tabButtonList: [
             {"icon": "activity_zone", "name": Translation.tr("Rect")},
             {"icon": "gesture", "name": Translation.tr("Circle")}
         ]
-        currentIndex: root.selectionMode === RegionSelection.SelectionMode.RectCorners ? 0 : 1
+
+        Component.onCompleted: {
+            currentIndex = Qt.binding(() => root.selectionMode === RegionSelection.SelectionMode.RectCorners ? 0 : 1);
+            ready = true;
+        }
+
         onCurrentIndexChanged: {
+            if (!ready) return;
             root.selectionMode = currentIndex === 0 ? RegionSelection.SelectionMode.RectCorners : RegionSelection.SelectionMode.Circle;
         }
     }

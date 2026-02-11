@@ -109,7 +109,7 @@ PanelWindow {
     property bool enableLayerRegions: Config.options.regionSelector.targetRegions.layers && !isCircleSelection
     property bool enableContentRegions: Config.options.regionSelector.targetRegions.content
     property real targetRegionOpacity: Config.options.regionSelector.targetRegions.opacity
-    property bool contentRegionOpacity: Config.options.regionSelector.targetRegions.contentRegionOpacity
+    property real contentRegionOpacity: Config.options.regionSelector.targetRegions.contentRegionOpacity
 
     property real targetedRegionX: -1
     property real targetedRegionY: -1
@@ -209,7 +209,7 @@ PanelWindow {
 
     Process {
         id: imageDetectionProcess
-        command: ["bash", "-c", `${Directories.scriptPath}/images/find-regions-venv.sh ` 
+        command: ["bash", "-c", `${Directories.scriptPath}/images/find_regions.py ` 
             + `--hyprctl ` 
             + `--image '${StringUtils.shellSingleQuoteEscape(root.screenshotPath)}' ` 
             + `--max-width ${Math.round(root.screen.width * root.falsePositivePreventionRatio)} ` 
@@ -251,6 +251,7 @@ PanelWindow {
         if (root.regionWidth <= 0 || root.regionHeight <= 0) {
             console.warn("[Region Selector] Invalid region size, skipping snip.");
             root.dismiss();
+            return;
         }
 
         // Clamp region to screen bounds
@@ -264,6 +265,14 @@ PanelWindow {
             root.action = root.mouseButton === Qt.RightButton ? RegionSelection.SnipAction.Edit : RegionSelection.SnipAction.Copy;
         }
         
+        // Compute lasso points for circle/freeform mode
+        const lassoPoints = (root.isCircleSelection && root.points.length >= 3)
+            ? root.points.map(p => ({
+                x: Math.round((p.x - root.regionX) * root.monitorScale),
+                y: Math.round((p.y - root.regionY) * root.monitorScale)
+            }))
+            : [];
+
         const screenshotDir = Config.options.screenSnip.savePath !== "" ? //
             Config.options.screenSnip.savePath : "";
         var screenshotAction = root.getScreenshotAction();
@@ -274,7 +283,8 @@ PanelWindow {
             root.regionHeight * root.monitorScale, //
             root.screenshotPath, //
             screenshotAction, //
-            screenshotDir
+            screenshotDir, //
+            lassoPoints
         )
         snipProc.command = command;
 
@@ -376,8 +386,8 @@ PanelWindow {
 
             CursorGuide {
                 z: 9999
-                x: root.dragging ? root.regionX + root.regionWidth : mouseArea.mouseX
-                y: root.dragging ? root.regionY + root.regionHeight : mouseArea.mouseY
+                x: (root.dragging && !root.isCircleSelection) ? root.regionX + root.regionWidth : mouseArea.mouseX
+                y: (root.dragging && !root.isCircleSelection) ? root.regionY + root.regionHeight : mouseArea.mouseY
                 action: root.action
                 selectionMode: root.selectionMode
             }

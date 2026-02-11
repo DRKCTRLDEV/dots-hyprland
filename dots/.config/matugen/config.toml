@@ -1,47 +1,63 @@
 [config]
 version_check = false
 
+# NOTE: All post-processing (D-Bus signals, Flatpak propagation, Qt/Darkly
+# refresh, icon recoloring, terminal colors) is handled by switchwall.sh
+# AFTER matugen finishes.  Do NOT add post_hooks here — they race with
+# switchwall.sh and cause duplicated / mis-ordered signals.
+
 [templates.m3colors]
 input_path = '~/.config/matugen/templates/colors.json'
 output_path = '~/.local/state/quickshell/user/generated/colors.json'
 
 [templates.hyprland]
-input_path = '~/.config/matugen/templates/hyprland/colors.conf'
-output_path = '~/.config/hypr/hyprland/colors.conf'
-
-[templates.hyprlock]
-input_path = '~/.config/matugen/templates/hyprland/hyprlock-colors.conf'
-output_path = '~/.config/hypr/hyprlock/colors.conf'
+input_path = '~/.config/matugen/templates/hyprland/matugen-colors.conf'
+output_path = '~/.config/hypr/hyprland/matugen-colors.conf'
 
 [templates.fuzzel]
-input_path = '~/.config/matugen/templates/fuzzel/fuzzel_theme.ini'
-output_path = '~/.config/fuzzel/fuzzel_theme.ini'
+input_path = '~/.config/matugen/templates/fuzzel/matugen-colors.ini'
+output_path = '~/.config/fuzzel/matugen-colors.ini'
 
 [templates.gtk3]
 input_path = '~/.config/matugen/templates/gtk-3.0/gtk.css'
 output_path = '~/.config/gtk-3.0/gtk.css'
-post_hook = 'gsettings set org.gnome.desktop.interface gtk-theme ""; gsettings set org.gnome.desktop.interface gtk-theme adw-gtk3-{{mode}}'
 
 [templates.gtk4]
 input_path = '~/.config/matugen/templates/gtk-4.0/gtk.css'
 output_path = '~/.config/gtk-4.0/gtk.css'
 
-[templates.kde_colors]
-input_path = '~/.config/matugen/templates/kde/color.txt'
-output_path = '~/.local/state/quickshell/user/generated/color.txt'
-
-[templates.wallpaper]
-input_path = '~/.config/matugen/templates/wallpaper.txt'
-output_path = '~/.local/state/quickshell/user/generated/wallpaper/path.txt'
-
 [templates.cava]
-input_path = '~/.config/matugen/templates/cava/config'
-output_path = '~/.config/cava/config'
+input_path = '~/.config/matugen/templates/cava/matugen-colors'
+output_path = '~/.config/cava/themes/matugen-colors'
 
 [templates.vesktop]
 input_path = '~/.config/matugen/templates/vesktop/midnight.theme.css'
 output_path = '~/.config/vesktop/themes/midnight.theme.css'
 
 [templates.micro]
-input_path = '~/.config/matugen/templates/micro/colorscheme.micro'
-output_path = '~/.config/micro/colorschemes/matugen.micro'
+input_path = '~/.config/matugen/templates/micro/matugen-colors.micro'
+output_path = '~/.config/micro/colorschemes/matugen-colors.micro'
+
+[templates.kdeglobals]
+input_path = '~/.config/matugen/templates/kdeglobals'
+output_path = '~/.config/kdeglobals'
+
+[templates.kitty]
+input_path = '~/.config/matugen/templates/kitty/matugen-colors.conf'
+output_path = '~/.config/kitty/matugen-colors.conf'
+
+[templates.foot]
+input_path = '~/.config/matugen/templates/foot/matugen-colors.ini'
+output_path = '~/.config/foot/matugen-colors.ini'
+
+[templates.fish]
+input_path = '~/.config/matugen/templates/fish/matugen-colors.fish'
+output_path = '~/.config/fish/matugen-colors.fish'
+
+[templates.cosmic]
+input_path = '~/.config/matugen/templates/cosmic/matugen-colors.ron'
+output_path = '~/.config/cosmic/com.system76.CosmicTheme.Dark/v1/system'
+
+[templates.darkly]
+input_path = '~/.config/matugen/templates/darkly/darklyrc'
+output_path = '~/.config/darklyrc'

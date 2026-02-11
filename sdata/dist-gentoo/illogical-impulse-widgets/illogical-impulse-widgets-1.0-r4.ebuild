@@ -16,7 +16,6 @@ RDEPEND="
 	dev-libs/glib
 	media-gfx/imagemagick
 	gui-apps/hypridle
-	gui-apps/hyprlock
 	gui-apps/hyprpicker
 	app-misc/songrec
 	app-i18n/translate-shell

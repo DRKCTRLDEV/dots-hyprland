@@ -4,6 +4,9 @@
 # - `hard`: Overwrite existing files when copying
 # - `soft-backup`: If target file exists, copy source file to `*.new`. Do not create `*.new` but skip coyping when source and target HASH values are exactly the same.
 # - `hard-backup`: If target file exists, create backup by renaming it to `*.old.<n>` where `<n>` is a number increment from 1 to prevent backup gets overwritten when running twice. (Keep in mind that this script must be idempotent.) Also must compare the actual file content by using MD5 HASH value to prevent generating lots of `*.old.<n>`s when runnng multiple times. Do not create backup but skip coyping when source and target HASH values are exactly the same.
+# - `symlink`: Create a read-write symlink pointing to the repo source. Backs up existing non-symlink targets.
+# - `symlink-ro`: Like `symlink` but also marks the source read-only.
+# - `firstrun-only`: Only install if INSTALL_FIRSTRUN=true or the target does not exist.
 # - `skip`: Skip this step
 # - `skip-if-exists`: Skip this step if target exists
 version: "1.0"
@@ -46,16 +49,13 @@ patterns:
   - from: "dots/.config/hypr"
     to: "$XDG_CONFIG_HOME/hypr"
     mode: "sync"
-    excludes: ["custom", "hyprlock.conf", "hypridle.conf", "hyprland.conf"]
+    excludes: ["custom", "hypridle.conf", "hyprland.conf"]
   # Hyprland special files
   - from: "dots/.config/hypr/hyprland.conf"
     to: "$XDG_CONFIG_HOME/hypr/hyprland.conf"
-    mode: "hard-backup"
+    mode: "firstrun-only"
   - from: "dots/.config/hypr/hypridle.conf"
     to: "$XDG_CONFIG_HOME/hypr/hypridle.conf"
-    mode: "soft-backup"
-  - from: "dots/.config/hypr/hyprlock.conf"
-    to: "$XDG_CONFIG_HOME/hypr/hyprlock.conf"
     mode: "soft-backup"
   - from: "dots/.config/hypr/custom"
     to: "$XDG_CONFIG_HOME/hypr/custom"
@@ -73,12 +73,6 @@ patterns:
   # MISC config directories (other .config directories)
   - from: "dots/.config/fuzzel"
     to: "$XDG_CONFIG_HOME/fuzzel"
-    mode: "sync"
-  - from: "dots/.config/kde-material-you-colors"
-    to: "$XDG_CONFIG_HOME/kde-material-you-colors"
-    mode: "sync"
-  - from: "dots/.config/Kvantum"
-    to: "$XDG_CONFIG_HOME/Kvantum"
     mode: "sync"
   - from: "dots/.config/matugen"
     to: "$XDG_CONFIG_HOME/matugen"
@@ -110,9 +104,6 @@ patterns:
     mode: "soft"
   - from: "dots/.config/dolphinrc"
     to: "$XDG_CONFIG_HOME/dolphinrc"
-    mode: "soft"
-  - from: "dots/.config/kdeglobals"
-    to: "$XDG_CONFIG_HOME/kdeglobals"
     mode: "soft"
   - from: "dots/.config/konsolerc"
     to: "$XDG_CONFIG_HOME/konsolerc"

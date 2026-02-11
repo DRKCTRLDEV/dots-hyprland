@@ -1,4 +1,5 @@
 #!/bin/bash
+set -euo pipefail
 
 INTERVAL=2
 TOTAL_DURATION=30

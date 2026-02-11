@@ -25,16 +25,24 @@ Singleton {
     property string imageSearchEngineBaseUrl: Config.options.search.imageSearch.imageSearchEngineBaseUrl
     property string fileUploadApiEndpoint: "https://uguu.se/upload"
 
-    function getCommand(x, y, width, height, screenshotPath, action, saveDir = "") {
+    function getCommand(x, y, width, height, screenshotPath, action, saveDir = "", lassoPoints = []) {
         // Set command for action
         const rx = Math.round(x);
         const ry = Math.round(y);
         const rw = Math.round(width);
         const rh = Math.round(height);
-        const cropBase = `magick ${StringUtils.shellSingleQuoteEscape(screenshotPath)} `
+        const cropCmd = `magick ${StringUtils.shellSingleQuoteEscape(screenshotPath)} `
             + `-crop ${rw}x${rh}+${rx}+${ry}`
-        const cropToStdout = `${cropBase} -`
-        const cropInPlace = `${cropBase} '${StringUtils.shellSingleQuoteEscape(screenshotPath)}'`
+        let cropToStdout, cropInPlace;
+        if (lassoPoints.length >= 3) {
+            const polygon = lassoPoints.map(p => `${p.x},${p.y}`).join(" ");
+            const mask = ` +repage \\( +clone -fill black -colorize 100 -fill white -draw "polygon ${polygon}" \\) -alpha off -compose CopyOpacity -composite`;
+            cropToStdout = `${cropCmd}${mask} PNG:-`;
+            cropInPlace = `${cropCmd}${mask} '${StringUtils.shellSingleQuoteEscape(screenshotPath)}'`;
+        } else {
+            cropToStdout = `${cropCmd} -`;
+            cropInPlace = `${cropCmd} '${StringUtils.shellSingleQuoteEscape(screenshotPath)}'`;
+        }
         const cleanup = `rm '${StringUtils.shellSingleQuoteEscape(screenshotPath)}'`
         const slurpRegion = `${rx},${ry} ${rw}x${rh}`
         const uploadAndGetUrl = (filePath) => {

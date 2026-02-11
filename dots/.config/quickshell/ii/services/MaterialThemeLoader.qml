@@ -18,6 +18,15 @@ Singleton {
         themeFileView.reload()
     }
 
+    function generateDefaultTheme() {
+        // Generate theme files using default wallpaper if they don't exist
+        const defaultWallpaper = FileUtils.trimFileProtocol(`${Directories.assetsPath}/images/default_wallpaper.png`)
+        console.log("Generating default theme files...")
+        Quickshell.exec([Directories.wallpaperSwitchScriptPath, "--noswitch", defaultWallpaper])
+        // Reload after generation
+        Qt.callLater(() => themeFileView.reload())
+    }
+
     function applyColors(fileContent) {
         const json = JSON.parse(fileContent)
         for (const key in json) {
@@ -69,6 +78,13 @@ Singleton {
             const fileContent = themeFileView.text()
             root.applyColors(fileContent)
         }
-        onLoadFailed: root.resetFilePathNextTime();
+        onLoadFailed: (error) => {
+            if (error === FileViewError.FileNotFound) {
+                console.warn("Theme file not found, generating defaults...")
+                root.generateDefaultTheme()
+            } else {
+                root.resetFilePathNextTime()
+            }
+        }
     }
 }

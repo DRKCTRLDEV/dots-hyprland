@@ -14,7 +14,6 @@ DEPEND=""
 RDEPEND="
 	x11-themes/adw-gtk3
 	kde-plasma/breeze
-	kde-plasma/breeze-plus
 	x11-themes/darkly
 	sys-apps/eza
 	app-shells/fish

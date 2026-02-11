@@ -1,5 +1,0 @@
-[output]
-method = ncurses
-
-[color]
-foreground = '{{colors.primary.default.hex}}'

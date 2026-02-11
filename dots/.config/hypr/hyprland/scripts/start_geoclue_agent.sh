@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+set -euo pipefail
 
 # Check if GeoClue agent is already running
 if pgrep -f 'geoclue-2.0/demos/agent' > /dev/null; then

@@ -19,8 +19,8 @@ if status is-interactive # Commands to run in interactive sessions can go here
         set -e _tty
     end
 
-    if test -f ~/.local/state/quickshell/user/generated/terminal/sequences.txt
-        cat ~/.local/state/quickshell/user/generated/terminal/sequences.txt
+    if test -f ~/.config/fish/matugen-colors.fish
+        source ~/.config/fish/matugen-colors.fish
     end
 
     alias ls 'eza --icons'

@@ -23,23 +23,15 @@ TextArea {
     placeholderTextColor: Appearance.m3colors.m3outline
 
     background: Rectangle {
-        implicitHeight: 56
+        implicitHeight: 40
         color: Appearance.m3colors.m3surface
-        topLeftRadius: 4
-        topRightRadius: 4
-        Rectangle {
-            anchors {
-                left: parent.left
-                right: parent.right
-                bottom: parent.bottom
-            }
-            height: 1
-            color: root.focus ? Appearance.m3colors.m3primary : 
-                root.hovered ? Appearance.m3colors.m3outline : Appearance.m3colors.m3outlineVariant
+        radius: Appearance.rounding.small
+        border.width: root.focus ? 2 : 1
+        border.color: root.focus ? Appearance.m3colors.m3primary :
+            root.hovered ? Appearance.m3colors.m3outline : Appearance.m3colors.m3outlineVariant
 
-            Behavior on color {
-                animation: Appearance.animation.elementMoveFast.colorAnimation.createObject(this)
-            }
+        Behavior on border.color {
+            animation: Appearance.animation.elementMoveFast.colorAnimation.createObject(this)
         }
     }
 

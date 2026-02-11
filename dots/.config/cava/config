@@ -1,0 +1,5 @@
+[output]
+method = 'ncurses'
+
+[color]
+theme = 'matugen-colors'

@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+set -euo pipefail
 locked_state=$(busctl --user get-property org.freedesktop.secrets \
     /org/freedesktop/secrets/collection/login \
     org.freedesktop.Secret.Collection Locked)

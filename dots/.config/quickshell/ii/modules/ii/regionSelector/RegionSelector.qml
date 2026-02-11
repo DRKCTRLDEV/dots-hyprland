@@ -42,35 +42,31 @@ Scope {
 
     function screenshot() {
         root.action = RegionSelection.SnipAction.Copy
-        root.selectionMode = RegionSelection.SelectionMode.RectCorners
+        root.selectionMode = Config.options.regionSelector.useCircleSelection ? RegionSelection.SelectionMode.Circle : RegionSelection.SelectionMode.RectCorners
         GlobalStates.regionSelectorOpen = true
     }
 
     function search() {
         root.action = RegionSelection.SnipAction.Search
-        if (Config.options.search.imageSearch.useCircleSelection) {
-            root.selectionMode = RegionSelection.SelectionMode.Circle
-        } else {
-            root.selectionMode = RegionSelection.SelectionMode.RectCorners
-        }
+        root.selectionMode = Config.options.regionSelector.useCircleSelection ? RegionSelection.SelectionMode.Circle : RegionSelection.SelectionMode.RectCorners
         GlobalStates.regionSelectorOpen = true
     }
 
     function ocr() {
         root.action = RegionSelection.SnipAction.CharRecognition
-        root.selectionMode = RegionSelection.SelectionMode.RectCorners
+        root.selectionMode = Config.options.regionSelector.useCircleSelection ? RegionSelection.SelectionMode.Circle : RegionSelection.SelectionMode.RectCorners
         GlobalStates.regionSelectorOpen = true
     }
 
     function record() {
         root.action = RegionSelection.SnipAction.Record
-        root.selectionMode = RegionSelection.SelectionMode.RectCorners
+        root.selectionMode = Config.options.regionSelector.useCircleSelection ? RegionSelection.SelectionMode.Circle : RegionSelection.SelectionMode.RectCorners
         GlobalStates.regionSelectorOpen = true
     }
 
     function recordWithSound() {
         root.action = RegionSelection.SnipAction.RecordWithSound
-        root.selectionMode = RegionSelection.SelectionMode.RectCorners
+        root.selectionMode = Config.options.regionSelector.useCircleSelection ? RegionSelection.SelectionMode.Circle : RegionSelection.SelectionMode.RectCorners
         GlobalStates.regionSelectorOpen = true
     }
 

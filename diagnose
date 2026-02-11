@@ -4,7 +4,7 @@
 #
 # It should be as independent as possible and should not source other files unless it has to
 #
-# TODO: How to get the Qt version which Quickshell was built against?
+# Detect Qt version via multiple methods (works across distros)
 
 STY_RED='\e[31m'
 STY_RST='\e[00m'
@@ -58,6 +58,27 @@ _check_venv() {
 _check_quickshell_version() {
   pacman -Q | grep -E 'quickshell|qt6-base'
 }
+_check_qt_version() {
+  # Try multiple methods to detect Qt version
+  if command -v qmake6 &>/dev/null; then
+    echo "Qt version (qmake6): $(qmake6 -query QT_VERSION 2>/dev/null || echo 'unknown')"
+  elif command -v qmake &>/dev/null; then
+    echo "Qt version (qmake): $(qmake -query QT_VERSION 2>/dev/null || echo 'unknown')"
+  fi
+  if command -v pkg-config &>/dev/null; then
+    echo "Qt6Core (pkg-config): $(pkg-config --modversion Qt6Core 2>/dev/null || echo 'not found')"
+  fi
+  if command -v quickshell &>/dev/null; then
+    echo "Quickshell version: $(quickshell --version 2>/dev/null || echo 'unknown')"
+  fi
+  # Check ldd for linked Qt version
+  local qs_path
+  qs_path=$(command -v quickshell 2>/dev/null)
+  if [[ -n "$qs_path" ]] && command -v ldd &>/dev/null; then
+    echo "Quickshell linked Qt libs:"
+    ldd "$qs_path" 2>/dev/null | grep -i qt | head -5
+  fi
+}
 _check_PKGBUILD_version() {
   pacman -Q | grep '^illogical-impulse-'
 }
@@ -86,6 +107,7 @@ x ls -l ~/.local/state/quickshell/.venv
 e "Checking versions"
 x Hyprland --version
 x _check_quickshell_version
+x _check_qt_version
 x _check_PKGBUILD_version
 
 e "Finished. Output saved as \"$output_file\"."

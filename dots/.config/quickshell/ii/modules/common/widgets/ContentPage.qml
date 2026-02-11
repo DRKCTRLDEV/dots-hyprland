@@ -6,6 +6,7 @@ import qs.modules.common.widgets
 StyledFlickable {
     id: root
     property real baseWidth: 600
+    property real maxWidth: 900
     property bool forceWidth: false
     property real bottomContentPadding: 100
 
@@ -17,7 +18,7 @@ StyledFlickable {
     
     ColumnLayout {
         id: contentColumn
-        width: root.forceWidth ? root.baseWidth : Math.max(root.baseWidth, implicitWidth)
+        width: root.forceWidth ? Math.min(Math.max(root.width - 40, root.baseWidth), root.maxWidth) : Math.max(root.baseWidth, implicitWidth)
         anchors {
             top: parent.top
             horizontalCenter: parent.horizontalCenter

@@ -1,10 +1,11 @@
-#!/usr/bin/env python3
+#!/usr/bin/env -S\_/bin/sh\_-c\_"source\_\$(eval\_echo\_\$ILLOGICAL_IMPULSE_VIRTUAL_ENV)/bin/activate&&exec\_python\_-E\_"\$0"\_"\$@""
 
 # From https://github.com/difference-engine/thumbnail-generator-ubuntu (MIT License)
 # Since the script is small and the maintainers seem inactive to accept my PR (#11) I decided to just copy it over.
 # When it gets merged and the python package gets updated we can just use it
 
 import os
+os.environ.setdefault('GIO_USE_VFS', 'local')
 import sys
 from multiprocessing import Pool
 from pathlib import Path

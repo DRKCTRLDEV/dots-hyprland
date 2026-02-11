@@ -13,6 +13,56 @@ Singleton {
     property int readWriteDelay: 50 // milliseconds
     property bool blockWrites: false
 
+    // Default values - these are the hardcoded fallbacks when user clears a field
+    readonly property var defaults: ({
+        apps: {
+            bluetooth: "kcmshell6 kcm_bluetooth",
+            changePassword: "kitty -1 --hold=yes fish -i -c 'passwd'",
+            network: "kcmshell6 kcm_networkmanagement",
+            manageUser: "kcmshell6 kcm_users",
+            networkEthernet: "kcmshell6 kcm_networkmanagement",
+            taskManager: "plasma-systemmonitor --page-name Processes",
+            terminal: "kitty -1",
+            update: "kitty -1 --hold=yes fish -i -c 'pkexec pacman -Syu'",
+            volumeMixer: `~/.config/hypr/hyprland/scripts/launch_first_available.sh "pavucontrol-qt" "pavucontrol"`
+        },
+        appearance: {
+            fonts: {
+                main: "Google Sans Flex",
+                numbers: "Google Sans Flex",
+                title: "Google Sans Flex",
+                iconNerd: "JetBrains Mono NF",
+                monospace: "JetBrains Mono NF",
+                reading: "Readex Pro",
+                expressive: "Space Grotesk"
+            }
+        },
+        crosshair: {
+            code: "0;P;d;1;0l;10;0o;2;1b;0"
+        },
+        language: {
+            translator: {
+                engine: "auto",
+                targetLanguage: "auto",
+                sourceLanguage: "auto"
+            }
+        },
+        time: {
+            shortDateFormat: "dd/MM",
+            dateWithYearFormat: "dd/MM/yyyy",
+            dateFormat: "ddd, dd/MM"
+        },
+        calendar: {
+            locale: "en-GB"
+        },
+        search: {
+            engineBaseUrl: "https://duckduckgo.com/?q=",
+            imageSearch: {
+                imageSearchEngineBaseUrl: "https://lens.google.com/uploadbyurl?url="
+            }
+        }
+    })
+
     function setNestedValue(nestedKey, value) {
         let keys = nestedKey.split(".");
         let obj = root.options;
@@ -102,17 +152,16 @@ Singleton {
                     property bool enableAppsAndShell: true
                     property bool enableQtApps: true
                     property bool enableTerminal: true
-                    property JsonObject terminalGenerationProps: JsonObject {
-                        property real harmony: 0.6
-                        property real harmonizeThreshold: 100
-                        property real termFgBoost: 0.35
-                        property bool forceDarkMode: false
-                    }
                 }
                 property JsonObject palette: JsonObject {
                     property string type: "auto" // Allowed: auto, scheme-content, scheme-expressive, scheme-fidelity, scheme-fruit-salad, scheme-monochrome, scheme-neutral, scheme-rainbow, scheme-tonal-spot
                     property string accentColor: ""
                 }
+                property string iconTheme: ""
+            }
+
+            property JsonObject accessibility: JsonObject {
+                property bool reduceMotion: false
             }
 
             property JsonObject audio: JsonObject {
@@ -292,15 +341,12 @@ Singleton {
             }
 
             property JsonObject lock: JsonObject {
-                property bool useHyprlock: false
                 property bool launchOnStartup: false
                 property JsonObject blur: JsonObject {
                     property bool enable: true
                     property real radius: 100
                     property real extraZoom: 1.1
                 }
-                property bool centerClock: true
-                property bool showLockedText: true
                 property JsonObject security: JsonObject {
                     property bool unlockKeyring: true
                     property bool requirePasswordToPower: false
@@ -347,6 +393,7 @@ Singleton {
             }
 
             property JsonObject regionSelector: JsonObject {
+                property bool useCircleSelection: false
                 property JsonObject targetRegions: JsonObject {
                     property bool windows: true
                     property bool layers: false
@@ -402,7 +449,7 @@ Singleton {
                     property string webSearch: "?"
                 }
                 property JsonObject imageSearch: JsonObject {
-                    property string imageSearchEngineBaseUrl: "https://tineye.com/search?url="
+                    property string imageSearchEngineBaseUrl: "https://lens.google.com/uploadbyurl?url="
                     property bool useCircleSelection: false
                 }
             }
@@ -410,7 +457,7 @@ Singleton {
             property JsonObject sidebar: JsonObject {
                 property bool keepRightSidebarLoaded: true
                 property JsonObject translator: JsonObject {
-                    property bool enable: false
+                    property bool enable: true
                     property int delay: 300 // Delay before sending request. Reduces (potential) rate limits and lag.
                 }
                 property JsonObject mouseConfig: JsonObject {
@@ -465,7 +512,9 @@ Singleton {
 
             property JsonObject sounds: JsonObject {
                 property bool battery: false
+                property bool notifications: true
                 property bool pomodoro: false
+                property bool system: true
                 property string theme: "freedesktop"
             }
 
@@ -485,6 +534,7 @@ Singleton {
             }
 
             property JsonObject updates: JsonObject {
+                property bool enableCheck: true
                 property int checkInterval: 120 // minutes
                 property int adviseUpdateThreshold: 75 // packages
                 property int stronglyAdviseUpdateThreshold: 200 // packages

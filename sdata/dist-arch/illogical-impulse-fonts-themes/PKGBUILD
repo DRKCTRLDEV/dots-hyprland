@@ -7,7 +7,6 @@ license=(None)
 depends=(
   adw-gtk-theme-git
   breeze
-  breeze-plus
   darkly-bin
   eza
   fish

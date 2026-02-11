@@ -43,7 +43,6 @@ gui-wm/hyprland::hyproverlay X guiutils
 #gui-libs/hyprland-qtutils (no use flags)
 #gui-libs/hyprland-qt-support (no use flags)
 #dev-libs/hyprlang (no use flags)
-#gui-apps/hyprlock (no use flags)
 #gui-apps/hyprpicker (no use flags)
 #gui-apps/hyprsunset (no use flags)
 #gui-libs/hyprutils (no use flags)

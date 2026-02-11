@@ -62,7 +62,6 @@ packages = [
   "breeze-icon-theme-fedora",
   "kf6-breeze-icons",
   "sddm-breeze",
-  "breeze-plus-icon-theme",
   "darkly",
   "eza",
   "fish",
@@ -189,7 +188,7 @@ packages = [
   "glib2",
   "ImageMagick",
   "hypridle",
-  "hyprlock",
+
   "hyprpicker",
   "songrec",
   "translate-shell",

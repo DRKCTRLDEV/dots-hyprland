@@ -33,7 +33,7 @@ set -euo pipefail
 
 # Note: The detect_repo_structure function below auto-detects the folder layout
 # Try to find the packages directory (different names in different versions)
-if which pacman &>/dev/null; then
+if command -v pacman &>/dev/null; then
   if [[ -d "${REPO_ROOT}/dist-arch" ]]; then
     ARCH_PACKAGES_DIR="${REPO_ROOT}/dist-arch"
   elif [[ -d "${REPO_ROOT}/arch-packages" ]]; then

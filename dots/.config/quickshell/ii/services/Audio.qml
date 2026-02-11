@@ -136,4 +136,30 @@ Singleton {
         ];
         Quickshell.execDetached(command);
     }
+
+    // System sounds control
+    onReady: updateSystemSounds()
+
+    Connections {
+        target: Config.options.sounds
+        function onSystemChanged() {
+            root.updateSystemSounds();
+        }
+    }
+
+    function updateSystemSounds() {
+        const enabled = Config.options.sounds.system;
+        const value = enabled ? "1" : "0";
+        
+        // Control PulseAudio/PipeWire event sounds
+        // This sets the enable-event-sounds property for the server
+        Quickshell.execDetached([
+            "bash", "-c",
+            `pactl set-sink-mute @DEFAULT_SINK@ false 2>/dev/null; ` +
+            `pactl upload-sample /dev/null x-freedesktop-dummy 2>/dev/null || true; ` +
+            `gsettings set org.gnome.desktop.sound event-sounds ${enabled} 2>/dev/null || true; ` +
+            `kwriteconfig5 --file kdeglobals --group Sounds --key Enable ${enabled} 2>/dev/null || true; ` +
+            `kwriteconfig6 --file kdeglobals --group Sounds --key Enable ${enabled} 2>/dev/null || true`
+        ]);
+    }
 }

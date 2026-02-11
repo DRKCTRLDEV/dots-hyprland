@@ -11,13 +11,18 @@ RowLayout {
     Layout.rightMargin: 8
 
     property string text: ""
+    property string icon: ""
     property string buttonIcon: ""
     property alias value: slider.value
     property alias stopIndicatorValues: slider.stopIndicatorValues
     property bool usePercentTooltip: true
     property real from: slider.from
     property real to: slider.to
+    property real stepSize: 0
     property real textWidth: 120
+    property bool hovered: hoverHandler.hovered
+
+    HoverHandler { id: hoverHandler }
 
     RowLayout {
         id: row
@@ -25,7 +30,7 @@ RowLayout {
 
         OptionalMaterialSymbol {
             id: iconWidget
-            icon: root.buttonIcon
+            icon: root.icon.length > 0 ? root.icon : root.buttonIcon
             iconSize: Appearance.font.pixelSize.larger
         }
         StyledText {
@@ -43,5 +48,6 @@ RowLayout {
         value: root.value
         from: root.from
         to: root.to
+        stepSize: root.stepSize
     }
 }

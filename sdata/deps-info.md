@@ -61,9 +61,6 @@ Tips:
   - Used in Quickshell config.
 - `breeze`
   - Used in kdeglobals config.
-- `breeze-plus`
-  - [source](https://github.com/mjkim0727/breeze-plus)
-  - Used in kde-material-you-colors config.
 - `darkly-bin`
   - `darkly` is supposed to be set as the theme for Qt apps, just have not figured out how to properly set it yet.
 - `eza`
@@ -75,7 +72,7 @@ Tips:
 - `kitty`
   - Used in fuzzel, Hyprland, kdeglobals and Quickshell config; kitty config is also included as dots.
 - `matugen-bin`
-  - Used in Quickshell.
+  - Used in Quickshell for all Material You color generation and theming.
 - `otf-space-grotesk`
   - [source](https://events.ccc.de/congress/2024/infos/styleguide.html)
   - Used in Quickshell and matugen config.
@@ -180,8 +177,6 @@ Tips:
   - Used in Quickshell config.
 - `hypridle`
   - Used for loginctl to lock session.
-- `hyprlock`
-  - Installed as fallback; its config is also included.
 - `hyprpicker`
   - Used in Hyprland and Quickshell config.
 - `songrec`

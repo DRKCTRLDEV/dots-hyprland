@@ -25,7 +25,8 @@ def cmd_detect() -> Dict[str, Any]:
     """Detect connected SteelSeries mouse and return device info."""
     result: Dict[str, Any] = {
         "available": False,
-        "error": ""
+        "error": "",
+        "needs_udev_install": False
     }
     result["device"] = {
         "name": "",
@@ -50,7 +51,14 @@ def cmd_detect() -> Dict[str, Any]:
     
     mouse = get_mouse()
     if mouse is None:
-        result["error"] = "No SteelSeries mouse detected or rivalcfg not installed."
+        # Check if rivalcfg is installed
+        try:
+            import rivalcfg
+            # rivalcfg is installed but no device found - could be udev rules issue
+            result["error"] = "No SteelSeries mouse detected.\nMake sure your mouse is connected and udev rules are installed."
+            result["needs_udev_install"] = True
+        except ImportError:
+            result["error"] = "rivalcfg not installed.\nPlease install it with: pip install rivalcfg"
         return result
     
     try:

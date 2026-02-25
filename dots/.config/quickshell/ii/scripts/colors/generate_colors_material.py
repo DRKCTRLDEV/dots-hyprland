@@ -25,6 +25,7 @@ parser.add_argument('--term_fg_boost', type=float , default=0.35, help='Make ter
 parser.add_argument('--blend_bg_fg', action='store_true', default=False, help='Shift terminal background or foreground towards accent')
 parser.add_argument('--cache', type=str, default=None, help='file path to store the generated color')
 parser.add_argument('--debug', action='store_true', default=False, help='debug mode')
+parser.add_argument('--json', action='store_true', default=False, help='output JSON format instead of SCSS')
 args = parser.parse_args()
 
 rgba_to_hex = lambda rgba: "#{:02X}{:02X}{:02X}".format(rgba[0], rgba[1], rgba[2])
@@ -151,7 +152,14 @@ if args.termscheme is not None:
             harmonized = boost_chroma_tone(harmonized, 1, 1 + (args.term_fg_boost * (1 if darkmode else -1)))
         term_colors[color] = argb_to_hex(harmonized)
 
-if args.debug == False:
+if args.json == True:
+    output = {}
+    output.update(material_colors)
+    output.update(term_colors)
+    output['darkmode'] = darkmode
+    output['transparent'] = transparent
+    print(json.dumps(output, indent=2))
+elif args.debug == False:
     print(f"$darkmode: {darkmode};")
     print(f"$transparent: {transparent};")
     for color, code in material_colors.items():

@@ -87,16 +87,10 @@ var go = (search, targets, options) => {
         tmpResults[keyI] = algorithm(preparedSearch, target, /*allowSpaces=*/false, /*allowPartialMatch=*/containsSpace)
         if(tmpResults[keyI] === NULL) { tmpResults[keyI] = noTarget; continue }
 
-        // todo: this seems weird and wrong. like what if our first match wasn't good. this should just replace it instead of averaging with it
-        // if our second match isn't good we ignore it instead of averaging with it
+        // Always take the best score per space-search across keys; small additive bonus for multi-key coverage
         if(containsSpace) for(let i=0; i<preparedSearch.spaceSearches.length; i++) {
-            if(allowPartialMatchScores[i] > -1000) {
-            if(keysSpacesBestScores[i] > NEGATIVE_INFINITY) {
-                var tmp = (keysSpacesBestScores[i] + allowPartialMatchScores[i]) / 4/*bonus score for having multiple matches*/
-                if(tmp > keysSpacesBestScores[i]) keysSpacesBestScores[i] = tmp
-            }
-            }
             if(allowPartialMatchScores[i] > keysSpacesBestScores[i]) keysSpacesBestScores[i] = allowPartialMatchScores[i]
+            else if(allowPartialMatchScores[i] > -1000 && keysSpacesBestScores[i] > NEGATIVE_INFINITY) keysSpacesBestScores[i] += 1
         }
         }
 
@@ -115,19 +109,15 @@ var go = (search, targets, options) => {
         var score = 0
         for(let i=0; i<preparedSearch.spaceSearches.length; i++) score += keysSpacesBestScores[i]
         } else {
-        // todo could rewrite this scoring to be more similar to when there's spaces
-        // if we match multiple keys give us bonus points
+        // Best score across keys + additive bonus for multi-key matches (mirrors space-search approach)
         var score = NEGATIVE_INFINITY
+        var multiKeyBonus = 0
         for(let i=0; i<keysLen; i++) {
             var result = objResults[i]
-            if(result._score > -1000) {
-            if(score > NEGATIVE_INFINITY) {
-                var tmp = (score + result._score) / 4/*bonus score for having multiple matches*/
-                if(tmp > score) score = tmp
-            }
-            }
             if(result._score > score) score = result._score
+            if(result._score > -1000) multiKeyBonus += 1
         }
+        if(multiKeyBonus > 1) score += multiKeyBonus
         }
 
         objResults.obj = obj

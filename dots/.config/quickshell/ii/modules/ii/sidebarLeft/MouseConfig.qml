@@ -118,41 +118,6 @@ Item {
             margins: root.padding
         }
 
-        // Loading state - centered, takes full space
-        Loader {
-            anchors.fill: parent
-            active: RivalCfg.loading
-            visible: active
-            z: 10
-
-            sourceComponent: Item {
-                anchors.fill: parent
-                Accessible.role: Accessible.Pane
-                Accessible.name: Translation.tr("Loading")
-                Accessible.description: Translation.tr("Detecting mouse device")
-
-                ColumnLayout {
-                    anchors.centerIn: parent
-                    spacing: 16
-
-                    MaterialLoadingIndicator {
-                        Layout.alignment: Qt.AlignHCenter
-                        implicitSize: 48
-                    }
-
-                    StyledText {
-                        Layout.alignment: Qt.AlignHCenter
-                        text: Translation.tr("Detecting mouse...")
-                        color: Appearance.colors.colSubtext
-                        font.pixelSize: Appearance.font.pixelSize.small
-                    }
-
-                }
-
-            }
-
-        }
-
         // Error state - centered, takes full space
         Loader {
             anchors.fill: parent
@@ -162,9 +127,6 @@ Item {
 
             sourceComponent: Item {
                 anchors.fill: parent
-                Accessible.role: Accessible.AlertMessage
-                Accessible.name: Translation.tr("Error")
-                Accessible.description: RivalCfg.errorMessage
 
                 ColumnLayout {
                     anchors.centerIn: parent
@@ -219,6 +181,39 @@ Item {
                         }
                     }
 
+                    // Show udev install button when needed
+                    RippleButton {
+                        Layout.alignment: Qt.AlignHCenter
+                        Layout.preferredWidth: 180
+                        Layout.topMargin: 8
+                        implicitHeight: 36
+                        buttonRadius: Appearance.rounding.full
+                        colBackground: Appearance.colors.colTertiary
+                        visible: RivalCfg.needsUdevInstall
+                        onClicked: RivalCfg.installUdevRules()
+
+                        StyledToolTip {
+                            text: Translation.tr("Install udev rules to allow access to SteelSeries mice without root")
+                        }
+
+                        contentItem: RowLayout {
+                            spacing: 8
+
+                            MaterialSymbol {
+                                text: "terminal"
+                                iconSize: Appearance.font.pixelSize.normal
+                                color: Appearance.colors.colOnTertiary
+                            }
+
+                            StyledText {
+                                text: Translation.tr("Install udev rules")
+                                color: Appearance.colors.colOnTertiary
+                                font.pixelSize: Appearance.font.pixelSize.small
+                            }
+
+                        }
+                    }
+
                 }
 
             }
@@ -257,21 +252,16 @@ Item {
                         }
 
                         // Device Info Section
-                        DeviceInfoCard {
+                        DeviceCard {
                         }
 
                         // DPI/Sensitivity Section
-                        DpiSection {
-                            Layout.fillWidth: true
-                        }
-
-                        // Polling Rate Section
-                        PollingRateSection {
+                        DPICard {
                             Layout.fillWidth: true
                         }
 
                         // Button Bindings Section
-                        ButtonBindingsSection {
+                        BindingsCard {
                             Layout.fillWidth: true
                             listeningButton: root.listeningButton
                             onStartListening: (button) => {
@@ -293,12 +283,9 @@ Item {
                             onClicked: {
                                 RivalCfg.resetToDefaults();
                             }
-                            Accessible.role: Accessible.Button
-                            Accessible.name: Translation.tr("Reset to Defaults")
-                            Accessible.description: Translation.tr("Reset all mouse settings to default values")
 
                             StyledToolTip {
-                                text: Translation.tr("Reset all settings (DPI, polling rate, button bindings) to default values")
+                                text: Translation.tr("Reset all settings (DPI, button bindings) to default values")
                             }
 
                             contentItem: RowLayout {

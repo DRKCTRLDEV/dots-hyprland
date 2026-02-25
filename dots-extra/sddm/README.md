@@ -20,16 +20,6 @@ paru -S sddm-silent-theme-git
 
 # Enable SDDM
 sudo systemctl enable sddm
-
-# Configure SDDM
-sudo bash -c 'cat > /etc/sddm.conf <<EOF
-[General]
-InputMethod=qtvirtualkeyboard
-GreeterEnvironment=QML2_IMPORT_PATH=/usr/share/sddm/themes/silent/components/,QT_IM_MODULE=qtvirtualkeyboard
-
-[Theme]
-Current=silent
-EOF'
 ```
 
 </details>
@@ -103,13 +93,27 @@ Next, import the default nixosModule and set to enable
 ```
 </details>
 
+### Set SDDM Configuration
+
+```bash
+# Configure SDDM
+sudo bash -c 'cat > /etc/sddm.conf <<EOF
+[General]
+InputMethod=qtvirtualkeyboard
+GreeterEnvironment=QML2_IMPORT_PATH=/usr/share/sddm/themes/silent/components/,QT_IM_MODULE=qtvirtualkeyboard
+
+[Theme]
+Current=silent
+EOF'
+```
+
 ### Apply Illogical-Impulse Configuration
 
 The SDDM theme script should automatically handle creating a new config and updating the metadata. The following commands are intended as a fallback if the script does not work as intended—only run them if required.
 
 ```bash
 # Copy the custom illogical-impulse config (UNREQUIRED)
-sudo cp /usr/share/sddm/themes/silent/configs/default.conf /usr/share/sddm/themes/silent/configs/illogical-impulse.conf
+sudo cp /usr/share/sddm/themes/silent/configs/silvia.conf /usr/share/sddm/themes/silent/configs/illogical-impulse.conf
 
 # Update metadata to use the custom config (UNREQUIRED)
 sudo sed -i 's|ConfigFile=configs/default.conf|ConfigFile=configs/illogical-impulse.conf|' /usr/share/sddm/themes/silent/metadata.desktop

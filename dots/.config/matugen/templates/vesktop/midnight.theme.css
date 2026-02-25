@@ -59,9 +59,9 @@ body {
 
     /* transparency/blur options */
     /* NOTE: TO USE TRANSPARENCY/BLUR, YOU MUST HAVE TRANSPARENT BG COLORS. FOR EXAMPLE: --bg-4: hsla(220, 15%, 10%, 0.7); */
-    --transparency-tweaks: off; /* off: no changes, on: remove some elements for better transparency */
-    --remove-bg-layer: off; /* off: no changes, on: remove the base --bg-3 layer for use with window transparency (WILL OVERRIDE BACKGROUND IMAGE) */
-    --panel-blur: off; /* off: no changes, on: blur the background of panels */
+    --transparency-tweaks: on; /* off: no changes, on: remove some elements for better transparency */
+    --remove-bg-layer: on; /* off: no changes, on: remove the base --bg-3 layer for use with window transparency (WILL OVERRIDE BACKGROUND IMAGE) */
+    --panel-blur: on; /* off: no changes, on: blur the background of panels */
     --blur-amount: 12px; /* amount of blur */
     --bg-floating: var(--bg-3); /* set this to a more opaque color if floating panels look too transparent. only applies if panel blur is on  */
 
@@ -86,13 +86,13 @@ body {
     --text-5: hsl(220, 14%, 66%); /* muted channels/chats and timestamps */
 
     /* background and dark colors */
-    --bg-1: hsla(220, 15%, 20%, 1); /* dark buttons when clicked */
-    --bg-2: hsla(220, 15%, 16%, 1); /* dark buttons */
-    --bg-3: hsla(220, 15%, 13%, 1); /* spacing, secondary elements */
-    --bg-4: hsla(220, 15%, 8%, 1); /* main background color */
-    --active: hsla(220, 19%, 40%, 0.2); /* channels and buttons when clicked or selected */
-    --active-2: hsla(220, 19%, 40%, 0.3); /* extra state for transparent buttons */
-    --message-hover: hsla(220, 0%, 0%, 0.1); /* messages when hovered */
+    --bg-1: #{{colors.surface_container_high.default.hex_stripped}}B3; /* dark buttons when clicked */
+    --bg-2: #{{colors.surface_container.default.hex_stripped}}B3; /* dark buttons */
+    --bg-3: #{{colors.surface_variant.default.hex_stripped}}B3; /* spacing, secondary elements */
+    --bg-4: #{{colors.surface.default.hex_stripped}}B3; /* main background color */
+    --active: #{{colors.primary.default.hex_stripped}}24; /* channels and buttons when clicked or selected */
+    --active-2: #{{colors.primary.default.hex_stripped}}36; /* extra state for transparent buttons */
+    --message-hover: #{{colors.on_surface.default.hex_stripped}}12; /* messages when hovered */
 
     /* accent colors */
     --accent-1: {{colors.primary.default.hex}}; /* links and other accent text */

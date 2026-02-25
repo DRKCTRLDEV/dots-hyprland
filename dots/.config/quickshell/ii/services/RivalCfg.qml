@@ -11,7 +11,7 @@ import Quickshell.Io
 /**
  * Service for interfacing with rivalcfg to configure SteelSeries mice.
  * Uses Python API via wrapper script for more reliable operation.
- * Handles device detection, sensitivity presets, polling rate, and button bindings.
+ * Handles device detection, sensitivity presets and button bindings.
  */
 Singleton {
     id: root
@@ -23,6 +23,7 @@ Singleton {
     property bool loading: true
     property bool available: false
     property string errorMessage: ""
+    property bool needsUdevInstall: false
 
     // Device info
     property string deviceName: ""
@@ -36,16 +37,13 @@ Singleton {
 
     // Configuration
     property var sensitivityPresets: [800, 1600, 3200]
-    property int pollingRate: 1000
     property var buttonBindings: ({})
     property var availableButtons: []
 
     // Capabilities from device profile
     property bool hasSensitivity: false
-    property bool hasPollingRate: false
     property bool hasButtons: false
     property var sensitivityRange: ({ "min": 100, "max": 18000 })
-    property var pollingRates: [125, 250, 500, 1000]
 
     // Python wrapper script path
     readonly property string scriptDir: Qt.resolvedUrl("../scripts/rivalcfg").toString().replace("file://", "")
@@ -77,10 +75,6 @@ Singleton {
         sensitivityProc.running = true
     }
 
-    function setPollingRate(rate: int) {
-        root.pollingRate = rate
-        pollingRateProc.running = true
-    }
 
     function setButtonBinding(button: string, action: string) {
         let newBindings = Object.assign({}, root.buttonBindings)
@@ -150,6 +144,12 @@ Singleton {
         resetProc.running = true
     }
 
+    function installUdevRules() {
+        // Run 'rivalcfg --update-udev' via pkexec (prompts for password) and retry detection
+        root.loading = true
+        installUdevProc.running = true
+    }
+
     // Detect mouse using Python wrapper
     Process {
         id: detectProc
@@ -167,6 +167,7 @@ Singleton {
                 
                 if (result.available) {
                     root.available = true
+                    root.needsUdevInstall = false
                     root.deviceName = result.device.name || ""
                     root.devicePid = result.device.pid || ""
                     root.connectionType = result.device.connection_type || "unknown"
@@ -178,11 +179,9 @@ Singleton {
                     
                     // Capabilities
                     root.hasSensitivity = result.capabilities.has_sensitivity || false
-                    root.hasPollingRate = result.capabilities.has_polling_rate || false
                     root.hasButtons = result.capabilities.has_buttons || false
                     root.availableButtons = result.capabilities.buttons || []
                     root.sensitivityRange = result.capabilities.sensitivity_range || { "min": 100, "max": 18000 }
-                    root.pollingRates = result.capabilities.polling_rates || [125, 250, 500, 1000]
                     
                     // Ensure we have default buttons if none detected
                     if (root.availableButtons.length === 0) {
@@ -193,6 +192,7 @@ Singleton {
                     settingsProc.running = true
                 } else {
                     root.available = false
+                    root.needsUdevInstall = result.needs_udev_install || false
                     root.errorMessage = result.error || Translation.tr("No SteelSeries mouse detected.\nMake sure your mouse is connected.")
                     root.loading = false
                 }
@@ -221,9 +221,6 @@ Singleton {
                 if (result.success && result.settings) {
                     if (result.settings.sensitivity && result.settings.sensitivity.length > 0) {
                         root.sensitivityPresets = result.settings.sensitivity
-                    }
-                    if (result.settings.polling_rate) {
-                        root.pollingRate = result.settings.polling_rate
                     }
                     if (result.settings.buttons) {
                         root.buttonBindings = result.settings.buttons
@@ -293,31 +290,6 @@ Singleton {
         }
     }
 
-    // Set polling rate
-    Process {
-        id: pollingRateProc
-        command: [root.wrapperScript, "polling-rate", root.pollingRate.toString()]
-        stdout: SplitParser {
-            onRead: data => pollingRateProc.output += data
-        }
-        stderr: SplitParser {
-            onRead: data => { if (data.trim()) console.warn("[RivalCfg]", data) }
-        }
-        property string output: ""
-        onExited: (exitCode, exitStatus) => {
-            try {
-                const result = JSON.parse(pollingRateProc.output)
-                if (result.success) {
-                    root.settingsApplied()
-                } else {
-                    root.settingsError(result.error || Translation.tr("Failed to apply polling rate"))
-                }
-            } catch (e) {
-                root.settingsError(Translation.tr("Failed to apply polling rate"))
-            }
-            pollingRateProc.output = ""
-        }
-    }
 
     // Set button mappings
     Process {
@@ -364,7 +336,7 @@ Singleton {
                     // Reload settings after reset
                     root.buttonBindings = {}
                     root.sensitivityPresets = [800, 1600, 3200]
-                    root.pollingRate = 1000
+
                     root.settingsApplied()
                 } else {
                     root.settingsError(result.error || Translation.tr("Failed to reset settings"))
@@ -373,6 +345,28 @@ Singleton {
                 root.settingsError(Translation.tr("Failed to reset settings"))
             }
             resetProc.output = ""
+        }
+    }
+
+    // Run 'rivalcfg --update-udev' as root via pkexec (prompts for password)
+    Process {
+        id: installUdevProc
+        // Prefer quickshell virtualenv's rivalcfg if present, otherwise fall back to system 'rivalcfg'
+        command: ["/bin/sh", "-c", "if [ -x \"$HOME/.local/state/quickshell/.venv/bin/rivalcfg\" ]; then pkexec \"$HOME/.local/state/quickshell/.venv/bin/rivalcfg\" --update-udev; else pkexec rivalcfg --update-udev; fi"]
+        stdout: SplitParser { onRead: data => installUdevProc.output += data }
+        stderr: SplitParser { onRead: data => { if (data.trim()) console.warn("[RivalCfg:installUdev]", data) } }
+        property string output: ""
+        onExited: (exitCode, exitStatus) => {
+            if (exitCode === 0) {
+                // udev rules installed — retry detection after a short delay
+                root.errorMessage = ""
+                root.loading = false
+                Qt.callLater(function() { refresh(); })
+            } else {
+                root.loading = false
+                root.errorMessage = Translation.tr("Failed to install udev rules. Try running 'sudo rivalcfg --update-udev' in a terminal.")
+            }
+            installUdevProc.output = ""
         }
     }
 

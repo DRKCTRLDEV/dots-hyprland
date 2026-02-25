@@ -13,7 +13,9 @@ Singleton {
     property var clock: SystemClock {
         id: clock
         precision: {
-            if (Config.options.time.secondPrecision || GlobalStates.screenLocked)
+            // Show seconds if format contains "ss" or screen is locked
+            const format = Config.options?.time.format ?? "hh:mm";
+            if (format.includes("ss") || GlobalStates.screenLocked)
                 return SystemClock.Seconds;
             return SystemClock.Minutes;
         }

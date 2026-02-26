@@ -31,14 +31,13 @@ Rectangle {
         id: deviceInfoColumn
         anchors.fill: parent
         anchors.margins: 12
-        spacing: 8
 
         StyledText {
             Layout.fillWidth: true
             visible: (typeof RivalCfg.deviceName !== 'undefined') && (RivalCfg.deviceName !== "")
             text: RivalCfg.deviceName
             color: RivalCfg.hasBattery ? (RivalCfg.isCharging ? Appearance.colors.colOnPrimaryContainer : (RivalCfg.batteryLevel <= 20 ? Appearance.colors.colOnErrorContainer : (RivalCfg.batteryLevel <= 40 ? Appearance.colors.colOnTertiaryContainer : Appearance.colors.colOnLayer1))) : Appearance.colors.colOnLayer2
-            font.pixelSize: Appearance.font.pixelSize.normal
+            font.pixelSize: Appearance.font.pixelSize.large
             font.weight: Font.Medium
             elide: Text.ElideRight
         }
@@ -89,7 +88,7 @@ Rectangle {
                 visible: (typeof RivalCfg.batteryLevel !== 'undefined') && RivalCfg.hasBattery
                 text: (typeof RivalCfg.batteryLevel !== 'undefined') ? (RivalCfg.batteryLevel + "%") : ""
                 horizontalAlignment: Text.AlignRight
-                font.pixelSize: Appearance.font.pixelSize.huge
+                font.pixelSize: Appearance.font.pixelSize.hugeass
                 font.family: Appearance.font.family.numbers
                 font.weight: Font.Bold
                 z: 2
@@ -102,7 +101,7 @@ Rectangle {
                 visible: RivalCfg.isCharging && (typeof RivalCfg.batteryLevel !== 'undefined')
                 text: "bolt"
                 fill: 1
-                iconSize: Appearance.font.pixelSize.huge
+                iconSize: Appearance.font.pixelSize.hugeass
                 color: batteryPercent.color
                 z: 2
             }

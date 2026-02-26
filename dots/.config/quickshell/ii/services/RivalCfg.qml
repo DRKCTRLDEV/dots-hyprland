@@ -36,7 +36,8 @@ Singleton {
     property bool isCharging: false
 
     // Configuration
-    property var sensitivityPresets: [800, 1600, 3200]
+    property var sensitivityPresets: []
+    property var userAppliedPresets: []
     property var buttonBindings: ({})
     property var availableButtons: []
 
@@ -52,6 +53,20 @@ Singleton {
     // Signals for UI feedback
     signal settingsApplied()
     signal settingsError(string error)
+
+    // Helper function to check if presets look like factory defaults (400, 800, 1200, 1600, etc.)
+    function looksLikeFactoryDefaults(presets) {
+        if (!presets || presets.length === 0) return true;
+        // Check if all values are multiples of 400 (typical factory defaults)
+        // Factory defaults are typically: 400, 800, 1200, 1600, 2000, etc.
+        for (let i = 0; i < presets.length; i++) {
+            let val = presets[i];
+            if (typeof val !== 'number' || val % 400 !== 0 || val < 400) {
+                return false;
+            }
+        }
+        return presets.length > 0;
+    }
 
     // Only refresh when activated, not on Component.onCompleted
     onActiveChanged: {
@@ -70,6 +85,8 @@ Singleton {
     }
 
     function setSensitivity(presets: var) {
+        // Store user-applied presets to preserve across service restarts
+        root.userAppliedPresets = presets.slice();
         root.sensitivityPresets = presets
         sensitivityProc.presetArg = presets.join(",")
         sensitivityProc.running = true
@@ -219,8 +236,26 @@ Singleton {
             try {
                 const result = JSON.parse(settingsProc.output)
                 if (result.success && result.settings) {
+                    // Only update sensitivity presets from device if:
+                    // 1. We have valid sensitivity data from device
+                    // 2. AND (we don't have user-applied presets OR the device values don't look like factory defaults)
                     if (result.settings.sensitivity && result.settings.sensitivity.length > 0) {
-                        root.sensitivityPresets = result.settings.sensitivity
+                        const devicePresets = result.settings.sensitivity;
+                        const hasUserPresets = root.userAppliedPresets && root.userAppliedPresets.length > 0;
+                        const looksLikeFactory = root.looksLikeFactoryDefaults(devicePresets);
+                        
+                        // Update presets: use device values if they look like user config, 
+                        // or if we don't have any user presets yet
+                        if (!hasUserPresets || !looksLikeFactory) {
+                            root.sensitivityPresets = devicePresets;
+                            // If this is the first time we're getting valid (non-factory) presets, save them
+                            if (!hasUserPresets && !looksLikeFactory) {
+                                root.userAppliedPresets = devicePresets.slice();
+                            }
+                        } else if (hasUserPresets) {
+                            // Device has factory defaults but we have user presets - keep user presets
+                            root.sensitivityPresets = root.userAppliedPresets;
+                        }
                     }
                     if (result.settings.buttons) {
                         root.buttonBindings = result.settings.buttons
@@ -336,6 +371,8 @@ Singleton {
                     // Reload settings after reset
                     root.buttonBindings = {}
                     root.sensitivityPresets = [800, 1600, 3200]
+                    // Clear user-applied presets so they get re-read from device
+                    root.userAppliedPresets = []
 
                     root.settingsApplied()
                 } else {

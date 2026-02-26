@@ -12,7 +12,8 @@ Rectangle {
     id: root
 
     property int maxDpi: Config.options.sidebar.mouseConfig.maxDpi
-    property var editablePresets: RivalCfg.sensitivityPresets.slice()
+    // Provide fallback defaults if sensitivityPresets is empty
+    property var editablePresets: (RivalCfg.sensitivityPresets && RivalCfg.sensitivityPresets.length > 0) ? RivalCfg.sensitivityPresets.slice() : [800, 1600, 3200]
     property int selectedPresetIndex: 0
 
     implicitHeight: dpiColumn.implicitHeight + 24

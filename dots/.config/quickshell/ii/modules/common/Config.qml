@@ -48,7 +48,7 @@ Singleton {
         interval: root.readWriteDelay
         repeat: false
         onTriggered: {
-            configFileView.reload()
+            configFileView.reload();
         }
     }
 
@@ -57,7 +57,7 @@ Singleton {
         interval: root.readWriteDelay
         repeat: false
         onTriggered: {
-            configFileView.writeAdapter()
+            configFileView.writeAdapter();
         }
     }
 
@@ -78,8 +78,6 @@ Singleton {
         JsonAdapter {
             id: configOptionsJsonAdapter
 
-            property string panelFamily: "ii"
-
             property JsonObject appearance: JsonObject {
                 property bool extraBackgroundTint: true
                 property int fakeScreenRounding: 2 // 0: None | 1: Always | 2: When not fullscreen
@@ -95,8 +93,8 @@ Singleton {
                 property JsonObject transparency: JsonObject {
                     property bool enable: true
                     property bool automatic: true
-                    property real backgroundTransparency: 0.11
-                    property real contentTransparency: 0.57
+                    property real backgroundTransparency: 0.2
+                    property real contentTransparency: 0.6
                 }
                 property JsonObject wallpaperTheming: JsonObject {
                     property bool enableAppsAndShell: true
@@ -250,7 +248,7 @@ Singleton {
                 property bool pinnedOnStartup: false
                 property bool hoverToReveal: true // When false, only reveals on empty workspace
                 property list<string> pinnedApps: [ // IDs of pinned entries
-                    "kitty", "org.kde.dolphin",]
+                    "org.kde.dolphin", "kitty",]
                 property list<string> ignoredAppRegexes: []
             }
 
@@ -261,7 +259,8 @@ Singleton {
                     property int mouseScrollFactor: 120
                     property int touchpadScrollFactor: 450
                 }
-                property JsonObject deadPixelWorkaround: JsonObject { // Hyprland leaves out 1 pixel on the right for interactions
+                property JsonObject deadPixelWorkaround: JsonObject {
+                    // Hyprland leaves out 1 pixel on the right for interactions
                     property bool enable: false
                 }
             }
@@ -276,7 +275,7 @@ Singleton {
             }
 
             property JsonObject launcher: JsonObject {
-                property list<string> pinnedApps: [ "org.kde.dolphin", "kitty"]
+                property list<string> pinnedApps: ["org.kde.dolphin", "kitty"]
             }
 
             property JsonObject light: JsonObject {
@@ -320,7 +319,7 @@ Singleton {
             }
 
             property JsonObject osd: JsonObject {
-                property int timeout: 1000
+                property int timeout: 1200
             }
 
             property JsonObject osk: JsonObject {
@@ -375,7 +374,7 @@ Singleton {
                 property bool monochromeIcons: true
                 property bool showItemId: false
                 property bool invertPinnedItems: true // Makes the below a whitelist for the tray and blacklist for the pinned area
-                property list<var> pinnedItems: [ "Fcitx" ]
+                property list<var> pinnedItems: ["Fcitx"]
                 property bool filterPassive: true
             }
 
@@ -400,7 +399,7 @@ Singleton {
                     property string webSearch: "?"
                 }
                 property JsonObject imageSearch: JsonObject {
-                    property string imageSearchEngineBaseUrl: "https://tineye.com/search?url="
+                    property string imageSearchEngineBaseUrl: "https://lens.google.com/uploadbyurl?url="
                     property bool useCircleSelection: false
                 }
             }
@@ -428,21 +427,45 @@ Singleton {
                 }
 
                 property JsonObject quickToggles: JsonObject {
-                    property string style: "android" // Options: classic, android
-                    property JsonObject android: JsonObject {
-                        property int columns: 5
-                        property list<var> toggles: [
-                            { "size": 2, "type": "network" },
-                            { "size": 2, "type": "bluetooth" },
-                            { "size": 1, "type": "cloudflareWarp" },
-                            { "size": 2, "type": "audio" },
-                            { "size": 2, "type": "mic" },
-                            { "size": 1, "type": "musicRecognition" },
-                            { "size": 2, "type": "idleInhibitor" },
-                            { "size": 2, "type": "nightLight" },
-                            { "size": 1, "type": "gameMode" }
-                        ]
-                    }
+                    property int columns: 5
+                    property list<var> toggles: [
+                        {
+                            "size": 2,
+                            "type": "network"
+                        },
+                        {
+                            "size": 2,
+                            "type": "bluetooth"
+                        },
+                        {
+                            "size": 1,
+                            "type": "cloudflareWarp"
+                        },
+                        {
+                            "size": 2,
+                            "type": "audio"
+                        },
+                        {
+                            "size": 2,
+                            "type": "mic"
+                        },
+                        {
+                            "size": 1,
+                            "type": "musicRecognition"
+                        },
+                        {
+                            "size": 2,
+                            "type": "idleInhibitor"
+                        },
+                        {
+                            "size": 2,
+                            "type": "nightLight"
+                        },
+                        {
+                            "size": 1,
+                            "type": "gameMode"
+                        }
+                    ]
                 }
 
                 property JsonObject quickSliders: JsonObject {
@@ -454,7 +477,7 @@ Singleton {
             }
 
             property JsonObject screenRecord: JsonObject {
-                property string savePath: Directories.videos.replace("file://","") // strip "file://"
+                property string savePath: Directories.videos.replace("file://", "") // strip "file://"
             }
 
             property JsonObject screenSnip: JsonObject {
@@ -488,11 +511,11 @@ Singleton {
                 property int adviseUpdateThreshold: 75 // packages
                 property int stronglyAdviseUpdateThreshold: 200 // packages
             }
-            
+
             property JsonObject wallpaperSelector: JsonObject {
                 property bool useSystemFileDialog: false
             }
-            
+
             property JsonObject windows: JsonObject {
                 property bool showTitlebar: true // Client-side decoration for shell apps
                 property bool centerTitle: true

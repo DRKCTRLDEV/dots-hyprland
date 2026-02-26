@@ -9,9 +9,9 @@ RippleButton {
     property int isToday
     property bool bold
 
-    Layout.fillWidth: false
+    Layout.fillWidth: true
     Layout.fillHeight: false
-    implicitWidth: 38; 
+    Layout.minimumWidth: 38 
     implicitHeight: 38;
 
     toggled: (isToday == 1)

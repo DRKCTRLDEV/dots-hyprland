@@ -98,7 +98,7 @@ Rectangle {
         CalendarHeaderButton {
             Layout.margins: 10
             Layout.rightMargin: 0
-            forceCircle: true
+            implicitWidth: 56 //same as navrailbtn
             downAction: () => {
                 root.setCollapsed(false);
             }
@@ -152,7 +152,6 @@ Rectangle {
                 id: tabBar
                 anchors.verticalCenter: parent.verticalCenter
                 anchors.left: parent.left
-                anchors.leftMargin: 5
                 currentIndex: root.selectedTab
                 expanded: false
                 Repeater {
@@ -173,9 +172,8 @@ Rectangle {
             }
             // Collapse button
             CalendarHeaderButton {
-                anchors.left: parent.left
-                anchors.top: parent.top
-                forceCircle: true
+                id: collapseButton
+                implicitWidth: 56 //same as navrailbtn
                 downAction: () => {
                     root.setCollapsed(true);
                 }

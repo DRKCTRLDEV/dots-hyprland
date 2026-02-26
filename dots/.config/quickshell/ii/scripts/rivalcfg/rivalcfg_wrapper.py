@@ -64,7 +64,17 @@ def cmd_detect() -> Dict[str, Any]:
     try:
         # Basic device info
         result["available"] = True
-        result["device"]["name"] = mouse.name
+        # Remove any bracketed technical info from device name (e.g., "Rival 3 (Wireless)" -> "Rival 3")
+        device_name = mouse.name
+        if isinstance(device_name, str):
+            # Remove content within parentheses and square brackets
+            import re
+            device_name = re.sub(r'\s*\([^)]*\)', '', device_name)  # Remove (...)
+            device_name = re.sub(r'\s*\[[^\]]*\]', '', device_name)  # Remove [...]
+            device_name = device_name.strip()
+        else:
+            device_name = str(device_name) if device_name else ""
+        result["device"]["name"] = device_name
         result["device"]["vendor_id"] = f"{mouse.vendor_id:04x}"
         result["device"]["product_id"] = f"{mouse.product_id:04x}"
         result["device"]["pid"] = f"{mouse.vendor_id:04x}_{mouse.product_id:04x}"

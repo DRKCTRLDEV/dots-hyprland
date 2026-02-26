@@ -6,13 +6,15 @@ import QtQuick
 import QtQuick.Layouts
 
 Item {
-    // Layout.topMargin: 10
-    anchors.topMargin: 10
+    anchors.left: parent.left
+    anchors.right: parent.right
+    anchors.top: parent.top
     property int monthShift: 0
     property var viewingDate: CalendarLayout.getDateInXMonthsTime(monthShift)
     property var calendarLayout: CalendarLayout.getCalendarLayout(viewingDate, monthShift === 0)
-    width: calendarColumn.width
-    implicitHeight: calendarColumn.height + 10 * 2
+
+    width: parent ? parent.width : implicitWidth
+    implicitHeight: calendarColumn.height
 
     Keys.onPressed: (event) => {
         if ((event.key === Qt.Key_PageDown || event.key === Qt.Key_PageUp)
@@ -38,7 +40,10 @@ Item {
 
     ColumnLayout {
         id: calendarColumn
-        anchors.centerIn: parent
+        anchors.fill: parent
+        anchors.topMargin: 10
+        anchors.rightMargin: 10
+        anchors.bottomMargin: 10
         spacing: 5
 
         // Calendar header
@@ -86,6 +91,7 @@ Item {
         // Week days row
         RowLayout {
             id: weekDaysRow
+            Layout.fillWidth: true
             Layout.alignment: Qt.AlignHCenter
             Layout.fillHeight: false
             spacing: 5
@@ -106,6 +112,7 @@ Item {
             // model: calendarLayout
             model: 6
             delegate: RowLayout {
+                Layout.fillWidth: true
                 Layout.alignment: Qt.AlignHCenter
                 Layout.fillHeight: false
                 spacing: 5

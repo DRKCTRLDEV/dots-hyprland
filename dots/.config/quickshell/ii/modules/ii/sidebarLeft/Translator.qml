@@ -15,7 +15,7 @@ Item {
     id: root
 
     // Sizes
-    property real padding: 4
+    property real padding: 8
 
     // Widgets
     property var inputField: inputCanvas.inputTextArea

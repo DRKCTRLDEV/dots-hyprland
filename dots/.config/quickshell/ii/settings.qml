@@ -221,8 +221,6 @@ ApplicationWindow {
                     }
                     expanded: root.width > 900   // no expand/contract button needed
 
-                    // <<– removed NavigationRailExpandButton here >>
-
                     NavigationRailTabArray {
                         currentIndex: root.currentPage
                         expanded: navRail.expanded
@@ -259,8 +257,13 @@ ApplicationWindow {
                 Item {
                     id: searchOverlay
                     anchors.fill: parent
-                    visible: root.searchVisible
+                    visible: opacity > 0
                     z: 100
+                    opacity: root.searchVisible ? 1 : 0
+                    
+                    Behavior on opacity {
+                        animation: Appearance.animation.elementMoveFast.numberAnimation.createObject(this)
+                    }
 
                     ColumnLayout {
                         anchors {
@@ -273,10 +276,22 @@ ApplicationWindow {
 
                         // Search field - pill shaped
                         Rectangle {
+                            id: searchFieldContainer
                             Layout.fillWidth: true
                             height: 48
                             radius: Appearance.rounding.small
                             color: Appearance.m3colors.m3surfaceContainerHigh
+                            scale: root.searchVisible ? 1 : 0.7
+                            opacity: root.searchVisible ? 1 : 0
+                            
+                            transformOrigin: Item.Center
+                            
+                            Behavior on scale {
+                                animation: Appearance.animation.elementMoveEnter.numberAnimation.createObject(this)
+                            }
+                            Behavior on opacity {
+                                animation: Appearance.animation.elementMoveEnter.numberAnimation.createObject(this)
+                            }
 
                             RowLayout {
                                 anchors.fill: parent
@@ -284,6 +299,7 @@ ApplicationWindow {
                                 anchors.rightMargin: 12
 
                                 MaterialSymbol {
+                                    id: searchIcon
                                     text: "search"
                                     iconSize: 24
                                     color: Appearance.colors.colOnSurfaceVariant
@@ -310,10 +326,13 @@ ApplicationWindow {
                                 }
 
                                 RippleButton {
+                                    id: clearButton
                                     implicitWidth: 32
                                     implicitHeight: 48
                                     buttonRadius: Appearance.rounding.small
-                                    visible: root.searchQuery.length > 0
+                                    opacity: root.searchQuery.length > 0 ? 1 : 0
+                                    scale: root.searchQuery.length > 0 ? 1 : 0.8
+                                    visible: opacity > 0
                                     onClicked: {
                                         root.searchQuery = "";
                                         searchField.forceActiveFocus();
@@ -324,15 +343,28 @@ ApplicationWindow {
                                         iconSize: 24
                                         color: Appearance.colors.colOnSurfaceVariant
                                     }
+                                    
+                                    Behavior on opacity {
+                                        animation: Appearance.animation.elementMoveFast.numberAnimation.createObject(this)
+                                    }
+                                    Behavior on scale {
+                                        animation: Appearance.animation.elementMoveFast.numberAnimation.createObject(this)
+                                    }
                                 }
                             }
                         }
 
                         // Search results (placeholder - no backend) - above search box, full width
                         ColumnLayout {
+                            id: searchResultsContainer
                             Layout.fillWidth: true
                             spacing: 6
-                            visible: root.searchResults.length > 0
+                            opacity: root.searchResults.length > 0 ? 1 : 0
+                            visible: opacity > 0
+                            
+                            Behavior on opacity {
+                                animation: Appearance.animation.elementMoveEnter.numberAnimation.createObject(this)
+                            }
 
                             Repeater {
                                 model: root.searchResults
@@ -343,6 +375,7 @@ ApplicationWindow {
                                     Layout.fillWidth: true
                                     buttonRadius: 8
                                     colBackground: Appearance.colors.colSecondaryContainer
+                                    opacity: searchResultsContainer.opacity
                                     onClicked: root.navigateToSearchResult(modelData)
                                     RowLayout {
                                         anchors.fill: parent

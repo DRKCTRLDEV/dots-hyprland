@@ -12,6 +12,10 @@ import qs.services
  */
 Rectangle {
     id: root
+    implicitHeight: bindingsColumn.implicitHeight + 24
+    radius: Appearance.rounding.small
+    color: Appearance.colors.colLayer2
+    Layout.fillWidth: true
 
     property string listeningButton: ""
     // Common button actions for the dropdown
@@ -259,10 +263,6 @@ Rectangle {
         }
         return actions;
     }
-
-    implicitHeight: bindingsColumn.implicitHeight + 24
-    radius: Appearance.rounding.normal
-    color: Appearance.colors.colLayer2
 
     ColumnLayout {
         id: bindingsColumn

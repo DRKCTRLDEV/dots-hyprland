@@ -10,15 +10,15 @@ import QtQuick.Layouts
  */
 Rectangle {
     id: root
+    implicitHeight: dpiColumn.implicitHeight + 24
+    radius: Appearance.rounding.small
+    color: Appearance.colors.colLayer2
+    Layout.fillWidth: true
 
     property int maxDpi: Config.options.sidebar.mouseConfig.maxDpi
     // Provide fallback defaults if sensitivityPresets is empty
     property var editablePresets: (RivalCfg.sensitivityPresets && RivalCfg.sensitivityPresets.length > 0) ? RivalCfg.sensitivityPresets.slice() : [800, 1600, 3200]
     property int selectedPresetIndex: 0
-
-    implicitHeight: dpiColumn.implicitHeight + 24
-    radius: Appearance.rounding.normal
-    color: Appearance.colors.colLayer2
 
     // Sync with service when it changes
     Connections {

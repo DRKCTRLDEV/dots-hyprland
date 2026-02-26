@@ -17,7 +17,7 @@ Item {
     id: root
 
     // Padding for content
-    property real padding: 4
+    property real padding: 8
     // Input handling for button capture
     property string listeningButton: ""
     // Status message
@@ -257,12 +257,10 @@ Item {
 
                         // DPI/Sensitivity Section
                         DPICard {
-                            Layout.fillWidth: true
                         }
 
                         // Button Bindings Section
                         BindingsCard {
-                            Layout.fillWidth: true
                             listeningButton: root.listeningButton
                             onStartListening: (button) => {
                                 root.listeningButton = button;
@@ -272,50 +270,7 @@ Item {
                                 root.listeningButton = "";
                             }
                         }
-
-                        // Reset Button
-                        RippleButton {
-                            Layout.fillWidth: true
-                            Layout.topMargin: 8
-                            implicitHeight: 44
-                            buttonRadius: Appearance.rounding.normal
-                            colBackground: Appearance.colors.colLayer2
-                            onClicked: {
-                                RivalCfg.resetToDefaults();
-                            }
-
-                            StyledToolTip {
-                                text: Translation.tr("Reset all settings (DPI, button bindings) to default values")
-                            }
-
-                            contentItem: RowLayout {
-                                anchors.centerIn: parent
-                                spacing: 8
-
-                                MaterialSymbol {
-                                    text: "restart_alt"
-                                    iconSize: Appearance.font.pixelSize.larger
-                                    color: Appearance.colors.colOnLayer2
-                                }
-
-                                StyledText {
-                                    text: Translation.tr("Reset to Defaults")
-                                    color: Appearance.colors.colOnLayer2
-                                    font.pixelSize: Appearance.font.pixelSize.small
-                                }
-
-                            }
-
-                        }
-
-                        // Bottom spacing
-                        Item {
-                            Layout.fillWidth: true
-                            implicitHeight: 20
-                        }
-
                     }
-
                 }
 
                 // Status message - pinned to bottom

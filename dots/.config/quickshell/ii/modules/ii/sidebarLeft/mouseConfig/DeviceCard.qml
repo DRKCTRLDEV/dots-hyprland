@@ -6,11 +6,10 @@ import qs.services
 
 Rectangle {
     id: root
-
-    Layout.fillWidth: true
-    implicitHeight: deviceInfoColumn.implicitHeight + 24
-    radius: Appearance.rounding.normal
+    implicitHeight: infoColumn.implicitHeight + 24
+    radius: Appearance.rounding.small
     color: Appearance.colors.colLayer2
+    Layout.fillWidth: true
 
     // Battery-progress
     Rectangle {
@@ -28,7 +27,7 @@ Rectangle {
     }
 
     ColumnLayout {
-        id: deviceInfoColumn
+        id: infoColumn
         anchors.fill: parent
         anchors.margins: 12
 

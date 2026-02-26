@@ -19,8 +19,6 @@ DockButton {
 
     readonly property bool isSeparator: appToplevel.appId === "SEPARATOR"
     property var desktopEntry: DesktopEntries.heuristicLookup(appToplevel.appId)
-<<<<<<< HEAD
-=======
 
     Timer {
         // Retry looking up the desktop entry if it failed (e.g. database not loaded yet)
@@ -34,7 +32,6 @@ DockButton {
         }
     }
 
->>>>>>> upstream/main
     enabled: !isSeparator
     implicitWidth: isSeparator ? 1 : implicitHeight - topInset - bottomInset
 

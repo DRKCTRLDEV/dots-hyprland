@@ -70,7 +70,7 @@ GroupButton {
             StyledText {
                 id: dpiText
                 text: root.dpiValue.toString()
-                font.pixelSize: Appearance.font.pixelSize.larger
+                font.pixelSize: Appearance.font.pixelSize.normal
                 animateChange: true
                 color: root.isSelected ? Appearance.colors.colOnPrimaryContainer : Appearance.colors.colOnSecondaryContainer
                 Layout.alignment: Qt.AlignVCenter

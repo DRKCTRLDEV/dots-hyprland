@@ -8,411 +8,197 @@ import QtQuick
 import Quickshell
 import Quickshell.Io
 
-/**
- * Service for interfacing with rivalcfg to configure SteelSeries mice.
- * Uses Python API via wrapper script for more reliable operation.
- * Handles device detection, sensitivity presets and button bindings.
- */
 Singleton {
     id: root
 
-    // Active state - when false, no processes run (saves resources when sidebar closed)
     property bool active: false
-    
-    // State properties
-    property bool loading: true
     property bool available: false
     property string errorMessage: ""
     property bool needsUdevInstall: false
 
-    // Device info
     property string deviceName: ""
-    property string devicePid: "" // e.g., "1038_1852"
-    property string connectionType: "" // "wired", "wireless", "bluetooth"
+    property string devicePid: ""
+    property string connectionType: ""
 
-    // Battery info
     property bool hasBattery: false
     property int batteryLevel: 100
     property bool isCharging: false
 
-    // Configuration
     property var sensitivityPresets: []
     property var userAppliedPresets: []
     property var buttonBindings: ({})
+
     property var availableButtons: []
 
-    // Capabilities from device profile
     property bool hasSensitivity: false
     property bool hasButtons: false
-    property var sensitivityRange: ({ "min": 100, "max": 18000 })
+    property var sensitivityRange: ({min:100, max:18000})
 
-    // Python wrapper script path
-    readonly property string scriptDir: Qt.resolvedUrl("../scripts/rivalcfg").toString().replace("file://", "")
-    readonly property string wrapperScript: scriptDir + "/rivalcfg_wrapper.py"
+    readonly property string venvPath: "/home/alfie/.local/state/quickshell/.venv"
+    readonly property string wrapperScript: Qt.resolvedUrl("../scripts/rivalcfg/rivalcfg_wrapper.py").toString().replace("file://","")
 
-    // Signals for UI feedback
     signal settingsApplied()
     signal settingsError(string error)
 
-    // Helper function to check if presets look like factory defaults (400, 800, 1200, 1600, etc.)
-    function looksLikeFactoryDefaults(presets) {
-        if (!presets || presets.length === 0) return true;
-        // Check if all values are multiples of 400 (typical factory defaults)
-        // Factory defaults are typically: 400, 800, 1200, 1600, 2000, etc.
-        for (let i = 0; i < presets.length; i++) {
-            let val = presets[i];
-            if (typeof val !== 'number' || val % 400 !== 0 || val < 400) {
-                return false;
-            }
-        }
-        return presets.length > 0;
+    function looksLikeFactoryDefaults(p) {
+        return !p || !p.length || p.every(function(v) { return typeof v === "number" && v >= 400 && v % 400 === 0 })
     }
 
-    // Only refresh when activated, not on Component.onCompleted
-    onActiveChanged: {
-        if (active) {
-            refresh()
-        } else {
-            batteryTimer.running = false
-        }
-    }
+    onActiveChanged: if (active) refresh()
 
     function refresh() {
-        if (!root.active) return; // Don't refresh if not active
-        root.loading = true
-        root.errorMessage = ""
-        detectProc.running = true
+        if (!active) return
+        errorMessage = ""
+        run(["detect"], onDetect)
     }
 
-    function setSensitivity(presets: var) {
-        // Store user-applied presets to preserve across service restarts
-        root.userAppliedPresets = presets.slice();
-        root.sensitivityPresets = presets
-        sensitivityProc.presetArg = presets.join(",")
-        sensitivityProc.running = true
+    function setSensitivity(p) {
+        userAppliedPresets = p.slice()
+        sensitivityPresets = p
+        run(["sensitivity", p.join(",")], onResult)
     }
 
-
-    function setButtonBinding(button: string, action: string) {
-        let newBindings = Object.assign({}, root.buttonBindings)
-        newBindings[button] = action
-        root.buttonBindings = newBindings
+    function setButtonBinding(btn, action) {
+        var newBindings = Object.assign({}, buttonBindings)
+        newBindings[btn] = action
+        buttonBindings = newBindings
         applyButtonBindings()
     }
 
     function applyButtonBindings() {
-        let mappedBindings = {}
-        for (let button in root.buttonBindings) {
-            const action = root.buttonBindings[button]
-            mappedBindings[button] = mapKeyToRivalcfgAlias(action)
+        var m = {}
+        for (var b in buttonBindings) {
+            m[b] = mapKeyToRivalcfgAlias(buttonBindings[b])
         }
-        buttonsProc.mappingsArg = JSON.stringify(mappedBindings)
-        buttonsProc.running = true
+        run(["buttons", JSON.stringify(m)], onResult)
     }
 
-    function mapKeyToRivalcfgAlias(key: string): string {
-        // Map special characters that conflict with rivalcfg syntax to their aliases
-        // Also map generic modifier names to rivalcfg format
-        const keyAliases = {
-            // Characters that conflict with syntax
-            ";": "semicolon",
-            "'": "quote",
-            ",": "comma",
-            ".": "dot",
-            "/": "slash",
-            "\\": "backslash",
-            "[": "leftbracket",
-            "]": "rightbracket",
-            "`": "backtick",
-            "-": "dash",
-            "=": "equal",
-            "#": "hash",
-            
-            // Generic modifier names to rivalcfg format
-            "Shift": "LeftShift",
-            "Ctrl": "LeftCtrl",
-            "Alt": "LeftAlt",
-            
-            // Already correct format (pass through)
-            "LeftShift": "LeftShift",
-            "RightShift": "RightShift",
-            "LeftCtrl": "LeftCtrl",
-            "RightCtrl": "RightCtrl",
-            "LeftAlt": "LeftAlt",
-            "RightAlt": "RightAlt",
-            "LeftSuper": "LeftSuper",
-            "RightSuper": "RightSuper",
-            
-            // Lowercase variants (legacy support)
-            "lalt": "LeftAlt",
-            "ralt": "RightAlt",
-            "lctrl": "LeftCtrl",
-            "rctrl": "RightCtrl",
-            "lshift": "LeftShift",
-            "rshift": "RightShift",
-            "lmeta": "LeftMeta",
-            "rmeta": "RightMeta"
+    function mapKeyToRivalcfgAlias(k) {
+        var a = {
+            ";":"semicolon", "'":"quote", ",":"comma", ".":"dot", "/":"slash", "\\":"backslash",
+            "[":"leftbracket", "]":"rightbracket", "`":"backtick", "-":"dash", "=":"equal", "#":"hash",
+            "Shift":"LeftShift", "Ctrl":"LeftCtrl", "Alt":"LeftAlt",
+            "lalt":"LeftAlt", "ralt":"RightAlt", "lctrl":"LeftCtrl", "rctrl":"RightCtrl",
+            "lshift":"LeftShift", "rshift":"RightShift"
         }
-        
-        return keyAliases[key] || key
+        return a[k] || k
     }
 
-    function resetToDefaults() {
-        resetProc.running = true
+    function resetToDefaults() { run(["reset"], onReset) }
+    function installUdevRules() { installUdevProc.running = true }
+
+    // DRY runner with safe arg passing (sh -c 'exec ... "$@"' sh args...)
+    Component {
+        id: procComp
+        Process {
+            property string out: ""
+            stdout: SplitParser { onRead: function(d) { out += d } }
+            stderr: SplitParser { onRead: function(d) { if (d.trim()) console.warn("[RivalCfg]", d) } }
+        }
     }
 
-    function installUdevRules() {
-        // Run 'rivalcfg --update-udev' via pkexec (prompts for password) and retry detection
-        root.loading = true
-        installUdevProc.running = true
+    function run(args, onDone) {
+        var baseCmd = "source " + venvPath + "/bin/activate && exec python3 " + wrapperScript + " \"$@\""
+        var cmd = ["/bin/sh", "-c", baseCmd, "sh"].concat(args)
+        var p = procComp.createObject(root, {command: cmd})
+        p.running = true
+        p.onExited.connect(function() {
+            onDone(p.out)
+            p.destroy()
+        })
     }
 
-    // Detect mouse using Python wrapper
-    Process {
-        id: detectProc
-        command: [root.wrapperScript, "detect"]
-        stdout: SplitParser {
-            onRead: data => detectProc.output += data
+    // Callbacks (unchanged)
+    function onDetect(data) {
+        var r = parseJson(data)
+        if (!r) { return }
+        if (r.available) {
+            available = true
+            needsUdevInstall = false
+            deviceName = r.device.name || ""
+            devicePid = r.device.pid || ""
+            connectionType = r.device.connection_type || "unknown"
+            hasBattery = r.battery.supported || false
+            batteryLevel = r.battery.level || 100
+            isCharging = r.battery.is_charging || false
+            hasSensitivity = r.capabilities.has_sensitivity || false
+            hasButtons = r.capabilities.has_buttons || false
+            availableButtons = (r.capabilities.buttons || []).length > 0 ? r.capabilities.buttons : ["Button1","Button2","Button3","Button4","Button5","Button6","Button7","Button8","Button9"]
+            sensitivityRange = r.capabilities.sensitivity_range || {min:100, max:18000}
+            run(["settings"], onSettings)
+            return
         }
-        stderr: SplitParser {
-            onRead: data => { if (data.trim()) console.warn("[RivalCfg]", data) }
-        }
-        property string output: ""
-        onExited: (exitCode, exitStatus) => {
-            try {
-                const result = JSON.parse(detectProc.output)
-                
-                if (result.available) {
-                    root.available = true
-                    root.needsUdevInstall = false
-                    root.deviceName = result.device.name || ""
-                    root.devicePid = result.device.pid || ""
-                    root.connectionType = result.device.connection_type || "unknown"
-                    
-                    // Battery info
-                    root.hasBattery = result.battery.supported || false
-                    root.batteryLevel = result.battery.level || 100
-                    root.isCharging = result.battery.is_charging || false
-                    
-                    // Capabilities
-                    root.hasSensitivity = result.capabilities.has_sensitivity || false
-                    root.hasButtons = result.capabilities.has_buttons || false
-                    root.availableButtons = result.capabilities.buttons || []
-                    root.sensitivityRange = result.capabilities.sensitivity_range || { "min": 100, "max": 18000 }
-                    
-                    // Ensure we have default buttons if none detected
-                    if (root.availableButtons.length === 0) {
-                        root.availableButtons = ["Button1", "Button2", "Button3", "Button4", "Button5", "Button6", "Button7", "Button8", "Button9"]
-                    }
-                    
-                    // Load saved settings
-                    settingsProc.running = true
-                } else {
-                    root.available = false
-                    root.needsUdevInstall = result.needs_udev_install || false
-                    root.errorMessage = result.error || Translation.tr("No SteelSeries mouse detected.\nMake sure your mouse is connected.")
-                    root.loading = false
-                }
-            } catch (e) {
-                console.error("[RivalCfg] Failed to parse detect output:", e)
-                root.available = false
-                root.errorMessage = Translation.tr("Failed to detect mouse. Check if rivalcfg is installed in the Python environment.")
-                root.loading = false
+        available = false
+        needsUdevInstall = r.needs_udev_install || false
+        errorMessage = r.error || "No SteelSeries mouse detected."
+    }
+
+    function onSettings(data) {
+        var r = parseJson(data)
+        if (r && r.success && r.settings) {
+            var sp = r.settings.sensitivity || []
+            if (sp.length > 0) {
+                var hasUser = userAppliedPresets.length > 0
+                if (!hasUser || !looksLikeFactoryDefaults(sp)) {
+                    sensitivityPresets = sp
+                    if (!hasUser && !looksLikeFactoryDefaults(sp)) userAppliedPresets = sp.slice()
+                } else if (hasUser) sensitivityPresets = userAppliedPresets
             }
-            
-            detectProc.output = ""
+            if (r.settings.buttons) buttonBindings = r.settings.buttons
         }
+        if (hasBattery) batteryTimer.running = true
     }
 
-    // Get current settings
-    Process {
-        id: settingsProc
-        command: [root.wrapperScript, "settings"]
-        stdout: SplitParser {
-            onRead: data => settingsProc.output += data
-        }
-        property string output: ""
-        onExited: (exitCode, exitStatus) => {
-            try {
-                const result = JSON.parse(settingsProc.output)
-                if (result.success && result.settings) {
-                    // Only update sensitivity presets from device if:
-                    // 1. We have valid sensitivity data from device
-                    // 2. AND (we don't have user-applied presets OR the device values don't look like factory defaults)
-                    if (result.settings.sensitivity && result.settings.sensitivity.length > 0) {
-                        const devicePresets = result.settings.sensitivity;
-                        const hasUserPresets = root.userAppliedPresets && root.userAppliedPresets.length > 0;
-                        const looksLikeFactory = root.looksLikeFactoryDefaults(devicePresets);
-                        
-                        // Update presets: use device values if they look like user config, 
-                        // or if we don't have any user presets yet
-                        if (!hasUserPresets || !looksLikeFactory) {
-                            root.sensitivityPresets = devicePresets;
-                            // If this is the first time we're getting valid (non-factory) presets, save them
-                            if (!hasUserPresets && !looksLikeFactory) {
-                                root.userAppliedPresets = devicePresets.slice();
-                            }
-                        } else if (hasUserPresets) {
-                            // Device has factory defaults but we have user presets - keep user presets
-                            root.sensitivityPresets = root.userAppliedPresets;
-                        }
-                    }
-                    if (result.settings.buttons) {
-                        root.buttonBindings = result.settings.buttons
-                    }
-                }
-            } catch (e) {
-                console.error("[RivalCfg] Failed to parse settings:", e)
-            }
-            
-            settingsProc.output = ""
-            root.loading = false
-            
-            // Start battery monitoring if supported
-            if (root.hasBattery) {
-                batteryProc.running = true
-            }
-        }
+    function onResult(data) {
+        var r = parseJson(data)
+        if (r && r.success) settingsApplied()
+        else settingsError(r ? r.error || "Failed" : "Failed")
     }
 
-    // Battery check
+    function onReset(data) {
+        var r = parseJson(data)
+        if (r && r.success) {
+            buttonBindings = {}
+            sensitivityPresets = [800,1600,3200]
+            userAppliedPresets = []
+            settingsApplied()
+        } else settingsError(r ? r.error || "Reset failed" : "Reset failed")
+    }
+
+    function parseJson(d) {
+        try { return JSON.parse(d) } catch(e) { console.error("[RivalCfg] JSON fail:", e); return null }
+    }
+
+    // Battery poll
     Process {
         id: batteryProc
-        command: [root.wrapperScript, "battery"]
-        stdout: SplitParser {
-            onRead: data => batteryProc.output += data
-        }
-        property string output: ""
-        onExited: (exitCode, exitStatus) => {
-            try {
-                const result = JSON.parse(batteryProc.output)
-                if (result.supported) {
-                    root.hasBattery = true
-                    root.batteryLevel = result.level || 100
-                    root.isCharging = result.is_charging || false
-                }
-            } catch (e) {
-                console.error("[RivalCfg] Failed to parse battery:", e)
+        command: ["/bin/sh", "-c", "source " + venvPath + "/bin/activate && exec python3 " + wrapperScript + " battery"]
+        stdout: SplitParser { onRead: function(d) { batteryProc.out += d } }
+        property string out: ""
+        onExited: {
+            var r = parseJson(out)
+            if (r && r.supported) {
+                hasBattery = true
+                batteryLevel = r.level || 100
+                isCharging = r.is_charging || false
             }
-            batteryProc.output = ""
+            out = ""
         }
     }
 
-    // Set sensitivity
-    Process {
-        id: sensitivityProc
-        property string presetArg: ""
-        command: [root.wrapperScript, "sensitivity", presetArg]
-        stdout: SplitParser {
-            onRead: data => sensitivityProc.output += data
-        }
-        stderr: SplitParser {
-            onRead: data => { if (data.trim()) console.warn("[RivalCfg]", data) }
-        }
-        property string output: ""
-        onExited: (exitCode, exitStatus) => {
-            try {
-                const result = JSON.parse(sensitivityProc.output)
-                if (result.success) {
-                    root.settingsApplied()
-                } else {
-                    root.settingsError(result.error || Translation.tr("Failed to apply sensitivity settings"))
-                }
-            } catch (e) {
-                root.settingsError(Translation.tr("Failed to apply sensitivity settings"))
-            }
-            sensitivityProc.output = ""
-        }
-    }
-
-
-    // Set button mappings
-    Process {
-        id: buttonsProc
-        property string mappingsArg: "{}"
-        command: [root.wrapperScript, "buttons", mappingsArg]
-        stdout: SplitParser {
-            onRead: data => buttonsProc.output += data
-        }
-        stderr: SplitParser {
-            onRead: data => { if (data.trim()) console.warn("[RivalCfg]", data) }
-        }
-        property string output: ""
-        onExited: (exitCode, exitStatus) => {
-            try {
-                const result = JSON.parse(buttonsProc.output)
-                if (result.success) {
-                    root.settingsApplied()
-                } else {
-                    root.settingsError(result.error || Translation.tr("Failed to apply button binding"))
-                }
-            } catch (e) {
-                root.settingsError(Translation.tr("Failed to apply button binding"))
-            }
-            buttonsProc.output = ""
-        }
-    }
-
-    // Reset to defaults
-    Process {
-        id: resetProc
-        command: [root.wrapperScript, "reset"]
-        stdout: SplitParser {
-            onRead: data => resetProc.output += data
-        }
-        stderr: SplitParser {
-            onRead: data => { if (data.trim()) console.warn("[RivalCfg]", data) }
-        }
-        property string output: ""
-        onExited: (exitCode, exitStatus) => {
-            try {
-                const result = JSON.parse(resetProc.output)
-                if (result.success) {
-                    // Reload settings after reset
-                    root.buttonBindings = {}
-                    root.sensitivityPresets = [800, 1600, 3200]
-                    // Clear user-applied presets so they get re-read from device
-                    root.userAppliedPresets = []
-
-                    root.settingsApplied()
-                } else {
-                    root.settingsError(result.error || Translation.tr("Failed to reset settings"))
-                }
-            } catch (e) {
-                root.settingsError(Translation.tr("Failed to reset settings"))
-            }
-            resetProc.output = ""
-        }
-    }
-
-    // Run 'rivalcfg --update-udev' as root via pkexec (prompts for password)
+    // Udev install (added back prompt if needsUdevInstall - already in error loader)
     Process {
         id: installUdevProc
-        // Prefer quickshell virtualenv's rivalcfg if present, otherwise fall back to system 'rivalcfg'
-        command: ["/bin/sh", "-c", "if [ -x \"$HOME/.local/state/quickshell/.venv/bin/rivalcfg\" ]; then pkexec \"$HOME/.local/state/quickshell/.venv/bin/rivalcfg\" --update-udev; else pkexec rivalcfg --update-udev; fi"]
-        stdout: SplitParser { onRead: data => installUdevProc.output += data }
-        stderr: SplitParser { onRead: data => { if (data.trim()) console.warn("[RivalCfg:installUdev]", data) } }
-        property string output: ""
-        onExited: (exitCode, exitStatus) => {
-            if (exitCode === 0) {
-                // udev rules installed — retry detection after a short delay
-                root.errorMessage = ""
-                root.loading = false
-                Qt.callLater(function() { refresh(); })
-            } else {
-                root.loading = false
-                root.errorMessage = Translation.tr("Failed to install udev rules. Try running 'sudo rivalcfg --update-udev' in a terminal.")
-            }
-            installUdevProc.output = ""
+        command: ["/bin/sh", "-c", `if [ -x "${venvPath}/bin/rivalcfg" ]; then pkexec "${venvPath}/bin/rivalcfg" --update-udev; else pkexec rivalcfg --update-udev; fi`]
+        onExited: {
+            if (exitCode === 0) { errorMessage = ""; Qt.callLater(refresh) }
+            else errorMessage = "Failed to install udev rules. Run 'sudo rivalcfg --update-udev' manually."
         }
     }
 
-    // Periodic battery check timer (if battery supported)
-    // Checks more frequently since service only runs when sidebar is open
     Timer {
         id: batteryTimer
-        interval: 10000 // Check every 10 seconds
-        running: root.active && root.available && root.hasBattery
+        interval: 10000
         repeat: true
         onTriggered: batteryProc.running = true
     }

@@ -6,80 +6,101 @@ import QtQuick
 import QtQuick.Controls
 import QtQuick.Layouts
 
-Rectangle {
+Item {
     id: root
     property bool isInput: true // true for input, false for output
     property string placeholderText
     property string text: ""
-    property var inputTextArea: isInput ? inputLoader.item : undefined
-    readonly property string displayedText: isInput ? inputLoader.item.text : 
-        root.text.length > 0 ? outputLoader.item.text : ""
-    default property alias actionButtons: actions.data
-    Layout.fillWidth: true
-    implicitHeight: Math.max(150, inputColumn.implicitHeight)
-    color: Appearance.colors.colLayer2
-    radius: Appearance.rounding.normal
 
-    signal inputTextChanged(); // Signal emitted when text changes
+    readonly property string displayedText: isInput
+        ? (inputTextArea ? inputTextArea.text : "")
+        : (root.text.length > 0 ? root.text : root.placeholderText)
+    property int charCount: isInput
+        ? (inputTextArea ? inputTextArea.text.length : 0)
+        : root.text.length
+    property int wordCount: isInput
+        ? (inputTextArea ? inputTextArea.text.trim().split(/\s+/).filter(w => w.length > 0).length : 0)
+        : (root.text.trim() ? root.text.trim().split(/\s+/).filter(w => w.length > 0).length : 0)
 
-    ColumnLayout {
-        id: inputColumn
+    // Expose the text edit for external access (e.g., forceActiveFocus)
+    property var inputTextArea: inputLoader.item ? inputLoader.item.textEdit : null
+    property var outputTextArea: outputLoader.item ? outputLoader.item.textDisplay : null
+
+    signal inputTextChanged() // Signal emitted when text changes
+
+    // Calculate implicit height based on content
+    implicitHeight: isInput
+        ? (inputTextArea ? inputTextArea.implicitHeight + 12 : 60)
+        : (outputTextArea ? outputTextArea.implicitHeight + 12 : 60)
+
+    // Flickable wrapper for input
+    Loader {
+        id: inputLoader
+        active: root.isInput
+        visible: root.isInput
         anchors.fill: parent
-        spacing: 0
+        sourceComponent: Component {
+            Flickable {
+                id: inputFlickable
+                anchors.fill: parent
+                contentWidth: width
+                contentHeight: textEdit.implicitHeight
+                clip: true
+                boundsBehavior: Flickable.StopAtBounds
 
-        Loader {
-            id: inputLoader
-            active: root.isInput
-            visible: root.isInput
-            Layout.fillWidth: true
-            sourceComponent: StyledTextArea { // Input area
-                id: inputTextArea
-                placeholderText: root.placeholderText
-                wrapMode: TextEdit.Wrap
-                textFormat: TextEdit.PlainText
-                font.pixelSize: Appearance.font.pixelSize.small
-                color: Appearance.colors.colOnLayer1
-                padding: 15
-                background: null
-                onTextChanged: root.inputTextChanged()
-            }
-        }
+                // Property to expose the text edit
+                property alias textEdit: textEdit
 
-        Loader {
-            id: outputLoader
-            active: !root.isInput
-            visible: !root.isInput
-            Layout.fillWidth: true
-            sourceComponent: StyledText { // Output area
-                id: outputTextArea
-                padding: 15
-                wrapMode: Text.Wrap
-                font.pixelSize: Appearance.font.pixelSize.small
-                color: root.text.length > 0 ? Appearance.colors.colOnLayer1 : Appearance.colors.colSubtext
-                text: root.text.length > 0 ? root.text : root.placeholderText
-            }
-        }
+                StyledTextArea {
+                    id: textEdit
+                    width: parent.width
+                    height: Math.max(implicitHeight, inputFlickable.height)
+                    placeholderText: root.placeholderText
+                    wrapMode: TextEdit.Wrap
+                    textFormat: TextEdit.PlainText
+                    verticalAlignment: TextEdit.AlignTop
+                    onTextChanged: root.inputTextChanged()
+                    padding: 0
+                }
 
-        Item { Layout.fillHeight: true } 
-
-        RowLayout { // Status row
-            Layout.fillWidth: true
-            Layout.margins: 10
-            spacing: 10
-
-            Loader {
-                active: root.isInput
-                visible: root.isInput
-                Layout.leftMargin: 10
-                sourceComponent: Text {
-                    text: Translation.tr("%1 characters").arg(inputLoader.item.text.length)
-                    color: Appearance.colors.colOnLayer1
-                    font.pixelSize: Appearance.font.pixelSize.smaller
+                // Scrollbar
+                ScrollBar.vertical: ScrollBar {
+                    policy: textEdit.implicitHeight > inputFlickable.height ? ScrollBar.AsNeeded : ScrollBar.AlwaysOff
                 }
             }
-            Item { Layout.fillWidth: true }
-            ButtonGroup {
-                id: actions
+        }
+    }
+
+    // Flickable wrapper for output
+    Loader {
+        id: outputLoader
+        active: !root.isInput
+        visible: !root.isInput
+        anchors.fill: parent
+        sourceComponent: Component {
+            Flickable {
+                id: outputFlickable
+                anchors.fill: parent
+                contentWidth: width
+                contentHeight: textDisplay.implicitHeight
+                clip: true
+                boundsBehavior: Flickable.StopAtBounds
+
+                // Property to expose the text display
+                property alias textDisplay: textDisplay
+
+                StyledText {
+                    id: textDisplay
+                    width: parent.width
+                    wrapMode: Text.Wrap
+                    text: root.text.length > 0 ? root.text : root.placeholderText
+                    verticalAlignment: Text.AlignTop
+                }
+
+                // Scrollbar
+                ScrollBar.vertical: ScrollBar {
+                    policy: textDisplay.implicitHeight > outputFlickable.height ? ScrollBar.AsNeeded : ScrollBar.AlwaysOff
+                }
             }
         }
     }

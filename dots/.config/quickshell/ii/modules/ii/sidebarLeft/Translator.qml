@@ -17,8 +17,8 @@ Item {
     // Sizes
     property real padding: 8
 
-    // Widgets
-    property var inputField: inputCanvas.inputTextArea
+    // Widget references
+    property var inputTextArea: inputSection.textCanvas.inputTextArea
 
     // Widget variables
     property bool translationFor: false // Indicates if the translation is for an autocorrected text
@@ -30,18 +30,9 @@ Item {
     property string sourceLanguage: Config.options.language.translator.sourceLanguage
     property string hostLanguage: targetLanguage
 
-    // States
-    property bool showLanguageSelector: false
-    property bool languageSelectorTarget: false // true for target language, false for source language
-
-    function showLanguageSelectorDialog(isTargetLang: bool) {
-        root.languageSelectorTarget = isTargetLang;
-        root.showLanguageSelector = true;
-    }
-
     onFocusChanged: focus => {
-        if (focus) {
-            root.inputField.forceActiveFocus();
+        if (focus && root.inputTextArea) {
+            root.inputTextArea.forceActiveFocus();
         }
     }
 
@@ -50,8 +41,7 @@ Item {
         interval: Config.options.sidebar.translator.delay
         repeat: false
         onTriggered: () => {
-            if (root.inputField.text.trim().length > 0) {
-                // console.log("Translating with command:", translateProc.command);
+            if (root.inputTextArea && root.inputTextArea.text && root.inputTextArea.text.trim().length > 0) {
                 translateProc.running = false;
                 translateProc.buffer = ""; // Clear the buffer
                 translateProc.running = true; // Restart the process
@@ -63,7 +53,9 @@ Item {
 
     Process {
         id: translateProc
-        command: ["bash", "-c", `trans -brief` + ` -source '${StringUtils.shellSingleQuoteEscape(root.sourceLanguage)}'` + ` -target '${StringUtils.shellSingleQuoteEscape(root.targetLanguage)}'` + ` '${StringUtils.shellSingleQuoteEscape(root.inputField.text.trim())}'`]
+        command: ["bash", "-c",
+            `trans -brief -from '${StringUtils.shellSingleQuoteEscape(root.sourceLanguage)}' -to '${StringUtils.shellSingleQuoteEscape(root.targetLanguage)}' '${StringUtils.shellSingleQuoteEscape(root.inputTextArea ? root.inputTextArea.text.trim() : "")}'`
+        ]
         property string buffer: ""
         stdout: SplitParser {
             onRead: data => {
@@ -101,79 +93,28 @@ Item {
             margins: root.padding
         }
 
-        LanguageSelectorButton { // Target language button
-            id: targetLanguageButton
-            displayText: root.targetLanguage
-            onClicked: {
-                root.showLanguageSelectorDialog(true);
-            }
-        }
+        // Output section
+        TranslatorSection {
+            id: outputSection
+            isInput: false
+            languages: root.languages
+            currentLanguage: root.targetLanguage
+            text: root.translatedText
 
-        Item {
-            Layout.fillWidth: true
-            Layout.preferredHeight: outputCanvas.implicitHeight
-            // Layout.fillHeight: true
-            Layout.maximumHeight: root.height * 0.4
-
-            StyledFlickable {
-                anchors.fill: parent
-                contentHeight: outputCanvas.implicitHeight
-                clip: true
-
-                TextCanvas { // Content translation
-                    id: outputCanvas
-                    width: parent.width
-                    height: implicitHeight
-
-                    isInput: false
-                    placeholderText: Translation.tr("Translation goes here...")
-                    property bool hasTranslation: (root.translatedText.trim().length > 0)
-                    text: hasTranslation ? root.translatedText : ""
+            onLanguageSelected: newLanguage => {
+                root.targetLanguage = newLanguage;
+                Config.options.language.translator.targetLanguage = newLanguage;
+                // Retranslate if there's input text
+                if (root.inputTextArea && root.inputTextArea.text && root.inputTextArea.text.trim().length > 0) {
+                    translateTimer.restart();
                 }
             }
 
-            GroupButton {
-                id: copyButton
-                anchors {
-                    right: searchButton.left
-                    bottom: parent.bottom
-                    margins: 8
-                }
-                baseWidth: height
-                buttonRadius: Appearance.rounding.small
-                colBackground: Appearance.colors.colLayer1Base
-                enabled: outputCanvas.displayedText.trim().length > 0
-                contentItem: MaterialSymbol {
-                    anchors.centerIn: parent
-                    horizontalAlignment: Text.AlignHCenter
-                    iconSize: Appearance.font.pixelSize.larger
-                    text: "content_copy"
-                    color: copyButton.enabled ? Appearance.colors.colOnLayer1 : Appearance.colors.colSubtext
-                }
-                onClicked: {
-                    Quickshell.clipboardText = outputCanvas.displayedText;
-                }
-            }
-            GroupButton {
-                id: searchButton
-                anchors {
-                    right: parent.right
-                    bottom: parent.bottom
-                    margins: 8
-                }
-                baseWidth: height
-                buttonRadius: Appearance.rounding.small
-                colBackground: Appearance.colors.colLayer1Base
-                enabled: outputCanvas.displayedText.trim().length > 0
-                contentItem: MaterialSymbol {
-                    anchors.centerIn: parent
-                    horizontalAlignment: Text.AlignHCenter
-                    iconSize: Appearance.font.pixelSize.larger
-                    text: "travel_explore"
-                    color: searchButton.enabled ? Appearance.colors.colOnLayer1 : Appearance.colors.colSubtext
-                }
-                onClicked: {
-                    let url = Config.options.search.engineBaseUrl + outputCanvas.displayedText;
+            onActionTriggered: action => {
+                if (action === "copy") {
+                    Quickshell.clipboardText = textCanvas.displayedText;
+                } else if (action === "search") {
+                    let url = Config.options.search.engineBaseUrl + textCanvas.displayedText;
                     for (let site of Config.options.search.excludedSites) {
                         if (site.trim() !== "") {
                             url += ` -site:${site}`;
@@ -188,114 +129,34 @@ Item {
             Layout.fillHeight: true
         }
 
-        LanguageSelectorButton { // Source language button
-            id: sourceLanguageButton
-            displayText: root.sourceLanguage
-            onClicked: {
-                root.showLanguageSelectorDialog(false);
-            }
-        }
+        // Input section
+        TranslatorSection {
+            id: inputSection
+            isInput: true
+            languages: root.languages
+            currentLanguage: root.sourceLanguage
+            placeholderText: Translation.tr("Enter text to translate...")
 
-        Item {
-            Layout.fillWidth: true
-            Layout.preferredHeight: inputCanvas.implicitHeight
-            Layout.maximumHeight: root.height * 0.5
-
-            StyledFlickable {
-                anchors.fill: parent
-                contentHeight: inputCanvas.implicitHeight
-                clip: true
-
-                TextCanvas { // Content input
-                    id: inputCanvas
-                    width: parent.width
-                    height: implicitHeight
-
-                    isInput: true
-                    placeholderText: Translation.tr("Enter text to translate...")
-                    onInputTextChanged: {
-                        translateTimer.restart();
-                    }
-
-                    Item {
-                        height: 35
-                    }
+            onLanguageSelected: newLanguage => {
+                root.sourceLanguage = newLanguage;
+                Config.options.language.translator.sourceLanguage = newLanguage;
+                // Retranslate if there's input text
+                if (root.inputTextArea && root.inputTextArea.text && root.inputTextArea.text.trim().length > 0) {
+                    translateTimer.restart();
                 }
             }
 
-            GroupButton {
-                id: pasteButton
-                anchors {
-                    right: deleteButton.left
-                    bottom: parent.bottom
-                    margins: 8
-                }
-                baseWidth: height
-                buttonRadius: Appearance.rounding.small
-                colBackground: Appearance.colors.colLayer1Base
-                contentItem: MaterialSymbol {
-                    anchors.centerIn: parent
-                    horizontalAlignment: Text.AlignHCenter
-                    iconSize: Appearance.font.pixelSize.larger
-                    text: "content_paste"
-                    color: deleteButton.enabled ? Appearance.colors.colOnLayer1 : Appearance.colors.colSubtext
-                }
-                onClicked: {
-                    root.inputField.text = Quickshell.clipboardText;
-                }
+            onInputTextEdited: {
+                translateTimer.restart();
             }
-            GroupButton {
-                id: deleteButton
-                anchors {
-                    right: parent.right
-                    bottom: parent.bottom
-                    margins: 8
-                }
-                baseWidth: height
-                buttonRadius: Appearance.rounding.small
-                colBackground: Appearance.colors.colLayer1Base
-                enabled: inputCanvas.inputTextArea.text.length > 0
-                contentItem: MaterialSymbol {
-                    anchors.centerIn: parent
-                    horizontalAlignment: Text.AlignHCenter
-                    iconSize: Appearance.font.pixelSize.larger
-                    text: "close"
-                    color: deleteButton.enabled ? Appearance.colors.colOnLayer1 : Appearance.colors.colSubtext
-                }
-                onClicked: {
-                    root.inputField.text = "";
-                }
-            }
-        }
-    }
 
-    Loader {
-        anchors.fill: parent
-        active: root.showLanguageSelector
-        visible: root.showLanguageSelector
-        z: 9999
-        sourceComponent: SelectionDialog {
-            id: languageSelectorDialog
-            titleText: Translation.tr("Select Language")
-            items: root.languages
-            defaultChoice: root.languageSelectorTarget ? root.targetLanguage : root.sourceLanguage
-            onCanceled: () => {
-                root.showLanguageSelector = false;
-            }
-            onSelected: result => {
-                root.showLanguageSelector = false;
-                if (!result || result.length === 0)
-                    return; // No selection made
-
-                if (root.languageSelectorTarget) {
-                    root.targetLanguage = result;
-                    Config.options.language.translator.targetLanguage = result; // Save to config
-                } else {
-                    root.sourceLanguage = result;
-                    Config.options.language.translator.sourceLanguage = result; // Save to config
+            onActionTriggered: action => {
+                if (!root.inputTextArea) return;
+                if (action === "paste") {
+                    root.inputTextArea.text = Quickshell.clipboardText;
+                } else if (action === "delete") {
+                    root.inputTextArea.text = "";
                 }
-
-                translateTimer.restart(); // Restart translation after language change
             }
         }
     }

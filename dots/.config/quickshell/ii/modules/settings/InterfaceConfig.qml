@@ -8,6 +8,31 @@ ContentPage {
     fillWidth: true
 
     ContentSection {
+        icon: "translate"
+        title: Translation.tr("Translator")
+
+        ConfigSwitch {
+            buttonIcon: "123"
+            text: Translation.tr("Show character count")
+            checked: Config.options.sidebar.translator.showCharCount
+            onCheckedChanged: {
+                Config.options.sidebar.translator.showCharCount = checked;
+            }
+        }
+
+        ConfigSpinBox {
+            text: Translation.tr("Translation delay (ms)")
+            value: Config.options.sidebar.translator.delay
+            from: 100
+            to: 5000
+            stepSize: 100
+            onValueChanged: {
+                Config.options.sidebar.translator.delay = value;
+            }
+        }
+    }
+
+    ContentSection {
         icon: "keyboard"
         title: Translation.tr("Cheat sheet")
 

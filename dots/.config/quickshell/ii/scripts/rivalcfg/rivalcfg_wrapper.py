@@ -1,500 +1,202 @@
-#!/usr/bin/env -S\_/bin/sh\_-c\_"source\_\$(eval\_echo\_\$ILLOGICAL_IMPULSE_VIRTUAL_ENV)/bin/activate&&exec\_python\_-E\_"\$0"\_"\$@""
+#!/usr/bin/env -S_/bin/sh_-c_"source_$(eval_echo_$ILLOGICAL_IMPULSE_VIRTUAL_ENV)/bin/activate&&exec_python_-E_"$0"_"$@""
 """
-RivalCfg Python Wrapper for Quickshell integration.
-Provides JSON-based interface to rivalcfg Python library for configuring SteelSeries mice.
+RivalCfg wrapper for Quickshell — compact, fully dynamic, supports every PID rivalcfg knows.
 """
-import argparse
-import json
-import sys
-from typing import Any, Dict, List, Optional
 
+import argparse, json, re, sys, contextlib
+from typing import Any, Dict, List
 
-def get_mouse():
-    """Get the first connected SteelSeries mouse."""
+try:
+    import rivalcfg
+    from rivalcfg.devices import PROFILES
+    RIVALCFG_AVAILABLE = True
+except ImportError:
+    rivalcfg = PROFILES = None
+    RIVALCFG_AVAILABLE = False
+
+@contextlib.contextmanager
+def _mouse():
+    m = None
     try:
-        import rivalcfg
-        mouse = rivalcfg.get_first_mouse()
-        return mouse
-    except ImportError:
-        return None
-    except Exception:
-        return None
+        yield None if not RIVALCFG_AVAILABLE else rivalcfg.get_first_mouse()
+    finally:
+        if m: m.close() if hasattr(m,'close') else None
 
+def _clean(n): return re.sub(r'\s*\[[^\]]*\]|\s*\([^)]*\)','',str(n or '')).strip() if isinstance(n,str) else str(n or '')
 
-def cmd_detect() -> Dict[str, Any]:
-    """Detect connected SteelSeries mouse and return device info."""
-    result: Dict[str, Any] = {
-        "available": False,
-        "error": "",
-        "needs_udev_install": False
+def _conn_type(m):
+    if not m: return "unknown"
+    k = (m.vendor_id, m.product_id)
+    if k in PROFILES:
+        n = PROFILES[k].get("name","").lower()
+        if any(x in n for x in ["2.4 ghz","wireless mode","wireless)"]): return "wireless"
+        if "bluetooth" in n: return "bluetooth"
+    return "bluetooth" if "bluetooth" in getattr(m,"name","").lower() else "wired"
+
+def _run(f, base=None):
+    r = base or {"success":False,"error":""}
+    if not RIVALCFG_AVAILABLE:
+        r["error"] = "rivalcfg not installed"
+        return r
+    with _mouse() as m:
+        if not m:
+            r["error"] = "No mouse connected"
+            return r
+        try: return f(m)
+        except Exception as e:
+            r["error"] = str(e)
+            return r
+    return r
+
+def cmd_detect():
+    r = {
+        "available":False,"error":"","needs_udev_install":False,
+        "device":{"name":"","pid":"","vendor_id":"","product_id":"","connection_type":"wired"},
+        "battery":{"supported":False,"level":100,"is_charging":False},
+        "capabilities":{"buttons":[],"has_sensitivity":False,"has_polling_rate":False,"has_buttons":False,
+                        "sensitivity_range":{"min":100,"max":18000},"polling_rates":[]}
     }
-    result["device"] = {
-        "name": "",
-        "pid": "",
-        "vendor_id": "",
-        "product_id": "",
-        "connection_type": "unknown"
-    }
-    result["battery"] = {
-        "supported": False,
-        "level": 100,
-        "is_charging": False
-    }
-    result["capabilities"] = {
-        "buttons": [],
-        "has_sensitivity": False,
-        "has_polling_rate": False,
-        "has_buttons": False,
-        "sensitivity_range": {"min": 100, "max": 18000},
-        "polling_rates": []
-    }
-    
-    mouse = get_mouse()
-    if mouse is None:
-        # Check if rivalcfg is installed
+    if not RIVALCFG_AVAILABLE:
+        r["error"] = "rivalcfg not installed.\nPlease install it with: pip install rivalcfg"
+        return r
+    with _mouse() as m:
+        if not m:
+            r["error"] = "No SteelSeries mouse detected.\nMake sure your mouse is connected and udev rules are installed."
+            r["needs_udev_install"] = True
+            return r
         try:
-            import rivalcfg
-            # rivalcfg is installed but no device found - could be udev rules issue
-            result["error"] = "No SteelSeries mouse detected.\nMake sure your mouse is connected and udev rules are installed."
-            result["needs_udev_install"] = True
-        except ImportError:
-            result["error"] = "rivalcfg not installed.\nPlease install it with: pip install rivalcfg"
-        return result
-    
-    try:
-        # Basic device info
-        result["available"] = True
-        # Remove any bracketed technical info from device name (e.g., "Rival 3 (Wireless)" -> "Rival 3")
-        device_name = mouse.name
-        if isinstance(device_name, str):
-            # Remove content within parentheses and square brackets
-            import re
-            device_name = re.sub(r'\s*\([^)]*\)', '', device_name)  # Remove (...)
-            device_name = re.sub(r'\s*\[[^\]]*\]', '', device_name)  # Remove [...]
-            device_name = device_name.strip()
-        else:
-            device_name = str(device_name) if device_name else ""
-        result["device"]["name"] = device_name
-        result["device"]["vendor_id"] = f"{mouse.vendor_id:04x}"
-        result["device"]["product_id"] = f"{mouse.product_id:04x}"
-        result["device"]["pid"] = f"{mouse.vendor_id:04x}_{mouse.product_id:04x}"
-        
-        # Determine connection type from device name
-        name_lower = mouse.name.lower()
-        if "wireless" in name_lower or "2.4" in name_lower:
-            result["device"]["connection_type"] = "wireless"
-        elif "bluetooth" in name_lower:
-            result["device"]["connection_type"] = "bluetooth"
-        else:
-            result["device"]["connection_type"] = "wired"
-        
-        # Check battery support
-        try:
-            battery_info = mouse.battery
-            if battery_info:
-                result["battery"]["supported"] = True
-                result["battery"]["level"] = battery_info.get("level", 100) or 100
-                result["battery"]["is_charging"] = battery_info.get("is_charging", False) or False
-        except Exception:
-            pass
-        
-        # Check device capabilities from profile
-        profile = mouse.mouse_profile
-        if profile and "settings" in profile:
-            settings = profile["settings"]
-            
-            # Check sensitivity/DPI support
-            # Newer mice use a combined "sensitivity" key; older ones use "sensitivity1", "sensitivity2", etc.
-            if "sensitivity" in settings:
-                result["capabilities"]["has_sensitivity"] = True
-                sens_info = settings["sensitivity"]
-                if "input_range" in sens_info:
-                    result["capabilities"]["sensitivity_range"]["min"] = sens_info["input_range"][0]
-                    result["capabilities"]["sensitivity_range"]["max"] = sens_info["input_range"][1]
-            elif "sensitivity1" in settings:
-                result["capabilities"]["has_sensitivity"] = True
-                sens_info = settings["sensitivity1"]
-                if "input_range" in sens_info:
-                    result["capabilities"]["sensitivity_range"]["min"] = sens_info["input_range"][0]
-                    result["capabilities"]["sensitivity_range"]["max"] = sens_info["input_range"][1]
-                elif "choices" in sens_info:
-                    choices = sorted(sens_info["choices"].keys())
-                    if choices:
-                        result["capabilities"]["sensitivity_range"]["min"] = choices[0]
-                        result["capabilities"]["sensitivity_range"]["max"] = choices[-1]
-            
-            # Check polling rate support
-            if "polling_rate" in settings:
-                result["capabilities"]["has_polling_rate"] = True
-                poll_info = settings["polling_rate"]
-                if "choices" in poll_info:
-                    result["capabilities"]["polling_rates"] = list(poll_info["choices"].keys())
-            
-            # Check button mapping support
-            if "buttons_mapping" in settings:
-                result["capabilities"]["has_buttons"] = True
-                btn_info = settings["buttons_mapping"]
-                if "buttons" in btn_info:
-                    buttons = list(btn_info["buttons"].keys())
-                    # Filter to just buttonN entries
-                    result["capabilities"]["buttons"] = [b for b in buttons if b.lower().startswith("button")]
-        
-        mouse.close()
-        
-    except Exception as e:
-        result["error"] = str(e)
-    
-    return result
-
-
-def cmd_get_battery() -> Dict[str, Any]:
-    """Get current battery status."""
-    result = {
-        "supported": False,
-        "level": 100,
-        "is_charging": False,
-        "error": ""
-    }
-    
-    mouse = get_mouse()
-    if mouse is None:
-        result["error"] = "No mouse connected"
-        return result
-    
-    try:
-        battery_info = mouse.battery
-        if battery_info:
-            result["supported"] = True
-            result["level"] = battery_info.get("level", 100) or 100
-            result["is_charging"] = battery_info.get("is_charging", False) or False
-        mouse.close()
-    except Exception as e:
-        result["error"] = str(e)
-    
-    return result
-
-
-def cmd_set_sensitivity(presets: List[int]) -> Dict[str, Any]:
-    """Set sensitivity/DPI presets."""
-    result = {"success": False, "error": ""}
-    
-    mouse = get_mouse()
-    if mouse is None:
-        result["error"] = "No mouse connected"
-        return result
-    
-    try:
-        # The method is dynamically generated as set_<setting_name>
-        # Newer mice use a combined "set_sensitivity"; older ones use "set_sensitivity1", etc.
-        if hasattr(mouse, 'set_sensitivity'):
-            mouse.set_sensitivity(presets)
-            mouse.save()
-            result["success"] = True
-        else:
-            # Try individual sensitivity1, sensitivity2, etc.
-            profile_settings = mouse.mouse_profile.get("settings", {})
-            any_set = False
-            for i, dpi in enumerate(presets, start=1):
-                setting_name = f"sensitivity{i}"
-                if setting_name in profile_settings:
-                    getattr(mouse, f"set_{setting_name}")(dpi)
-                    any_set = True
-            if any_set:
-                mouse.save()
-                result["success"] = True
-            else:
-                result["error"] = "Device does not support sensitivity adjustment"
-        mouse.close()
-    except Exception as e:
-        result["error"] = str(e)
-    
-    return result
-
-
-def cmd_set_polling_rate(rate: int) -> Dict[str, Any]:
-    """Set polling rate in Hz."""
-    result = {"success": False, "error": ""}
-    
-    mouse = get_mouse()
-    if mouse is None:
-        result["error"] = "No mouse connected"
-        return result
-    
-    try:
-        if hasattr(mouse, 'set_polling_rate'):
-            mouse.set_polling_rate(rate)
-            mouse.save()
-            result["success"] = True
-        else:
-            result["error"] = "Device does not support polling rate adjustment"
-        mouse.close()
-    except Exception as e:
-        result["error"] = str(e)
-    
-    return result
-
-
-def cmd_set_buttons(mappings: Dict[str, str]) -> Dict[str, Any]:
-    """Set button mappings."""
-    result = {"success": False, "error": ""}
-    
-    # Map generic modifier names to rivalcfg format
-    key_aliases = {
-        "Shift": "LeftShift",
-        "Ctrl": "LeftCtrl", 
-        "Alt": "LeftAlt",
-    }
-    
-    mouse = get_mouse()
-    if mouse is None:
-        result["error"] = "No mouse connected"
-        return result
-    
-    try:
-        # Check for unsupported key combinations
-        for btn, action in mappings.items():
-            if '+' in action:
-                # rivalcfg doesn't support key combinations - only single keys
-                result["error"] = f"Key combinations like '{action}' are not supported by rivalcfg. Only single keys are allowed."
-                return result
-        
-        if hasattr(mouse, 'set_buttons_mapping'):
-            # Build the buttons mapping string in rivalcfg format
-            # Format: buttons(button1=action1; button2=action2; ...; layout=qwerty)
-            mapping_parts = []
-            for btn, action in mappings.items():
-                # Convert Button1 -> button1 for the format string
-                btn_lower = btn.lower()
-                # Map generic modifier names to rivalcfg format
-                mapped_action = key_aliases.get(action, action)
-                mapping_parts.append(f"{btn_lower}={mapped_action}")
-            
-            # Add layout at the end
-            mapping_parts.append("layout=qwerty")
-            mapping_str = f"buttons({'; '.join(mapping_parts)})"
-            mouse.set_buttons_mapping(mapping_str)
-            mouse.save()
-            result["success"] = True
-        else:
-            result["error"] = "Device does not support button mapping"
-        mouse.close()
-    except Exception as e:
-        result["error"] = str(e)
-    
-    return result
-
-
-def cmd_reset() -> Dict[str, Any]:
-    """Reset all settings to factory defaults."""
-    result = {"success": False, "error": ""}
-    
-    mouse = get_mouse()
-    if mouse is None:
-        result["error"] = "No mouse connected"
-        return result
-    
-    try:
-        mouse.reset_settings()
-        mouse.save()
-        result["success"] = True
-        mouse.close()
-    except Exception as e:
-        result["error"] = str(e)
-    
-    return result
-
-
-def parse_buttons_mapping(mapping_str: str) -> Dict[str, str]:
-    """Parse a buttons mapping string like 'buttons(button1=button1; button9=LeftShift; layout=qwerty)'
-    
-    Only returns non-default bindings (where action != buttonN)
-    Converts rivalcfg key names to generic UI names (e.g., LeftShift -> Shift)
-    """
-    # Map rivalcfg names back to generic UI names
-    display_aliases = {
-        "LeftShift": "Shift",
-        "RightShift": "Shift", 
-        "LeftCtrl": "Ctrl",
-        "RightCtrl": "Ctrl",
-        "LeftAlt": "Alt",
-        # RightAlt stays as RightAlt since it's distinguishable
-    }
-    
-    result = {}
-    if not mapping_str or not mapping_str.startswith("buttons("):
-        return result
-    
-    # Extract content between buttons( and )
-    content = mapping_str[8:-1] if mapping_str.endswith(")") else mapping_str[8:]
-    
-    # Split by ; and parse each key=value pair
-    for part in content.split(";"):
-        part = part.strip()
-        if "=" in part:
-            key, value = part.split("=", 1)
-            key = key.strip().lower()
-            value = value.strip()
-            
-            # Skip layout and scroll entries
-            if key == "layout" or key.startswith("scroll"):
-                continue
-                
-            if key.startswith("button"):
-                # Normalize button name to "Button1" format
-                button_num = key.replace("button", "")
-                normalized_key = f"Button{button_num}"
-                
-                # Only include non-default bindings
-                # Default is buttonN=buttonN (e.g., button1=button1)
-                # Also include if action is "dpi" or "disabled" for button6
-                default_value = key  # e.g., "button1"
-                if value.lower() != default_value and value.lower() != "disabled":
-                    # Convert rivalcfg names to generic UI names
-                    display_value = display_aliases.get(value, value)
-                    result[normalized_key] = display_value
-                elif value.lower() == "disabled" and key != "button7" and key != "button8" and key != "button9":
-                    # button7/8/9 are disabled by default, so only include if it's a different button
-                    result[normalized_key] = value
-                elif key == "button6" and value.lower() != "dpi":
-                    # button6 default is dpi, include if different
-                    display_value = display_aliases.get(value, value)
-                    result[normalized_key] = display_value
-    
-    return result
-
-
-def cmd_get_settings() -> Dict[str, Any]:
-    """Get current device settings from rivalcfg's saved config."""
-    result = {
-        "success": False,
-        "error": "",
-        "settings": {
-            "sensitivity": [],
-            "polling_rate": 1000,
-            "buttons": {}
-        }
-    }
-    
-    mouse = get_mouse()
-    if mouse is None:
-        result["error"] = "No mouse connected"
-        return result
-    
-    try:
-        # Read settings using mouse_settings.get() method
-        settings = mouse.mouse_settings
-        
-        # Get sensitivity - handle both combined "sensitivity" and individual "sensitivityN" keys
-        try:
-            sens = settings.get("sensitivity")
-            if sens is not None:
-                if isinstance(sens, (list, tuple)):
-                    result["settings"]["sensitivity"] = [int(s) for s in sens]
-                elif isinstance(sens, str):
-                    # Parse comma-separated string like "400, 800, 1200"
-                    result["settings"]["sensitivity"] = [int(s.strip()) for s in sens.split(",")]
-                elif isinstance(sens, int):
-                    result["settings"]["sensitivity"] = [sens]
-        except (KeyError, TypeError, ValueError):
-            pass
-        
-        # Fall back to sensitivity1/sensitivity2/... pattern (older mice)
-        if not result["settings"]["sensitivity"]:
-            presets = []
-            for i in range(1, 6):  # Try sensitivity1 through sensitivity5
-                try:
-                    val = settings.get(f"sensitivity{i}")
-                    if val is not None:
-                        presets.append(int(val))
-                except (KeyError, TypeError, ValueError):
+            r["available"] = True
+            r["device"].update({
+                "name": _clean(m.name),
+                "vendor_id": f"{m.vendor_id:04x}",
+                "product_id": f"{m.product_id:04x}",
+                "pid": f"{m.vendor_id:04x}_{m.product_id:04x}",
+                "connection_type": _conn_type(m)
+            })
+            try:
+                b = m.battery or {}
+                if b.get("level") is not None:
+                    r["battery"].update({"supported":True,"level":b.get("level",100) or 100,"is_charging":bool(b.get("is_charging"))})
+            except: pass
+            p = getattr(m,"mouse_profile",None) or PROFILES.get((m.vendor_id,m.product_id),{})
+            s = p.get("settings",{}) if isinstance(p,dict) else {}
+            for k in ["sensitivity"]+[f"sensitivity{i}" for i in range(1,6)]:
+                if k in s:
+                    r["capabilities"]["has_sensitivity"] = True
+                    si = s[k]
+                    if isinstance(si,dict):
+                        if "input_range" in si and len(si["input_range"])>1:
+                            r["capabilities"]["sensitivity_range"] = {"min":si["input_range"][0],"max":si["input_range"][1]}
+                        elif "choices" in si:
+                            try: cs = [int(x) for x in si["choices"] if str(x).isdigit()]
+                            except: cs=[]
+                            if cs: r["capabilities"]["sensitivity_range"] = {"min":min(cs),"max":max(cs)}
                     break
-            if presets:
-                result["settings"]["sensitivity"] = presets
-        
-        # Get polling rate
-        try:
-            poll = settings.get("polling_rate")
-            if poll is not None:
-                result["settings"]["polling_rate"] = int(poll)
-        except Exception:
-            pass
-        
-        # Get button mappings - returns string like "buttons(button1=button1; ...)"
-        try:
-            buttons_str = settings.get("buttons_mapping")
-            if buttons_str:
-                result["settings"]["buttons"] = parse_buttons_mapping(buttons_str)
-        except Exception:
-            pass
-        
-        result["success"] = True
-        mouse.close()
-    except Exception as e:
-        result["error"] = str(e)
-    
-    return result
+            if "polling_rate" in s:
+                r["capabilities"]["has_polling_rate"] = True
+                pi = s["polling_rate"]
+                if isinstance(pi,dict) and "choices" in pi:
+                    try: r["capabilities"]["polling_rates"] = sorted(int(x) for x in pi["choices"] if str(x).isdigit())
+                    except: pass
+            if "buttons_mapping" in s:
+                r["capabilities"]["has_buttons"] = True
+                bi = s["buttons_mapping"]
+                if isinstance(bi,dict) and "buttons" in bi:
+                    r["capabilities"]["buttons"] = [b for b in bi["buttons"] if b.lower().startswith("button")]
+        except Exception as e: r["error"] = str(e); r["available"] = False
+    return r
 
+def cmd_battery(): return _run(lambda m: {
+    "supported": bool((b:=m.battery or {}).get("level") is not None),
+    "level": (b.get("level",100) or 100),
+    "is_charging": bool(b.get("is_charging")),
+    "error": ""
+}, {"supported":False,"level":100,"is_charging":False,"error":""})
+
+def cmd_set_sensitivity(p): return _run(lambda m: (
+    (hasattr(m,"set_sensitivity") and m.set_sensitivity(p)) or
+    any(getattr(m,f"set_sensitivity{i}",lambda x:None)(dpi) for i,dpi in enumerate(p,1)),
+    m.save(), {"success":True,"error":""}
+)[-1], {"success":False,"error":"Device does not support sensitivity adjustment"})
+
+def cmd_set_polling_rate(r): return _run(lambda m: (
+    hasattr(m,"set_polling_rate") and m.set_polling_rate(r) and m.save(),
+    {"success":True,"error":""}
+)[-1], {"success":False,"error":"Device does not support polling rate adjustment"})
+
+def cmd_set_buttons(maps):
+    aliases = {"Shift":"LeftShift","Ctrl":"LeftCtrl","Alt":"LeftAlt"}
+    def inner(m):
+        if any("+" in str(a) for a in maps.values()): raise ValueError("Key combos not supported")
+        if not hasattr(m,"set_buttons_mapping"): raise ValueError("No button mapping support")
+        parts = [f"{b.lower()}={aliases.get(a,a)}" for b,a in maps.items()] + ["layout=qwerty"]
+        m.set_buttons_mapping(f"buttons({'; '.join(parts)})")
+        m.save()
+        return {"success":True,"error":""}
+    return _run(inner, {"success":False,"error":""})
+
+def cmd_reset(): return _run(lambda m: (m.reset_settings(), m.save(), {"success":True,"error":""})[-1])
+
+def _parse_buttons(s):
+    aliases = {"LeftShift":"Shift","RightShift":"Shift","LeftCtrl":"Ctrl","RightCtrl":"Ctrl","LeftAlt":"Alt"}
+    r = {}
+    if not s or not s.startswith("buttons("): return r
+    for p in s[8:-1 if s.endswith(")") else None].split(";"):
+        if "=" not in p: continue
+        k,v = [x.strip() for x in p.split("=",1)]
+        if k=="layout" or k.startswith("scroll"): continue
+        if k.startswith("button"):
+            bn = f"Button{k[6:]}"
+            vl = v.lower()
+            if vl != k and vl != "disabled":
+                r[bn] = aliases.get(v,v)
+            elif vl=="disabled" and k not in ("button7","button8","button9"):
+                r[bn] = v
+            elif k=="button6" and vl != "dpi":
+                r[bn] = aliases.get(v,v)
+    return r
+
+def cmd_settings():
+    def inner(m):
+        s = m.mouse_settings
+        sens = s.get("sensitivity")
+        if sens is not None:
+            sens = [int(x) for x in (sens if isinstance(sens,list) else str(sens).split(",")) if str(x).strip().isdigit()]
+        else:
+            sens = []
+            for i in range(1,6):
+                v = s.get(f"sensitivity{i}")
+                if v is None: break
+                try: sens.append(int(v))
+                except: break
+        return {
+            "success":True,"error":"",
+            "settings":{
+                "sensitivity":sens,
+                "polling_rate":int(s.get("polling_rate") or 1000),
+                "buttons":_parse_buttons(s.get("buttons_mapping") or "")
+            }
+        }
+    return _run(inner, {"success":False,"error":""})
 
 def main():
-    parser = argparse.ArgumentParser(
-        description="RivalCfg Python wrapper for Quickshell",
-        formatter_class=argparse.RawDescriptionHelpFormatter
-    )
-    
-    subparsers = parser.add_subparsers(dest="command", help="Command to execute")
-    
-    # Detect command
-    subparsers.add_parser("detect", help="Detect connected SteelSeries mouse")
-    
-    # Battery command
-    subparsers.add_parser("battery", help="Get battery status")
-    
-    # Sensitivity command
-    sens_parser = subparsers.add_parser("sensitivity", help="Set sensitivity/DPI presets")
-    sens_parser.add_argument("presets", type=str, help="Comma-separated DPI values (e.g., 800,1600,3200)")
-    
-    # Polling rate command
-    poll_parser = subparsers.add_parser("polling-rate", help="Set polling rate")
-    poll_parser.add_argument("rate", type=int, help="Polling rate in Hz")
-    
-    # Buttons command
-    btn_parser = subparsers.add_parser("buttons", help="Set button mappings")
-    btn_parser.add_argument("mappings", type=str, help="JSON object of button mappings")
-    
-    # Reset command
-    subparsers.add_parser("reset", help="Reset to factory defaults")
-    
-    # Get settings command
-    subparsers.add_parser("settings", help="Get current settings")
-    
-    args = parser.parse_args()
-    
-    if not args.command:
-        parser.print_help()
-        sys.exit(1)
-    
-    result = {}
-    
-    if args.command == "detect":
-        result = cmd_detect()
-    elif args.command == "battery":
-        result = cmd_get_battery()
-    elif args.command == "sensitivity":
-        presets = [int(x.strip()) for x in args.presets.split(",")]
-        result = cmd_set_sensitivity(presets)
-    elif args.command == "polling-rate":
-        result = cmd_set_polling_rate(args.rate)
-    elif args.command == "buttons":
-        mappings = json.loads(args.mappings)
-        result = cmd_set_buttons(mappings)
-    elif args.command == "reset":
-        result = cmd_reset()
-    elif args.command == "settings":
-        result = cmd_get_settings()
-    
-    # Output JSON result
-    print(json.dumps(result, indent=2))
+    p = argparse.ArgumentParser(description="RivalCfg wrapper for Quickshell")
+    sp = p.add_subparsers(dest="cmd")
+    for c in ["detect","battery","reset","settings"]: sp.add_parser(c)
+    s = sp.add_parser("sensitivity"); s.add_argument("presets")
+    pr = sp.add_parser("polling-rate"); pr.add_argument("rate",type=int)
+    b = sp.add_parser("buttons"); b.add_argument("mappings")
+    a = p.parse_args()
+    if not a.cmd: p.print_help(); sys.exit(1)
+    h = {
+        "detect": cmd_detect,
+        "battery": cmd_battery,
+        "sensitivity": lambda: cmd_set_sensitivity([int(x.strip()) for x in a.presets.split(",") if x.strip().isdigit()]),
+        "polling-rate": lambda: cmd_set_polling_rate(a.rate),
+        "buttons": lambda: cmd_set_buttons(json.loads(a.mappings)),
+        "reset": cmd_reset,
+        "settings": cmd_settings
+    }
+    print(json.dumps(h[a.cmd](), indent=2))
 
-
-if __name__ == "__main__":
-    main()
+if __name__ == "__main__": main()

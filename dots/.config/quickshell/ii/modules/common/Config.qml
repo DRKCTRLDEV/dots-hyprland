@@ -409,6 +409,7 @@ Singleton {
                 property JsonObject translator: JsonObject {
                     property bool enable: false
                     property int delay: 300 // Delay before sending request. Reduces (potential) rate limits and lag.
+                    property bool showCharCount: true // Show character count in translator
                 }
                 property JsonObject mouseConfig: JsonObject {
                     property bool enable: true

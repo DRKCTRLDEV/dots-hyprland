@@ -428,45 +428,48 @@ Singleton {
                 }
 
                 property JsonObject quickToggles: JsonObject {
-                    property int columns: 5
-                    property list<var> toggles: [
-                        {
-                            "size": 2,
-                            "type": "network"
-                        },
-                        {
-                            "size": 2,
-                            "type": "bluetooth"
-                        },
-                        {
-                            "size": 1,
-                            "type": "cloudflareWarp"
-                        },
-                        {
-                            "size": 2,
-                            "type": "audio"
-                        },
-                        {
-                            "size": 2,
-                            "type": "mic"
-                        },
-                        {
-                            "size": 1,
-                            "type": "musicRecognition"
-                        },
-                        {
-                            "size": 2,
-                            "type": "idleInhibitor"
-                        },
-                        {
-                            "size": 2,
-                            "type": "nightLight"
-                        },
-                        {
-                            "size": 1,
-                            "type": "gameMode"
-                        }
-                    ]
+                    property string style: "android" // Options: classic, android
+                    property JsonObject android: JsonObject {
+                        property int columns: 5
+                        property list<var> toggles: [
+                            {
+                                "size": 2,
+                                "type": "network"
+                            },
+                            {
+                                "size": 2,
+                                "type": "bluetooth"
+                            },
+                            {
+                                "size": 1,
+                                "type": "cloudflareWarp"
+                            },
+                            {
+                                "size": 2,
+                                "type": "audio"
+                            },
+                            {
+                                "size": 2,
+                                "type": "mic"
+                            },
+                            {
+                                "size": 1,
+                                "type": "musicRecognition"
+                            },
+                            {
+                                "size": 2,
+                                "type": "idleInhibitor"
+                            },
+                            {
+                                "size": 2,
+                                "type": "nightLight"
+                            },
+                            {
+                                "size": 1,
+                                "type": "gameMode"
+                            }
+                        ]
+                    }
                 }
 
                 property JsonObject quickSliders: JsonObject {

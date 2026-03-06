@@ -11,12 +11,10 @@ import Quickshell.Services.Mpris
 Item {
     id: root
     readonly property MprisPlayer activePlayer: MprisController.activePlayer
-    readonly property bool hasMedia: activePlayer?.trackTitle?.length > 0
-    readonly property bool showText: Config.options.bar.verbose && (root.hasMedia || Config.options.bar.media.noMedia)
-    readonly property string cleanedTitle: StringUtils.cleanMusicTitle(activePlayer?.trackTitle) || (Config.options.bar.media.noMedia ? Translation.tr("No media") : "")
+    readonly property string cleanedTitle: StringUtils.cleanMusicTitle(activePlayer?.trackTitle) || Translation.tr("No media")
 
     Layout.fillHeight: true
-    implicitWidth: Math.min(rowLayout.implicitWidth + rowLayout.anchors.leftMargin + rowLayout.anchors.rightMargin + rowLayout.spacing * 2, Config.options.bar.media.maxWidth)
+    implicitWidth: rowLayout.implicitWidth + rowLayout.spacing * 2
     implicitHeight: Appearance.sizes.barHeight
 
     Timer {
@@ -46,13 +44,11 @@ Item {
         id: rowLayout
 
         spacing: 4
-        anchors.leftMargin: 4
-        anchors.rightMargin: 4
         anchors.fill: parent
 
         ClippedFilledCircularProgress {
             id: mediaCircProg
-            Layout.alignment: Qt.AlignVCenter | (root.showText ? 0 : Qt.AlignHCenter)
+            Layout.alignment: Qt.AlignVCenter
             lineWidth: Appearance.rounding.unsharpen
             value: activePlayer?.position / activePlayer?.length
             implicitSize: 20
@@ -69,7 +65,7 @@ Item {
         }
 
         StyledText {
-            visible: root.showText
+            visible: Config.options.bar.verbose
             width: rowLayout.width - (mediaCircProg.implicitSize + rowLayout.spacing * 2)
             Layout.alignment: Qt.AlignVCenter
             Layout.fillWidth: true // Ensures the text takes up available space

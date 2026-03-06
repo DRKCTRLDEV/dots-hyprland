@@ -159,10 +159,6 @@ Singleton {
                 property bool background: true
                 property bool verbose: true
                 property bool vertical: false
-                property JsonObject media: JsonObject {
-                    property int maxWidth: 200
-                    property bool noMedia: false
-                }
                 property JsonObject resources: JsonObject {
                     property bool alwaysShowSwap: true
                     property bool alwaysShowCpu: true

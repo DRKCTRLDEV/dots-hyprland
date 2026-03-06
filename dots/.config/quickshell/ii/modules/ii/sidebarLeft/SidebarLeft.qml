@@ -46,7 +46,8 @@ Scope { // Scope
         }
         stdout: StdioCollector {
             onStreamFinished: {
-                pinWithFunnyHyprlandWorkaroundProc.hook(text);
+                if (pinWithFunnyHyprlandWorkaroundProc.hook)
+                    pinWithFunnyHyprlandWorkaroundProc.hook(text);
             }
         }
     }
@@ -95,6 +96,9 @@ Scope { // Scope
                 } else {
                     GlobalFocusGrab.removeDismissable(panelWindow);
                 }
+            }
+            Component.onDestruction: {
+                GlobalFocusGrab.removeDismissable(panelWindow);
             }
             Connections {
                 target: GlobalFocusGrab

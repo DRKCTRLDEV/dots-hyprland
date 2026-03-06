@@ -33,23 +33,25 @@ Singleton {
     property string wifiStatus: "disconnected"
 
     property string networkName: ""
-    readonly property int networkStrength: root.active?.strength ?? 0
-    property string materialSymbol: {
-        if (root.ethernet) return "lan";
-        if (!root.wifiEnabled) return "signal_wifi_off";
-        if (root.wifiStatus === "limited") return "signal_wifi_bad";
-        if (root.active) {
-            const s = root.networkStrength;
-            if (s > 80) return "signal_wifi_4_bar";
-            if (s > 60) return "network_wifi_3_bar";
-            if (s > 40) return "network_wifi_2_bar";
-            if (s > 20) return "network_wifi_1_bar";
-            return "signal_wifi_0_bar";
-        }
-        if (root.wifiStatus === "connecting") return "signal_wifi_statusbar_not_connected";
-        if (root.wifiStatus === "connected") return "network_wifi";
-        return "wifi_find";
-    }
+    property int networkStrength
+    property string materialSymbol: root.ethernet
+        ? "lan"
+        : (root.wifiEnabled && root.wifiStatus === "connected")
+            ? (
+                (root.active?.strength ?? 0) > 83 ? "signal_wifi_4_bar" :
+                (root.active?.strength ?? 0) > 67 ? "network_wifi" :
+                (root.active?.strength ?? 0) > 50 ? "network_wifi_3_bar" :
+                (root.active?.strength ?? 0) > 33 ? "network_wifi_2_bar" :
+                (root.active?.strength ?? 0) > 17 ? "network_wifi_1_bar" :
+                "signal_wifi_0_bar"
+            )
+            : (root.wifiStatus === "connecting")
+                ? "signal_wifi_statusbar_not_connected"
+                : (root.wifiStatus === "disconnected")
+                    ? "wifi_find"
+                    : (root.wifiStatus === "disabled")
+                        ? "signal_wifi_off"
+                        : "signal_wifi_bad"
 
     // Control
     function enableWifi(enabled = true): void {
@@ -231,7 +233,17 @@ Singleton {
     }
 
     Process {
+        id: updateNetworkStrength
+        running: true
+        command: ["sh", "-c", "nmcli -f IN-USE,SIGNAL,SSID device wifi | awk '/^\\*/{if (NR!=1) {print $2}}'"]
+        stdout: SplitParser {
+            onRead: data => {
+                root.networkStrength = parseInt(data);
+            }
+        }
+    }
 
+    Process {
         id: wifiStatusProcess
         command: ["nmcli", "radio", "wifi"]
         Component.onCompleted: running = true

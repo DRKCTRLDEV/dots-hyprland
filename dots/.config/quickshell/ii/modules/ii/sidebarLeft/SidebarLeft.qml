@@ -166,7 +166,10 @@ Scope { // Scope
 
             visible: GlobalStates.sidebarLeftOpen
             onVisibleChanged: {
-                if (!visible) GlobalStates.sidebarLeftOpen = false;
+                if (!visible) {
+                    GlobalStates.sidebarLeftOpen = false;
+                    root.detach = false;
+                }
             }
             
             Rectangle {

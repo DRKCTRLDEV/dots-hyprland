@@ -71,13 +71,8 @@ apply_anyterm() {
 }
 
 apply_term() {
-  apply_kitty
-  apply_anyterm
-}
-
-apply_qt() {
-  sh "$CONFIG_DIR/scripts/kvantum/materialQT.sh"          # generate kvantum theme
-  python "$CONFIG_DIR/scripts/kvantum/changeAdwColors.py" # apply config colors
+	apply_kitty
+	apply_anyterm
 }
 
 # Check if terminal theming is enabled in config
@@ -91,5 +86,3 @@ else
   echo "Config file not found at $CONFIG_FILE. Applying terminal theming by default."
   apply_term &
 fi
-
-# apply_qt & # Qt theming is already handled by kde-material-colors

@@ -198,14 +198,8 @@ MouseArea {
                                 icon: "wallpaper",
                                 name: "Wallpapers",
                                 path: `${Directories.pictures}/Wallpapers`
-                            },
-                            ...(Config.options.policies.weeb === 1 ? [
-                                    {
-                                        icon: "favorite",
-                                        name: "Homework",
-                                        path: `${Directories.pictures}/homework`
-                                    }
-                                ] : []),]
+                            }
+                        ]
                         delegate: RippleButton {
                             id: quickDirButton
                             required property var modelData
@@ -427,7 +421,7 @@ MouseArea {
 
                         ToolbarPairedFab {
                             iconText: "close"
-                            onClicked: GlobalStates.wallpaperSelectorOpen = false;
+                            onClicked: GlobalStates.wallpaperSelectorOpen = false
                             StyledToolTip {
                                 text: Translation.tr("Cancel wallpaper selection")
                             }

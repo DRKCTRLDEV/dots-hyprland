@@ -14,27 +14,30 @@ Item {
     anchors.fill: parent
     property bool aiChatEnabled: Config.options.policies.ai !== 0
     property bool translatorEnabled: Config.options.sidebar.translator.enable
-    property bool animeEnabled: Config.options.policies.weeb !== 0
-    property bool animeCloset: Config.options.policies.weeb === 2
-    property var tabButtonList: [
-        ...(root.aiChatEnabled ? [{"icon": "neurology", "name": Translation.tr("Intelligence")}] : []),
-        ...(root.translatorEnabled ? [{"icon": "translate", "name": Translation.tr("Translator")}] : []),
-        ...((root.animeEnabled && !root.animeCloset) ? [{"icon": "bookmark_heart", "name": Translation.tr("Anime")}] : [])
-    ]
+    property var tabButtonList: [...(root.aiChatEnabled ? [
+                {
+                    "icon": "neurology",
+                    "name": Translation.tr("Intelligence")
+                }
+            ] : []), ...(root.translatorEnabled ? [
+                {
+                    "icon": "translate",
+                    "name": Translation.tr("Translator")
+                }
+            ] : [])]
     property int tabCount: swipeView.count
 
     function focusActiveItem() {
-        swipeView.currentItem.forceActiveFocus()
+        swipeView.currentItem.forceActiveFocus();
     }
 
-    Keys.onPressed: (event) => {
+    Keys.onPressed: event => {
         if (event.modifiers === Qt.ControlModifier) {
             if (event.key === Qt.Key_PageDown) {
-                swipeView.incrementCurrentIndex()
+                swipeView.incrementCurrentIndex();
                 event.accepted = true;
-            }
-            else if (event.key === Qt.Key_PageUp) {
-                swipeView.decrementCurrentIndex()
+            } else if (event.key === Qt.Key_PageUp) {
+                swipeView.decrementCurrentIndex();
                 event.accepted = true;
             }
         }
@@ -83,12 +86,7 @@ Item {
                     }
                 }
 
-                contentChildren: [
-                    ...(root.aiChatEnabled ? [aiChat.createObject()] : []),
-                    ...(root.translatorEnabled ? [translator.createObject()] : []),
-                    ...((root.tabButtonList.length === 0 || (!root.aiChatEnabled && !root.translatorEnabled && root.animeCloset)) ? [placeholder.createObject()] : []),
-                    ...(root.animeEnabled ? [anime.createObject()] : []),
-                ]
+                contentChildren: [...(root.aiChatEnabled ? [aiChat.createObject()] : []), ...(root.translatorEnabled ? [translator.createObject()] : []), ...((root.tabButtonList.length === 0) ? [placeholder.createObject()] : []),]
             }
         }
 
@@ -101,15 +99,11 @@ Item {
             Translator {}
         }
         Component {
-            id: anime
-            Anime {}
-        }
-        Component {
             id: placeholder
             Item {
                 StyledText {
                     anchors.centerIn: parent
-                    text: root.animeCloset ? Translation.tr("Nothing") : Translation.tr("Enjoy your empty sidebar...")
+                    text: Translation.tr("Enjoy your empty sidebar...")
                     color: Appearance.colors.colSubtext
                 }
             }

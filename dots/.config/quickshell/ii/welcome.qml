@@ -32,7 +32,7 @@ ApplicationWindow {
 
     Component.onCompleted: {
         MaterialThemeLoader.reapplyTheme();
-        Config.readWriteDelay = 0 // Welcome app always only sets one var at a time so delay isn't needed
+        Config.readWriteDelay = 0; // Welcome app always only sets one var at a time so delay isn't needed
     }
 
     minimumWidth: 600
@@ -40,18 +40,6 @@ ApplicationWindow {
     width: 900
     height: 650
     color: Appearance.m3colors.m3background
-
-    Process {
-        id: konachanWallProc
-        property string status: ""
-        command: ["bash", "-c", Quickshell.shellPath("scripts/colors/random/random_konachan_wall.sh")]
-        stdout: SplitParser {
-            onRead: data => {
-                console.log(`Konachan wall proc output: ${data}`);
-                konachanWallProc.status = data.trim();
-            }
-        }
-    }
 
     Process {
         id: translationProc
@@ -173,7 +161,7 @@ ApplicationWindow {
 
                     ContentSubsection {
                         title: Translation.tr("Generate translation with Gemini")
-                        
+
                         ConfigRow {
                             MaterialTextArea {
                                 id: localeInput
@@ -281,21 +269,6 @@ ApplicationWindow {
                     RowLayout {
                         Layout.alignment: Qt.AlignHCenter
                         RippleButtonWithIcon {
-                            id: rndWallBtn
-                            visible: Config.options.policies.weeb === 1
-                            Layout.alignment: Qt.AlignHCenter
-                            buttonRadius: Appearance.rounding.small
-                            materialIcon: "ifl"
-                            mainText: konachanWallProc.running ? Translation.tr("Be patient...") : Translation.tr("Random: Konachan")
-                            onClicked: {
-                                console.log(konachanWallProc.command.join(" "));
-                                konachanWallProc.running = true;
-                            }
-                            StyledToolTip {
-                                text: Translation.tr("Random SFW Anime wallpaper from Konachan\nImage is saved to ~/Pictures/Wallpapers")
-                            }
-                        }
-                        RippleButtonWithIcon {
                             materialIcon: "wallpaper"
                             StyledToolTip {
                                 text: Translation.tr("Pick wallpaper image on your system")
@@ -342,63 +315,31 @@ ApplicationWindow {
                     icon: "rule"
                     title: Translation.tr("Policies")
 
-                    ConfigRow {
-                        Layout.fillWidth: true
+                    ContentSubsection {
+                        title: "AI"
 
-                        ContentSubsection {
-                            title: "Weeb"
-
-                            ConfigSelectionArray {
-                                currentValue: Config.options.policies.weeb
-                                onSelected: newValue => {
-                                    Config.options.policies.weeb = newValue;
-                                }
-                                options: [
-                                    {
-                                        displayName: Translation.tr("No"),
-                                        icon: "close",
-                                        value: 0
-                                    },
-                                    {
-                                        displayName: Translation.tr("Yes"),
-                                        icon: "check",
-                                        value: 1
-                                    },
-                                    {
-                                        displayName: Translation.tr("Closet"),
-                                        icon: "ev_shadow",
-                                        value: 2
-                                    }
-                                ]
+                        ConfigSelectionArray {
+                            currentValue: Config.options.policies.ai
+                            onSelected: newValue => {
+                                Config.options.policies.ai = newValue;
                             }
-                        }
-
-                        ContentSubsection {
-                            title: "AI"
-
-                            ConfigSelectionArray {
-                                currentValue: Config.options.policies.ai
-                                onSelected: newValue => {
-                                    Config.options.policies.ai = newValue;
+                            options: [
+                                {
+                                    displayName: Translation.tr("No"),
+                                    icon: "close",
+                                    value: 0
+                                },
+                                {
+                                    displayName: Translation.tr("Yes"),
+                                    icon: "check",
+                                    value: 1
+                                },
+                                {
+                                    displayName: Translation.tr("Local only"),
+                                    icon: "sync_saved_locally",
+                                    value: 2
                                 }
-                                options: [
-                                    {
-                                        displayName: Translation.tr("No"),
-                                        icon: "close",
-                                        value: 0
-                                    },
-                                    {
-                                        displayName: Translation.tr("Yes"),
-                                        icon: "check",
-                                        value: 1
-                                    },
-                                    {
-                                        displayName: Translation.tr("Local only"),
-                                        icon: "sync_saved_locally",
-                                        value: 2
-                                    }
-                                ]
-                            }
+                            ]
                         }
                     }
                 }

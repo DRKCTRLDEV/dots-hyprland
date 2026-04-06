@@ -11,18 +11,6 @@ import qs.modules.common.functions
 ContentPage {
     forceWidth: true
 
-    Process {
-        id: randomWallProc
-        property string status: ""
-        property string scriptPath: `${Directories.scriptPath}/colors/random/random_konachan_wall.sh`
-        command: ["bash", "-c", FileUtils.trimFileProtocol(randomWallProc.scriptPath)]
-        stdout: SplitParser {
-            onRead: data => {
-                randomWallProc.status = data.trim();
-            }
-        }
-    }
-
     component SmallLightDarkPreferenceButton: RippleButton {
         id: smallLightDarkPreferenceButton
         required property bool dark
@@ -67,7 +55,7 @@ ContentPage {
             Item {
                 implicitWidth: 340
                 implicitHeight: 200
-                
+
                 StyledImage {
                     id: wallpaperPreview
                     anchors.fill: parent
@@ -87,69 +75,37 @@ ContentPage {
                 }
             }
 
-            ColumnLayout {
-                RippleButtonWithIcon {
-                    enabled: !randomWallProc.running
-                    visible: Config.options.policies.weeb === 1
-                    Layout.fillWidth: true
-                    buttonRadius: Appearance.rounding.small
-                    materialIcon: "ifl"
-                    mainText: randomWallProc.running ? Translation.tr("Be patient...") : Translation.tr("Random: Konachan")
-                    onClicked: {
-                        randomWallProc.scriptPath = `${Directories.scriptPath}/colors/random/random_konachan_wall.sh`;
-                        randomWallProc.running = true;
-                    }
-                    StyledToolTip {
-                        text: Translation.tr("Random SFW Anime wallpaper from Konachan\nImage is saved to ~/Pictures/Wallpapers")
-                    }
+            RippleButtonWithIcon {
+                Layout.fillWidth: true
+                materialIcon: "wallpaper"
+                StyledToolTip {
+                    text: Translation.tr("Pick wallpaper image on your system")
                 }
-                RippleButtonWithIcon {
-                    enabled: !randomWallProc.running
-                    visible: Config.options.policies.weeb === 1
-                    Layout.fillWidth: true
-                    buttonRadius: Appearance.rounding.small
-                    materialIcon: "ifl"
-                    mainText: randomWallProc.running ? Translation.tr("Be patient...") : Translation.tr("Random: osu! seasonal")
-                    onClicked: {
-                        randomWallProc.scriptPath = `${Directories.scriptPath}/colors/random/random_osu_wall.sh`;
-                        randomWallProc.running = true;
-                    }
-                    StyledToolTip {
-                        text: Translation.tr("Random osu! seasonal background\nImage is saved to ~/Pictures/Wallpapers")
-                    }
+                onClicked: {
+                    Quickshell.execDetached(`${Directories.wallpaperSwitchScriptPath}`);
                 }
-                RippleButtonWithIcon {
-                    Layout.fillWidth: true
-                    materialIcon: "wallpaper"
-                    StyledToolTip {
-                        text: Translation.tr("Pick wallpaper image on your system")
-                    }
-                    onClicked: {
-                        Quickshell.execDetached(`${Directories.wallpaperSwitchScriptPath}`);
-                    }
-                    mainContentComponent: Component {
+                mainContentComponent: Component {
+                    RowLayout {
+                        spacing: 10
+                        StyledText {
+                            font.pixelSize: Appearance.font.pixelSize.small
+                            text: Translation.tr("Choose file")
+                            color: Appearance.colors.colOnSecondaryContainer
+                        }
                         RowLayout {
-                            spacing: 10
-                            StyledText {
-                                font.pixelSize: Appearance.font.pixelSize.small
-                                text: Translation.tr("Choose file")
-                                color: Appearance.colors.colOnSecondaryContainer
+                            spacing: 3
+                            KeyboardKey {
+                                key: "Ctrl"
                             }
-                            RowLayout {
-                                spacing: 3
-                                KeyboardKey {
-                                    key: "Ctrl"
-                                }
-                                KeyboardKey {
-                                    key: Config.options.cheatsheet.superKey ?? "󰖳"
-                                }
-                                StyledText {
-                                    Layout.alignment: Qt.AlignVCenter
-                                    text: "+"
-                                }
-                                KeyboardKey {
-                                    key: "T"
-                                }
+                            KeyboardKey {
+                                key: Config.options.cheatsheet.superKey ?? "󰖳"
+                            }
+                            StyledText {
+                                Layout.alignment: Qt.AlignVCenter
+                                text: "+"
+                            }
+                            KeyboardKey {
+                                key: "T"
                             }
                         }
                     }
@@ -322,7 +278,6 @@ ContentPage {
                     ]
                 }
             }
-            
         }
     }
 
@@ -341,7 +296,7 @@ ContentPage {
             materialIcon: justCopied ? "check" : "content_copy"
             mainText: justCopied ? Translation.tr("Path copied") : Translation.tr("Copy path")
             onClicked: {
-                copyPathButton.justCopied = true
+                copyPathButton.justCopied = true;
                 Quickshell.clipboardText = FileUtils.trimFileProtocol(`${Directories.config}/illogical-impulse/config.json`);
                 revertTextTimer.restart();
             }
@@ -353,7 +308,7 @@ ContentPage {
                 id: revertTextTimer
                 interval: 1500
                 onTriggered: {
-                    copyPathButton.justCopied = false
+                    copyPathButton.justCopied = false;
                 }
             }
         }

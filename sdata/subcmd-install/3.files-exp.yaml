@@ -7,10 +7,6 @@
 # - `skip`: Skip this step
 # - `skip-if-exists`: Skip this step if target exists
 version: "1.0"
-user_preferences:
-  shell: "fish" # fish | zsh
-  terminal: "foot" # kitty | foot
-  keybindings: "default" # default | vim
 patterns:
   # Always install these files
   - from: "dots/.config/quickshell"
@@ -21,28 +17,10 @@ patterns:
     to: "$XDG_CONFIG_HOME/fish"
     mode: "sync"
     excludes: ["conf.d"]
-    condition:
-      type: "shell"
-      value: "fish"
-  - from: "dots/.config/zshrc.d"
-    to: "$XDG_CONFIG_HOME/zshrc.d"
-    mode: "sync"
-    condition:
-      type: "shell"
-      value: "zsh"
-  - from: "dots/.config/foot"
-    to: "$XDG_CONFIG_HOME/foot"
-    mode: "sync"
-    condition:
-      type: "terminal"
-      value: "foot"
   - from: "dots/.config/kitty"
     to: "$XDG_CONFIG_HOME/kitty"
     mode: "sync"
-    condition:
-      type: "terminal"
-      value: "kitty"
-  # Hyprland    
+  # Hyprland
   - from: "dots/.config/hypr"
     to: "$XDG_CONFIG_HOME/hypr"
     mode: "sync"

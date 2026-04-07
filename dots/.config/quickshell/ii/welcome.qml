@@ -253,65 +253,6 @@ ApplicationWindow {
                 }
 
                 ContentSection {
-                    icon: "format_paint"
-                    title: Translation.tr("Style & wallpaper")
-
-                    ButtonGroup {
-                        Layout.alignment: Qt.AlignHCenter
-                        LightDarkPreferenceButton {
-                            dark: false
-                        }
-                        LightDarkPreferenceButton {
-                            dark: true
-                        }
-                    }
-
-                    RowLayout {
-                        Layout.alignment: Qt.AlignHCenter
-                        RippleButtonWithIcon {
-                            materialIcon: "wallpaper"
-                            StyledToolTip {
-                                text: Translation.tr("Pick wallpaper image on your system")
-                            }
-                            onClicked: {
-                                Quickshell.execDetached([`${Directories.wallpaperSwitchScriptPath}`]);
-                            }
-                            mainContentComponent: Component {
-                                RowLayout {
-                                    spacing: 10
-                                    StyledText {
-                                        font.pixelSize: Appearance.font.pixelSize.small
-                                        text: Translation.tr("Choose file")
-                                        color: Appearance.colors.colOnSecondaryContainer
-                                    }
-                                    RowLayout {
-                                        spacing: 3
-                                        KeyboardKey {
-                                            key: "Ctrl"
-                                        }
-                                        KeyboardKey {
-                                            key: "󰖳"
-                                        }
-                                        StyledText {
-                                            Layout.alignment: Qt.AlignVCenter
-                                            text: "+"
-                                        }
-                                        KeyboardKey {
-                                            key: "T"
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                    }
-
-                    NoticeBox {
-                        Layout.fillWidth: true
-                        text: Translation.tr("Change any time later with /dark, /light, /wallpaper in the launcher\nIf the shell's colors aren't changing:\n    1. Open the right sidebar with Super+N\n    2. Click \"Reload Hyprland & Quickshell\" in the top-right corner")
-                    }
-                }
-
-                ContentSection {
                     icon: "rule"
                     title: Translation.tr("Policies")
 

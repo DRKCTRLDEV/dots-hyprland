@@ -8,7 +8,6 @@ import qs.modules.common.functions
 import qs.modules.common.widgets
 
 ContentPage {
-    forceWidth: true
 
     Process {
         id: translationProc

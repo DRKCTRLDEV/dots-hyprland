@@ -9,7 +9,6 @@ import qs.modules.common.widgets
 import qs.modules.common.functions
 
 ContentPage {
-    forceWidth: true
 
     component SmallLightDarkPreferenceButton: RippleButton {
         id: smallLightDarkPreferenceButton
@@ -75,37 +74,39 @@ ContentPage {
                 }
             }
 
-            RippleButtonWithIcon {
-                Layout.fillWidth: true
-                materialIcon: "wallpaper"
-                StyledToolTip {
-                    text: Translation.tr("Pick wallpaper image on your system")
-                }
-                onClicked: {
-                    Quickshell.execDetached(`${Directories.wallpaperSwitchScriptPath}`);
-                }
-                mainContentComponent: Component {
-                    RowLayout {
-                        spacing: 10
-                        StyledText {
-                            font.pixelSize: Appearance.font.pixelSize.small
-                            text: Translation.tr("Choose file")
-                            color: Appearance.colors.colOnSecondaryContainer
-                        }
+            ColumnLayout {
+                RippleButtonWithIcon {
+                    Layout.fillWidth: true
+                    materialIcon: "wallpaper"
+                    StyledToolTip {
+                        text: Translation.tr("Pick wallpaper image on your system")
+                    }
+                    onClicked: {
+                        Quickshell.execDetached(`${Directories.wallpaperSwitchScriptPath}`);
+                    }
+                    mainContentComponent: Component {
                         RowLayout {
-                            spacing: 3
-                            KeyboardKey {
-                                key: "Ctrl"
-                            }
-                            KeyboardKey {
-                                key: Config.options.cheatsheet.superKey ?? "󰖳"
-                            }
                             StyledText {
-                                Layout.alignment: Qt.AlignVCenter
-                                text: "+"
+                                font.pixelSize: Appearance.font.pixelSize.small
+                                text: Translation.tr("Choose file")
+                                color: Appearance.colors.colOnSecondaryContainer
                             }
-                            KeyboardKey {
-                                key: "T"
+                            RowLayout {
+                                Layout.alignment: Qt.AlignRight | Qt.AlignVCenter
+                                spacing: 3
+                                KeyboardKey {
+                                    key: "Ctrl"
+                                }
+                                KeyboardKey {
+                                    key: Config.options.cheatsheet.superKey ?? "󰖳"
+                                }
+                                StyledText {
+                                    Layout.alignment: Qt.AlignVCenter
+                                    text: "+"
+                                }
+                                KeyboardKey {
+                                    key: "T"
+                                }
                             }
                         }
                     }

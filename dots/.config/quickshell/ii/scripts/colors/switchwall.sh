@@ -35,69 +35,69 @@ handle_kde_material_you_colors() {
 }
 
 pre_process() {
-    local mode_flag="$1"
-    # Set GNOME color-scheme if mode_flag is dark or light
-    if [[ "$mode_flag" == "dark" ]]; then
-        gsettings set org.gnome.desktop.interface color-scheme 'prefer-dark'
-        gsettings set org.gnome.desktop.interface gtk-theme 'adw-gtk3-dark'
-    elif [[ "$mode_flag" == "light" ]]; then
-        gsettings set org.gnome.desktop.interface color-scheme 'prefer-light'
-        gsettings set org.gnome.desktop.interface gtk-theme 'adw-gtk3'
-    fi
+	local mode_flag="$1"
+	# Set GNOME color-scheme if mode_flag is dark or light
+	if [[ "$mode_flag" == "dark" ]]; then
+		gsettings set org.gnome.desktop.interface color-scheme 'prefer-dark'
+		gsettings set org.gnome.desktop.interface gtk-theme 'adw-gtk3-dark'
+	elif [[ "$mode_flag" == "light" ]]; then
+		gsettings set org.gnome.desktop.interface color-scheme 'prefer-light'
+		gsettings set org.gnome.desktop.interface gtk-theme 'adw-gtk3'
+	fi
 
-    if [ ! -d "$CACHE_DIR"/user/generated ]; then
-        mkdir -p "$CACHE_DIR"/user/generated
-    fi
+	if [ ! -d "$CACHE_DIR"/user/generated ]; then
+		mkdir -p "$CACHE_DIR"/user/generated
+	fi
 }
 
 post_process() {
-    local screen_width="$1"
-    local screen_height="$2"
-    local wallpaper_path="$3"
+	local screen_width="$1"
+	local screen_height="$2"
+	local wallpaper_path="$3"
 
     handle_kde_material_you_colors &
     "$SCRIPT_DIR/code/material-code-set-color.sh" &
 }
 
 check_and_prompt_upscale() {
-    local img="$1"
-    min_width_desired="$(hyprctl monitors -j | jq '([.[].width] | max)' | xargs)" # max monitor width
-    min_height_desired="$(hyprctl monitors -j | jq '([.[].height] | max)' | xargs)" # max monitor height
+	local img="$1"
+	min_width_desired="$(hyprctl monitors -j | jq '([.[].width] | max)' | xargs)"   # max monitor width
+	min_height_desired="$(hyprctl monitors -j | jq '([.[].height] | max)' | xargs)" # max monitor height
 
-    if command -v identify &>/dev/null && [ -f "$img" ]; then
-        local img_width img_height
-        if is_video "$img"; then # Not check resolution for videos, just let em pass
-            img_width=$min_width_desired
-            img_height=$min_height_desired
-        else
-            img_width=$(identify -format "%w" "$img" 2>/dev/null)
-            img_height=$(identify -format "%h" "$img" 2>/dev/null)
-        fi
-        if [[ "$img_width" -lt "$min_width_desired" || "$img_height" -lt "$min_height_desired" ]]; then
-            action=$(notify-send "Upscale?" \
-                "Image resolution (${img_width}x${img_height}) is lower than screen resolution (${min_width_desired}x${min_height_desired})" \
-                -A "open_upscayl=Open Upscayl"\
-                -a "Wallpaper switcher")
-            if [[ "$action" == "open_upscayl" ]]; then
-                if command -v upscayl &>/dev/null; then
-                    nohup upscayl > /dev/null 2>&1 &
-                else
-                    action2=$(notify-send \
-                        -a "Wallpaper switcher" \
-                        -c "im.error" \
-                        -A "install_upscayl=Install Upscayl (Arch)" \
-                        "Install Upscayl?" \
-                        "yay -S upscayl-bin")
-                    if [[ "$action2" == "install_upscayl" ]]; then
-                        kitty -1 yay -S upscayl-bin
-                        if command -v upscayl &>/dev/null; then
-                            nohup upscayl > /dev/null 2>&1 &
-                        fi
-                    fi
-                fi
-            fi
-        fi
-    fi
+	if command -v identify &>/dev/null && [ -f "$img" ]; then
+		local img_width img_height
+		if is_video "$img"; then # Not check resolution for videos, just let em pass
+			img_width=$min_width_desired
+			img_height=$min_height_desired
+		else
+			img_width=$(identify -format "%w" "$img" 2>/dev/null)
+			img_height=$(identify -format "%h" "$img" 2>/dev/null)
+		fi
+		if [[ "$img_width" -lt "$min_width_desired" || "$img_height" -lt "$min_height_desired" ]]; then
+			action=$(notify-send "Upscale?" \
+				"Image resolution (${img_width}x${img_height}) is lower than screen resolution (${min_width_desired}x${min_height_desired})" \
+				-A "open_upscayl=Open Upscayl" \
+				-a "Wallpaper switcher")
+			if [[ "$action" == "open_upscayl" ]]; then
+				if command -v upscayl &>/dev/null; then
+					nohup upscayl >/dev/null 2>&1 &
+				else
+					action2=$(notify-send \
+						-a "Wallpaper switcher" \
+						-c "im.error" \
+						-A "install_upscayl=Install Upscayl (Arch)" \
+						"Install Upscayl?" \
+						"yay -S upscayl-bin")
+					if [[ "$action2" == "install_upscayl" ]]; then
+						kitty -1 yay -S upscayl-bin
+						if command -v upscayl &>/dev/null; then
+							nohup upscayl >/dev/null 2>&1 &
+						fi
+					fi
+				fi
+			fi
+		fi
+	fi
 }
 
 CUSTOM_DIR="$XDG_CONFIG_HOME/hypr/custom"
@@ -107,17 +107,17 @@ THUMBNAIL_DIR="$RESTORE_SCRIPT_DIR/mpvpaper_thumbnails"
 VIDEO_OPTS="no-audio loop hwdec=auto scale=bilinear interpolation=no video-sync=display-resample panscan=1.0 video-scale-x=1.0 video-scale-y=1.0 video-align-x=0.5 video-align-y=0.5 load-scripts=no"
 
 is_video() {
-    local extension="${1##*.}"
-    [[ "$extension" == "mp4" || "$extension" == "webm" || "$extension" == "mkv" || "$extension" == "avi" || "$extension" == "mov" ]] && return 0 || return 1
+	local extension="${1##*.}"
+	[[ "$extension" == "mp4" || "$extension" == "webm" || "$extension" == "mkv" || "$extension" == "avi" || "$extension" == "mov" ]] && return 0 || return 1
 }
 
 kill_existing_mpvpaper() {
-    pkill -f -9 mpvpaper || true
+	pkill -f -9 mpvpaper || true
 }
 
 create_restore_script() {
-    local video_path=$1
-    cat > "$RESTORE_SCRIPT.tmp" << EOF
+	local video_path=$1
+	cat >"$RESTORE_SCRIPT.tmp" <<EOF
 #!/bin/bash
 # Generated by switchwall.sh - Don't modify it by yourself.
 # Time: $(date)
@@ -129,191 +129,154 @@ for monitor in \$(hyprctl monitors -j | jq -r '.[] | .name'); do
     sleep 0.1
 done
 EOF
-    mv "$RESTORE_SCRIPT.tmp" "$RESTORE_SCRIPT"
-    chmod +x "$RESTORE_SCRIPT"
+	mv "$RESTORE_SCRIPT.tmp" "$RESTORE_SCRIPT"
+	chmod +x "$RESTORE_SCRIPT"
 }
 
 remove_restore() {
-    cat > "$RESTORE_SCRIPT.tmp" << EOF
+	cat >"$RESTORE_SCRIPT.tmp" <<EOF
 #!/bin/bash
 # The content of this script will be generated by switchwall.sh - Don't modify it by yourself.
 EOF
-    mv "$RESTORE_SCRIPT.tmp" "$RESTORE_SCRIPT"
+	mv "$RESTORE_SCRIPT.tmp" "$RESTORE_SCRIPT"
 }
 
 set_wallpaper_path() {
-    local path="$1"
-    if [ -f "$SHELL_CONFIG_FILE" ]; then
-        jq --arg path "$path" '.background.wallpaperPath = $path' "$SHELL_CONFIG_FILE" > "$SHELL_CONFIG_FILE.tmp" && mv "$SHELL_CONFIG_FILE.tmp" "$SHELL_CONFIG_FILE"
-    fi
+	local path="$1"
+	if [ -f "$SHELL_CONFIG_FILE" ]; then
+		jq --arg path "$path" '.background.wallpaperPath = $path' "$SHELL_CONFIG_FILE" >"$SHELL_CONFIG_FILE.tmp" && mv "$SHELL_CONFIG_FILE.tmp" "$SHELL_CONFIG_FILE"
+	fi
 }
 
 set_thumbnail_path() {
-    local path="$1"
-    if [ -f "$SHELL_CONFIG_FILE" ]; then
-        jq --arg path "$path" '.background.thumbnailPath = $path' "$SHELL_CONFIG_FILE" > "$SHELL_CONFIG_FILE.tmp" && mv "$SHELL_CONFIG_FILE.tmp" "$SHELL_CONFIG_FILE"
-    fi
-}
-
-categorize_wallpaper() {
-    img_cat=$("$SCRIPT_DIR/../ai/gemini-categorize-wallpaper.sh" "$1")
-    # notify-send "Wallpaper category" "$img_cat"
-    echo "$img_cat" > "$STATE_DIR/user/generated/wallpaper/category.txt"
+	local path="$1"
+	if [ -f "$SHELL_CONFIG_FILE" ]; then
+		jq --arg path "$path" '.background.thumbnailPath = $path' "$SHELL_CONFIG_FILE" >"$SHELL_CONFIG_FILE.tmp" && mv "$SHELL_CONFIG_FILE.tmp" "$SHELL_CONFIG_FILE"
+	fi
 }
 
 switch() {
-    imgpath="$1"
-    mode_flag="$2"
-    type_flag="$3"
-    color_flag="$4"
-    color="$5"
+	imgpath="$1"
+	mode_flag="$2"
+	type_flag="$3"
+	color_flag="$4"
+	color="$5"
 
-    # Start Gemini auto-categorization if enabled
-    aiStylingEnabled=$(jq -r '.background.widgets.clock.cookie.aiStyling' "$SHELL_CONFIG_FILE")
-    if [[ "$aiStylingEnabled" == "true" ]]; then
-        categorize_wallpaper "$imgpath" &
-    fi
+	read scale screenx screeny screensizey < <(hyprctl monitors -j | jq '.[] | select(.focused) | .scale, .x, .y, .height' | xargs)
+	cursorposx=$(hyprctl cursorpos -j | jq '.x' 2>/dev/null) || cursorposx=960
+	cursorposx=$(bc <<<"scale=0; ($cursorposx - $screenx) * $scale / 1")
+	cursorposy=$(hyprctl cursorpos -j | jq '.y' 2>/dev/null) || cursorposy=540
+	cursorposy=$(bc <<<"scale=0; ($cursorposy - $screeny) * $scale / 1")
+	cursorposy_inverted=$((screensizey - cursorposy))
 
-    read scale screenx screeny screensizey < <(hyprctl monitors -j | jq '.[] | select(.focused) | .scale, .x, .y, .height' | xargs)
-    cursorposx=$(hyprctl cursorpos -j | jq '.x' 2>/dev/null) || cursorposx=960
-    cursorposx=$(bc <<< "scale=0; ($cursorposx - $screenx) * $scale / 1")
-    cursorposy=$(hyprctl cursorpos -j | jq '.y' 2>/dev/null) || cursorposy=540
-    cursorposy=$(bc <<< "scale=0; ($cursorposy - $screeny) * $scale / 1")
-    cursorposy_inverted=$((screensizey - cursorposy))
+	matugen_args=(--source-color-index 0)
 
-    matugen_args=(--source-color-index 0)
+	if [[ "$color_flag" == "1" ]]; then
+		matugen_args+=(color hex "$color")
+	else
+		if [[ -z "$imgpath" ]]; then
+			echo 'Aborted'
+			exit 0
+		fi
 
-    if [[ "$color_flag" == "1" ]]; then
-        matugen_args+=(color hex "$color")
-        generate_colors_material_args=(--color "$color")
-    else
-        if [[ -z "$imgpath" ]]; then
-            echo 'Aborted'
-            exit 0
-        fi
+		check_and_prompt_upscale "$imgpath" &
+		kill_existing_mpvpaper
 
-        check_and_prompt_upscale "$imgpath" &
-        kill_existing_mpvpaper
+		if is_video "$imgpath"; then
+			mkdir -p "$THUMBNAIL_DIR"
 
-        if is_video "$imgpath"; then
-            mkdir -p "$THUMBNAIL_DIR"
+			missing_deps=()
+			if ! command -v mpvpaper &>/dev/null; then
+				missing_deps+=("mpvpaper")
+			fi
+			if ! command -v ffmpeg &>/dev/null; then
+				missing_deps+=("ffmpeg")
+			fi
+			if [ ${#missing_deps[@]} -gt 0 ]; then
+				echo "Missing deps: ${missing_deps[*]}"
+				echo "Arch: sudo pacman -S ${missing_deps[*]}"
+				action=$(notify-send \
+					-a "Wallpaper switcher" \
+					-c "im.error" \
+					-A "install_arch=Install (Arch)" \
+					"Can't switch to video wallpaper" \
+					"Missing dependencies: ${missing_deps[*]}")
+				if [[ "$action" == "install_arch" ]]; then
+					kitty -1 sudo pacman -S "${missing_deps[*]}"
+					if command -v mpvpaper &>/dev/null && command -v ffmpeg &>/dev/null; then
+						notify-send 'Wallpaper switcher' 'Alright, try again!' -a "Wallpaper switcher"
+					fi
+				fi
+				exit 0
+			fi
 
-            missing_deps=()
-            if ! command -v mpvpaper &> /dev/null; then
-                missing_deps+=("mpvpaper")
-            fi
-            if ! command -v ffmpeg &> /dev/null; then
-                missing_deps+=("ffmpeg")
-            fi
-            if [ ${#missing_deps[@]} -gt 0 ]; then
-                echo "Missing deps: ${missing_deps[*]}"
-                echo "Arch: sudo pacman -S ${missing_deps[*]}"
-                action=$(notify-send \
-                    -a "Wallpaper switcher" \
-                    -c "im.error" \
-                    -A "install_arch=Install (Arch)" \
-                    "Can't switch to video wallpaper" \
-                    "Missing dependencies: ${missing_deps[*]}")
-                if [[ "$action" == "install_arch" ]]; then
-                    kitty -1 sudo pacman -S "${missing_deps[*]}"
-                    if command -v mpvpaper &>/dev/null && command -v ffmpeg &>/dev/null; then
-                        notify-send 'Wallpaper switcher' 'Alright, try again!' -a "Wallpaper switcher"
-                    fi
-                fi
-                exit 0
-            fi
+			# Set wallpaper path
+			set_wallpaper_path "$imgpath"
 
-            # Set wallpaper path
-            set_wallpaper_path "$imgpath"
+			# Set video wallpaper
+			local video_path="$imgpath"
+			monitors=$(hyprctl monitors -j | jq -r '.[] | .name')
+			for monitor in $monitors; do
+				mpvpaper -o "$VIDEO_OPTS" "$monitor" "$video_path" &
+				sleep 0.1
+			done
 
-            # Set video wallpaper
-            local video_path="$imgpath"
-            monitors=$(hyprctl monitors -j | jq -r '.[] | .name')
-            for monitor in $monitors; do
-                mpvpaper -o "$VIDEO_OPTS" "$monitor" "$video_path" &
-                sleep 0.1
-            done
+			# Extract first frame for color generation
+			thumbnail="$THUMBNAIL_DIR/$(basename "$imgpath").jpg"
+			ffmpeg -y -i "$imgpath" -vframes 1 "$thumbnail" 2>/dev/null
 
-            # Extract first frame for color generation
-            thumbnail="$THUMBNAIL_DIR/$(basename "$imgpath").jpg"
-            ffmpeg -y -i "$imgpath" -vframes 1 "$thumbnail" 2>/dev/null
+			# Set thumbnail path
+			set_thumbnail_path "$thumbnail"
 
-            # Set thumbnail path
-            set_thumbnail_path "$thumbnail"
+			if [ -f "$thumbnail" ]; then
+				matugen_args+=(image "$thumbnail")
+				create_restore_script "$video_path"
+			else
+				echo "Cannot create image to colorgen"
+				remove_restore
+				exit 1
+			fi
+		else
+			matugen_args+=(image "$imgpath")
+			# Update wallpaper path in config
+			set_wallpaper_path "$imgpath"
+			remove_restore
+		fi
+	fi
 
-            if [ -f "$thumbnail" ]; then
-                matugen_args+=(image "$thumbnail")
-                generate_colors_material_args=(--path "$thumbnail")
-                create_restore_script "$video_path"
-            else
-                echo "Cannot create image to colorgen"
-                remove_restore
-                exit 1
-            fi
-        else
-            matugen_args+=(image "$imgpath")
-            generate_colors_material_args=(--path "$imgpath")
-            # Update wallpaper path in config
-            set_wallpaper_path "$imgpath"
-            remove_restore
-        fi
-    fi
+	# Determine mode if not set
+	if [[ -z "$mode_flag" ]]; then
+		current_mode=$(gsettings get org.gnome.desktop.interface color-scheme 2>/dev/null | tr -d "'")
+		if [[ "$current_mode" == "prefer-dark" ]]; then
+			mode_flag="dark"
+		else
+			mode_flag="light"
+		fi
+	fi
 
-    # Determine mode if not set
-    if [[ -z "$mode_flag" ]]; then
-        current_mode=$(gsettings get org.gnome.desktop.interface color-scheme 2>/dev/null | tr -d "'")
-        if [[ "$current_mode" == "prefer-dark" ]]; then
-            mode_flag="dark"
-        else
-            mode_flag="light"
-        fi
-    fi
+	# enforce dark mode for terminal (handled by matugen template)
+	if [[ -n "$mode_flag" ]]; then
+		matugen_args+=(--mode "$mode_flag")
+	fi
+	[[ -n "$type_flag" ]] && matugen_args+=(--type "$type_flag")
 
-    # enforce dark mode for terminal
-    if [[ -n "$mode_flag" ]]; then
-        matugen_args+=(--mode "$mode_flag")
-        if [[ $(jq -r '.appearance.wallpaperTheming.terminalGenerationProps.forceDarkMode' "$SHELL_CONFIG_FILE") == "true" ]]; then
-            generate_colors_material_args+=(--mode "dark")
-        else
-            generate_colors_material_args+=(--mode "$mode_flag")
-        fi
-    fi
-    [[ -n "$type_flag" ]] && matugen_args+=(--type "$type_flag") && generate_colors_material_args+=(--scheme "$type_flag")
-    generate_colors_material_args+=(--termscheme "$terminalscheme" --blend_bg_fg)
-    generate_colors_material_args+=(--cache "$STATE_DIR/user/generated/color.txt")
+	pre_process "$mode_flag"
 
-    pre_process "$mode_flag"
+	# Check if app and shell theming is enabled in config
+	if [ -f "$SHELL_CONFIG_FILE" ]; then
+		enable_apps_shell=$(jq -r '.appearance.wallpaperTheming.enableAppsAndShell' "$SHELL_CONFIG_FILE")
+		if [ "$enable_apps_shell" == "false" ]; then
+			echo "App and shell theming disabled, skipping matugen and color generation"
+			return
+		fi
+	fi
 
-    # Check if app and shell theming is enabled in config
-    if [ -f "$SHELL_CONFIG_FILE" ]; then
-        enable_apps_shell=$(jq -r '.appearance.wallpaperTheming.enableAppsAndShell' "$SHELL_CONFIG_FILE")
-        if [ "$enable_apps_shell" == "false" ]; then
-            echo "App and shell theming disabled, skipping matugen and color generation"
-            return
-        fi
-    fi
+	matugen "${matugen_args[@]}"
 
-    # Set harmony and related properties
-    if [ -f "$SHELL_CONFIG_FILE" ]; then
-        harmony=$(jq -r '.appearance.wallpaperTheming.terminalGenerationProps.harmony' "$SHELL_CONFIG_FILE")
-        harmonize_threshold=$(jq -r '.appearance.wallpaperTheming.terminalGenerationProps.harmonizeThreshold' "$SHELL_CONFIG_FILE")
-        term_fg_boost=$(jq -r '.appearance.wallpaperTheming.terminalGenerationProps.termFgBoost' "$SHELL_CONFIG_FILE")
-        [[ "$harmony" != "null" && -n "$harmony" ]] && generate_colors_material_args+=(--harmony "$harmony")
-        [[ "$harmonize_threshold" != "null" && -n "$harmonize_threshold" ]] && generate_colors_material_args+=(--harmonize_threshold "$harmonize_threshold")
-        [[ "$term_fg_boost" != "null" && -n "$term_fg_boost" ]] && generate_colors_material_args+=(--term_fg_boost "$term_fg_boost")
-    fi
-
-    matugen "${matugen_args[@]}"
-    source "$(eval echo $ILLOGICAL_IMPULSE_VIRTUAL_ENV)/bin/activate"
-    python3 "$SCRIPT_DIR/generate_colors_material.py" "${generate_colors_material_args[@]}" \
-        > "$STATE_DIR"/user/generated/material_colors.scss
-    "$SCRIPT_DIR"/applycolor.sh
-    deactivate
-
-    # Pass screen width, height, and wallpaper path to post_process
-    max_width_desired="$(hyprctl monitors -j | jq '([.[].width] | min)' | xargs)"
-    max_height_desired="$(hyprctl monitors -j | jq '([.[].height] | min)' | xargs)"
-    post_process "$max_width_desired" "$max_height_desired" "$imgpath"
+	# Pass screen width, height, and wallpaper path to post_process
+	max_width_desired="$(hyprctl monitors -j | jq '([.[].width] | min)' | xargs)"
+	max_height_desired="$(hyprctl monitors -j | jq '([.[].height] | min)' | xargs)"
+	post_process "$max_width_desired" "$max_height_desired" "$imgpath"
 }
 
 main() {

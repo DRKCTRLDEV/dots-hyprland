@@ -10,7 +10,7 @@ StyledFlickable {
     property bool fillWidth: true
     property real bottomContentPadding: 100
 
-    default property alias data: contentColumn.data
+    default property alias contentData: contentColumn.data
 
     clip: true
     contentHeight: contentColumn.implicitHeight + root.bottomContentPadding // Add some padding at the bottom

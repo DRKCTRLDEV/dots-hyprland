@@ -58,10 +58,33 @@ AbstractWidget {
         target: Config
         function onReadyChanged() { refreshPlacementIfNeeded() }
     }
+    
+    onWidthChanged: { if (placementStrategy === "centered") refreshPlacementIfNeeded() }
+    onHeightChanged: { if (placementStrategy === "centered") refreshPlacementIfNeeded() }
+    
     function refreshPlacementIfNeeded() {
         if (!Config.ready) return;
-        if (root.placementStrategy === "free" && !root.needsColText) return;
+        if (root.placementStrategy === "centered") {
+            root.targetX = (root.scaledScreenWidth - root.width) / 2;
+            root.targetY = (root.scaledScreenHeight - root.height) / 2;
+        }
+        if ((root.placementStrategy === "free" || root.placementStrategy === "centered") && !root.needsColText) return;
         leastBusyRegionProc.wallpaperPath = root.wallpaperPath;
+        
+        let cmd = [Quickshell.shellPath("scripts/images/least-busy-region-venv.sh")
+            , "--screen-width", Math.round(root.scaledScreenWidth)
+            , "--screen-height", Math.round(root.scaledScreenHeight)
+            , "--width", leastBusyRegionProc.contentWidth
+            , "--height", leastBusyRegionProc.contentHeight
+            , "--horizontal-padding", leastBusyRegionProc.horizontalPadding
+            , "--vertical-padding", leastBusyRegionProc.verticalPadding
+            , root.wallpaperPath
+        ];
+        if (root.placementStrategy === "mostBusy") {
+            cmd.push("--busiest");
+        }
+        leastBusyRegionProc.command = cmd;
+        
         leastBusyRegionProc.running = false;
         leastBusyRegionProc.running = true;
     }
@@ -73,17 +96,6 @@ AbstractWidget {
         property int contentHeight: 300
         property int horizontalPadding: 200
         property int verticalPadding: 200
-        command: [Quickshell.shellPath("scripts/images/least-busy-region-venv.sh") // Comments to force the formatter to break lines
-            , "--screen-width", Math.round(root.scaledScreenWidth) //
-            , "--screen-height", Math.round(root.scaledScreenHeight) //
-            , "--width", contentWidth //
-            , "--height", contentHeight //
-            , "--horizontal-padding", horizontalPadding //
-            , "--vertical-padding", verticalPadding //
-            , wallpaperPath //
-            , ...(root.placementStrategy === "mostBusy" ? ["--busiest"] : [])
-            // "--visual-output",
-        ]
         stdout: StdioCollector {
             id: leastBusyRegionOutputCollector
             onStreamFinished: {
@@ -92,7 +104,7 @@ AbstractWidget {
                 if (output.length === 0) return;
                 const parsedContent = JSON.parse(output);
                 root.dominantColor = parsedContent.dominant_color || Appearance.colors.colPrimary;
-                if (root.placementStrategy === "free") return;
+                if (root.placementStrategy === "free" || root.placementStrategy === "centered") return;
                 root.targetX = parsedContent.center_x * root.wallpaperScale - root.width / 2;
                 root.targetY  = parsedContent.center_y * root.wallpaperScale - root.height / 2;
             }

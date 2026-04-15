@@ -16,20 +16,20 @@ AbstractBackgroundWidget {
     implicitHeight: contentColumn.implicitHeight
     implicitWidth: contentColumn.implicitWidth
 
-    readonly property string clockStyle: GlobalStates.screenLocked ? Config.options.background.widgets.clock.styleLocked : Config.options.background.widgets.clock.style
     readonly property bool forceCenter: (GlobalStates.screenLocked && Config.options.lock.centerClock)
     readonly property bool shouldShow: (!Config.options.background.widgets.clock.showOnlyWhenLocked || GlobalStates.screenLocked)
-    needsColText: clockStyle === "digital"
-    x: forceCenter ? ((root.screenWidth - root.width) / 2) : targetX
-    y: forceCenter ? ((root.screenHeight - root.height) / 2) : targetY
+    needsColText: true
+    x: forceCenter ? ((root.screenWidth - root.width) / 2) : Math.max(0, Math.min(targetX, root.scaledScreenWidth - root.width))
+    y: forceCenter ? ((root.screenHeight - root.height) / 2) : Math.max(0, Math.min(targetY, root.scaledScreenHeight - root.height))
     visibleWhenLocked: true
 
     property var textHorizontalAlignment: {
-        if (!Config.options.background.widgets.clock.digital.adaptiveAlignment || root.forceCenter || Config.options.background.widgets.clock.digital.vertical) 
+        if (!Config.options.background.widgets.clock.digital.adaptiveAlignment || root.forceCenter || root.placementStrategy === "centered" || Config.options.background.widgets.clock.digital.vertical)
             return Text.AlignHCenter;
-        if (root.x < root.scaledScreenWidth / 3)
+        let centerX = root.x + root.width / 2;
+        if (centerX < root.scaledScreenWidth / 3)
             return Text.AlignLeft;
-        if (root.x > root.scaledScreenWidth * 2 / 3)
+        if (centerX > root.scaledScreenWidth * 2 / 3)
             return Text.AlignRight;
         return Text.AlignHCenter;
     }
@@ -40,27 +40,9 @@ AbstractBackgroundWidget {
         spacing: 10
 
         FadeLoader {
-            id: cookieClockLoader
-            anchors.horizontalCenter: parent.horizontalCenter
-            shown: root.clockStyle === "cookie" && (root.shouldShow)
-            fade: false
-            sourceComponent: Column {
-                spacing: 10
-                CookieClock {
-                    anchors.horizontalCenter: parent.horizontalCenter
-                }
-                FadeLoader {
-                    anchors.horizontalCenter: parent.horizontalCenter
-                    shown: Config.options.background.widgets.clock.quote.enable && Config.options.background.widgets.clock.quote.text !== ""
-                    sourceComponent: CookieQuote {}
-                }
-            }
-        }
-
-        FadeLoader {
             id: digitalClockLoader
             anchors.horizontalCenter: parent.horizontalCenter
-            shown: root.clockStyle === "digital" && (root.shouldShow)
+            shown: root.shouldShow
             fade: false
             sourceComponent: DigitalClock {
                 colText: root.colText
@@ -76,11 +58,6 @@ AbstractBackgroundWidget {
         id: statusText
         implicitHeight: statusTextBg.implicitHeight
         implicitWidth: statusTextBg.implicitWidth
-        StyledRectangularShadow {
-            target: statusTextBg
-            visible: statusTextBg.visible && root.clockStyle === "cookie"
-            opacity: statusTextBg.opacity
-        }
         Rectangle {
             id: statusTextBg
             anchors.centerIn: parent
@@ -90,7 +67,7 @@ AbstractBackgroundWidget {
             implicitHeight: statusTextRow.implicitHeight + 5 * 2
             implicitWidth: statusTextRow.implicitWidth + 5 * 2
             radius: Appearance.rounding.small
-            color: ColorUtils.transparentize(Appearance.colors.colSecondaryContainer, root.clockStyle === "cookie" ? 0 : 1)
+            color: ColorUtils.transparentize(Appearance.colors.colSecondaryContainer, 1)
 
             Behavior on implicitWidth {
                 animation: Appearance.animation.elementResize.numberAnimation.createObject(this)
@@ -129,7 +106,7 @@ AbstractBackgroundWidget {
         property alias statusIcon: statusIconWidget.text
         property alias statusText: statusTextWidget.text
         property bool shown: true
-        property color textColor: root.clockStyle === "cookie" ? Appearance.colors.colOnSecondaryContainer : root.colText
+        property color textColor: root.colText
         opacity: shown ? 1 : 0
         visible: opacity > 0
         Behavior on opacity {

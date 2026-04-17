@@ -5,6 +5,7 @@ import Quickshell
 import Quickshell.Io
 import qs.modules.common.functions
 
+
 Singleton {
     id: root
     property string filePath: Directories.shellConfigPath
@@ -372,6 +373,7 @@ Singleton {
             property JsonObject media: JsonObject {
                 // Attempt to remove dupes (the aggregator playerctl one and browsers' native ones when there's plasma browser integration)
                 property bool filterDuplicatePlayers: true
+                property int updateInterval: 1000
             }
 
             property JsonObject networking: JsonObject {

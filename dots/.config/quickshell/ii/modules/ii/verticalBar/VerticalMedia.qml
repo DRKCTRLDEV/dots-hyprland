@@ -16,13 +16,14 @@ MouseArea {
     readonly property MprisPlayer activePlayer: MprisController.activePlayer
     readonly property string cleanedTitle: StringUtils.cleanMusicTitle(activePlayer?.trackTitle) || Translation.tr("No media")
 
+    visible: activePlayer != null
     Layout.fillHeight: true
     implicitHeight: mediaCircProg.implicitHeight
     implicitWidth: Appearance.sizes.verticalBarWidth
 
     Timer {
         running: activePlayer?.playbackState == MprisPlaybackState.Playing
-        interval: Config.options.resources.updateInterval
+        interval: Config.options.media.updateInterval
         repeat: true
         onTriggered: activePlayer.positionChanged()
     }
@@ -55,7 +56,7 @@ MouseArea {
             anchors.centerIn: parent
             width: mediaCircProg.implicitSize
             height: mediaCircProg.implicitSize
-            
+
             MaterialSymbol {
                 anchors.centerIn: parent
                 fill: 1

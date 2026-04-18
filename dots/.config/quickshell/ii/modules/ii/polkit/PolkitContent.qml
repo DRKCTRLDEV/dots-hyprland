@@ -63,10 +63,17 @@ Item {
             text: Translation.tr("Authentication")
         }
 
-        WindowDialogParagraph {
+        StyledFlickable {
             Layout.fillWidth: true
-            horizontalAlignment: Text.AlignLeft
-            text: PolkitService.cleanMessage
+            Layout.preferredHeight: Math.floor(Appearance.font.pixelSize.small * 1.2 * 2) // limit to 2 lines
+            clip: true
+            flickableDirection: Flickable.VerticalFlick
+
+            WindowDialogParagraph {
+                horizontalAlignment: Text.AlignLeft
+                text: PolkitService.cleanMessage
+                width: parent.width
+            }
         }
 
         MaterialTextField {
@@ -86,7 +93,6 @@ Item {
         }
 
         WindowDialogButtonRow {
-            Layout.bottomMargin: 10 // I honestly don't know why this is necessary
             Item {
                 Layout.fillWidth: true
             }

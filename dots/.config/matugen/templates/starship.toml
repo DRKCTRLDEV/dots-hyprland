@@ -1,0 +1,144 @@
+add_newline = false
+
+format = """
+[](color1)\
+$os\
+$username\
+[](bg:color4 fg:color1)\
+$directory\
+[](fg:color4 bg:color5)\
+$git_branch\
+$git_status\
+[](fg:color5 bg:color6)\
+$c\
+$elixir\
+$elm\
+$golang\
+$gradle\
+$haskell\
+$java\
+$julia\
+$nodejs\
+$nim\
+$rust\
+$scala\
+[](fg:color6 bg:color7)\
+$docker_context\
+[](fg:color7 bg:color8)\
+$time\
+[ ](fg:color8)\
+"""
+
+palette = 'colors'
+
+[palettes.colors]
+color1 = '{{base16.base08.default.hex}}'
+color2 = '{{colors.secondary_fixed_dim.default.hex}}'
+color3 = '{{colors.tertiary_fixed_dim.default.hex}}'
+color4 = '{{colors.on_primary_fixed_variant.default.hex}}'
+color5 = '{{colors.on_secondary_fixed_variant.default.hex}}'
+color6 = '{{colors.on_tertiary_fixed_variant.default.hex}}'
+color7 = '{{colors.on_surface_variant.default.hex}}'
+color8 = '{{colors.surface_container_highest.default.hex}}'
+color9 = '{{colors.primary.default.hex}}'
+
+[username]
+show_always = true
+style_user = "bg:color1"
+style_root = "bg:color1"
+format = '[$user ]($style)'
+disabled = false
+
+[os]
+style = "bg:color1"
+disabled = true
+
+[directory]
+style = "bg:color4"
+format = "[ $path ]($style)"
+truncation_length = 3
+truncation_symbol = "…/"
+
+[c]
+symbol = " "
+style = "bg:color6"
+format = '[ $symbol ($version) ]($style)'
+
+[cpp]
+symbol = " "
+style = "bg:color6"
+format = '[ $symbol ($version) ]($style)'
+
+[docker_context]
+symbol = " "
+style = "bg:color7"
+format = '[ $symbol $context ]($style)'
+
+[elixir]
+symbol = " "
+style = "bg:color6"
+format = '[ $symbol ($version) ]($style)'
+
+[elm]
+symbol = " "
+style = "bg:color6"
+format = '[ $symbol ($version) ]($style)'
+
+[git_branch]
+symbol = ""
+style = "bg:color5"
+format = '[ $symbol $branch ]($style)'
+
+[git_status]
+style = "bg:color5"
+format = '[$all_status$ahead_behind ]($style)'
+
+[golang]
+symbol = " "
+style = "bg:color6"
+format = '[ $symbol ($version) ]($style)'
+
+[gradle]
+style = "bg:color6"
+format = '[ $symbol ($version) ]($style)'
+
+[haskell]
+symbol = " "
+style = "bg:color6"
+format = '[ $symbol ($version) ]($style)'
+
+[java]
+symbol = " "
+style = "bg:color6"
+format = '[ $symbol ($version) ]($style)'
+
+[julia]
+symbol = " "
+style = "bg:color6"
+format = '[ $symbol ($version) ]($style)'
+
+[nodejs]
+symbol = ""
+style = "bg:color6"
+format = '[ $symbol ($version) ]($style)'
+
+[nim]
+symbol = "󰆥 "
+style = "bg:color6"
+format = '[ $symbol ($version) ]($style)'
+
+[rust]
+symbol = ""
+style = "bg:color6"
+format = '[ $symbol ($version) ]($style)'
+
+[scala]
+symbol = " "
+style = "bg:color6"
+format = '[ $symbol ($version) ]($style)'
+
+[time]
+disabled = false
+time_format = "%R"
+style = "bg:color8"
+format = '[ $time ]($style)'

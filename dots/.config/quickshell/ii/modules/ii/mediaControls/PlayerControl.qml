@@ -409,6 +409,7 @@ Item { // Player instance
                                     highlightColor: blendedColors.colPrimary
                                     trackColor: blendedColors.colSecondaryContainer
                                     value: root.player?.position / root.player?.length
+                                    implicitHeight: 18
                                 }
                             }
                         }

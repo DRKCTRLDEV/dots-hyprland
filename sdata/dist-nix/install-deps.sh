@@ -66,6 +66,10 @@ function hm_deps(){
 
 vianix-warning
 
+# Optional: SDDM Display Manager
+# If you want a graphical login screen, edit home-manager/home.nix and uncomment pkgs.sddm
+# Then run: home-manager switch --flake .#illogical_impulse
+
 TEST_CMDS=(curl fish swaylock gnome-keyring)
 ensure_cmds "${TEST_CMDS[@]}"
 

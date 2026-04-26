@@ -11,6 +11,7 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 SHELL_CONFIG_FILE="$XDG_CONFIG_HOME/illogical-impulse/config.json"
 MATUGEN_DIR="$XDG_CONFIG_HOME/matugen"
 terminalscheme="$SCRIPT_DIR/terminal/scheme-base.json"
+SDDM_THEME_HELPER="$SCRIPT_DIR/sddm/sddm-set-theme.sh"
 
 handle_kde_material_you_colors() {
     # Check if Qt app theming is enabled in config
@@ -57,6 +58,23 @@ post_process() {
 
     handle_kde_material_you_colors &
     "$SCRIPT_DIR/code/material-code-set-color.sh" &
+}
+
+handle_sddm() {
+    local wallpaper="$1"
+    local enable_sddm="true"
+
+    if [ -f "$SHELL_CONFIG_FILE" ]; then
+        enable_sddm=$(jq -r '.appearance.wallpaperTheming.enableSddm // true' "$SHELL_CONFIG_FILE")
+    fi
+    [ "$enable_sddm" = "true" ] || return 0
+
+    [ -n "$wallpaper" ] && [ -f "$wallpaper" ] || return 0
+    [ -x "$SDDM_THEME_HELPER" ] || return 0
+    if sudo -n "$SDDM_THEME_HELPER" "$wallpaper"; then
+        return 0
+    fi
+    notify-send -a "Wallpaper switcher" -c "im.error" "SDDM integration" "Unable to apply SDDM theme. Re-run ./setup install to configure SDDM."
 }
 
 check_and_prompt_upscale() {
@@ -161,6 +179,7 @@ switch() {
 	type_flag="$3"
 	color_flag="$4"
 	color="$5"
+    sddm_wallpaper=""
 
 	read scale screenx screeny screensizey < <(hyprctl monitors -j | jq '.[] | select(.focused) | .scale, .x, .y, .height' | xargs)
 	cursorposx=$(hyprctl cursorpos -j | jq '.x' 2>/dev/null) || cursorposx=960
@@ -230,6 +249,7 @@ switch() {
 
 			if [ -f "$thumbnail" ]; then
 				matugen_args+=(image "$thumbnail")
+                sddm_wallpaper="$thumbnail"
 				create_restore_script "$video_path"
 			else
 				echo "Cannot create image to colorgen"
@@ -238,6 +258,7 @@ switch() {
 			fi
 		else
 			matugen_args+=(image "$imgpath")
+            sddm_wallpaper="$imgpath"
 			# Update wallpaper path in config
 			set_wallpaper_path "$imgpath"
 			remove_restore
@@ -277,6 +298,7 @@ switch() {
 	max_width_desired="$(hyprctl monitors -j | jq '([.[].width] | min)' | xargs)"
 	max_height_desired="$(hyprctl monitors -j | jq '([.[].height] | min)' | xargs)"
 	post_process "$max_width_desired" "$max_height_desired" "$imgpath"
+    handle_sddm "$sddm_wallpaper"
 }
 
 main() {

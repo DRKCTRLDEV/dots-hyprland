@@ -121,3 +121,14 @@ case $SKIP_PLASMAINTG in
     esac
     ;;
 esac
+
+if ! pacman -Qs ^sddm$ >/dev/null 2>&1; then
+  if $ask; then
+    echo -e "${STY_YELLOW}SDDM is a display manager (login screen).${STY_RST}"
+    echo -e "${STY_YELLOW}Install it? [y/N]${STY_RST}"
+    read -p "====> " p
+  else
+    p=y
+  fi
+  [[ $p == y ]] && x sudo pacman -S --needed --noconfirm sddm qt6-svg qt6-virtualkeyboard qt6-multimedia
+fi

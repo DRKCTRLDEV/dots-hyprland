@@ -67,3 +67,15 @@ for i in "${metapkgs[@]}"; do
 done
 
 v sudo emerge --depclean
+
+## Optional SDDM installation
+if ! command -v sddm >/dev/null 2>&1; then
+  if $ask; then
+    printf "${STY_YELLOW}SDDM is a display manager (login screen).${STY_RST}\n"
+    printf "${STY_YELLOW}Install it? [y/N]${STY_RST}\n"
+    read -p "====> " p
+  else
+    p=y
+  fi
+  [[ $p == y ]] && v sudo emerge --update --quiet x11-misc/sddm
+fi

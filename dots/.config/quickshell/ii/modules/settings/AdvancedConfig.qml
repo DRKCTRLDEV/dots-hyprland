@@ -2,8 +2,21 @@ import QtQuick
 import qs.services
 import qs.modules.common
 import qs.modules.common.widgets
+import Quickshell.Io
 
 ContentPage {
+    id: root
+
+    property bool sddmInstalled: false
+
+    Process {
+        id: sddmCheck
+        running: true
+        command: ["bash", "-c", "which sddm"]
+        onExited: (exitCode, exitStatus) => {
+            root.sddmInstalled = (exitCode === 0)
+        }
+    }
 
     ContentSection {
         icon: "colors"
@@ -37,6 +50,23 @@ ContentPage {
             }
             StyledToolTip {
                 text: Translation.tr("Shell & utilities theming must also be enabled")
+            }
+        }
+        ConfigSwitch {
+            id: sddmSwitch
+            buttonIcon: "lock"
+            text: Translation.tr("SDDM")
+            enabled: root.sddmInstalled
+            checked: enabled && Config.options.appearance.wallpaperTheming.enableSddm
+            onCheckedChanged: {
+                if (enabled) {
+                    Config.options.appearance.wallpaperTheming.enableSddm = checked;
+                }
+            }
+            StyledToolTip {
+                text: root.sddmInstalled 
+                    ? Translation.tr("Shell & utilities theming must also be enabled")
+                    : Translation.tr("SDDM is not installed. Re-run ./setup install without --skip-sddm to install it.")
             }
         }
         ConfigRow {

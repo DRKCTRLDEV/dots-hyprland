@@ -171,6 +171,10 @@ quickshell, home_attrs, ... }:
       wlogout #wlogout
       libqalculate #libqalculate
 
+      ### Optional: SDDM Display Manager
+      # sddm is a display manager (login screen)
+      # Uncomment below to install it, then run: home-manager switch --flake .#illogical_impulse
+      # pkgs.sddm
     ]
     ++ [
     #(config.lib.nixGL.wrap pkgs.hyprland)

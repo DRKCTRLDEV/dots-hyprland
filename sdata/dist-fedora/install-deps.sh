@@ -33,7 +33,7 @@ function install_RPMS() {
   x cp -r "${REPO_ROOT}/sdata/dist-fedora/SPECS" "$rpmbuildroot/"
 
   x cd $rpmbuildroot/SPECS
-   
+
   packages=(
     "cpptrace"
     "quickshell-git"
@@ -42,20 +42,20 @@ function install_RPMS() {
   )
   for package in "${packages[@]}"; do
   	echo "start $package"
-  
+
     spec="$rpm_specs/$package.spec"
     installed_rpm_stamp=$(rpm -q --qf '%{NVRA}\n' "$package" 2>/dev/null || true)
     spec_stamp=$(rpmspec -q --qf '%{NVRA}\n' "$spec")
-    
+
     [[ -f "$spec" ]] || {
       echo "Missing spec: $spec"
       continue
     }
-    
+
     echo "rpm_specs=$rpm_specs"
     echo "spec=$spec"
     echo "spec_stamp=$spec_stamp"
-    
+
     if [[ "$installed_rpm_stamp" == "$spec_stamp" ]]; then
     	printf "$installed_rpm_stamp is installed and up to date. Skipping.\n"
     	continue
@@ -120,6 +120,9 @@ deps_data=$(yq -o=j '.' "$deps_data_file")
 echo "Starting to install packages from $deps_data_file ..."
 
 while IFS= read -r deps_list_key; do
+  # Skip SDDM group, will be handled separately
+  [[ "$deps_list_key" == "sddm" ]] && continue
+
   echo "Installing package list: $deps_list_key"
 
   install_opts=$(echo $deps_data | yq ".groups.\"$deps_list_key\" | select(has(\"install_opts\")) | .install_opts[]")
@@ -129,6 +132,18 @@ while IFS= read -r deps_list_key; do
 
   echo "----------------------------------------"
 done < <(echo "$deps_data" | yq '.groups | keys[]? | select(length > 0)')
+
+## Optional SDDM installation
+if ! rpm -q sddm >/dev/null 2>&1; then
+  if $ask; then
+    echo -e "${STY_YELLOW}SDDM is a display manager (login screen).${STY_RST}"
+    echo -e "${STY_YELLOW}Install it? [y/N]${STY_RST}"
+    read -p "====> " p
+  else
+    p=y
+  fi
+  [[ $p == y ]] && r v sudo dnf install -y sddm qt6-qtsvg qt6-qtvirtualkeyboard qt6-qtmultimedia git
+fi
 
 # Add back versionlock at the end
 [ -n $nolock_qs ] || v sudo dnf versionlock add quickshell-git || true

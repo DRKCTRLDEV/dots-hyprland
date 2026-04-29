@@ -14,9 +14,6 @@ import Quickshell.Services.Mpris
 
 Item { // Player instance
     id: root
-    property bool isWidget: false
-    implicitWidth: root.isWidget ? -1 : Appearance.sizes.mediaControlsWidth
-    implicitHeight: root.isWidget ? -1 : Appearance.sizes.mediaControlsHeight
     required property MprisPlayer player
     property var artUrl: player?.trackArtUrl
     property string artDownloadLocation: Directories.coverArt
@@ -24,30 +21,28 @@ Item { // Player instance
     property string artFilePath: `${artDownloadLocation}/${artFileName}`
     property color artDominantColor: ColorUtils.mix((colorQuantizer?.colors[0] ?? Appearance.colors.colPrimary), Appearance.colors.colPrimaryContainer, 0.8) || Appearance.m3colors.m3secondaryContainer
     property bool downloaded: false
-    property var visualizerPoints: []
+    property list<real> visualizerPoints: []
     property real maxVisualizerValue: 1000 // Max value in the data points
     property int visualizerSmoothing: 2 // Number of points to average for smoothing
     property real radius
-    property string displayedArtFilePath: root.downloaded ? Qt.resolvedUrl(artFilePath) : ""
 
-    function toggleMute() {
-        MprisController.toggleMute(root.player);
-    }
-    function openExternal() {
-        MprisController.openExternal(root.player);
-    }
+    property string displayedArtFilePath: root.downloaded ? Qt.resolvedUrl(artFilePath) : ""
+    readonly property bool canChangeVolume: (root.player?.volumeSupported ?? false) && (root.player?.canControl ?? false)
+    property real lastNonZeroVolume: 1
 
 
     component IconBtn: RippleButton {
         id: iconBtn
-        implicitWidth: 16
-        implicitHeight: 16
+        implicitWidth: 20
+        implicitHeight: 20
 
         property var iconName
         property real iconSize: Appearance.font.pixelSize.hugeass
-        rippleEnabled: false
         colBackground: "transparent"
         colBackgroundHover: "transparent"
+
+        Layout.leftMargin: -2
+        Layout.rightMargin: -2
 
         contentItem: MaterialSymbol {
             iconSize: iconBtn.iconSize
@@ -55,14 +50,10 @@ Item { // Player instance
             horizontalAlignment: Text.AlignHCenter
             color: blendedColors.colOnSecondaryContainer
             text: iconName
-
-            Behavior on color {
-                animation: Appearance.animation.elementMoveFast.colorAnimation.createObject(this)
-            }
         }
     }
 
-    Timer { // Force update for revision
+    Timer {
         running: root.player?.playbackState == MprisPlaybackState.Playing
         interval: Config.options.media.updateInterval
         repeat: true
@@ -110,12 +101,11 @@ Item { // Player instance
 
     StyledRectangularShadow {
         target: background
-        visible: !root.isWidget
     }
     Rectangle { // Background
         id: background
         anchors.fill: parent
-        anchors.margins: root.isWidget ? 0 : Appearance.sizes.elevationMargin
+        anchors.margins: Appearance.sizes.elevationMargin
         color: ColorUtils.applyAlpha(blendedColors.colLayer0, 1)
         radius: root.radius
 
@@ -154,7 +144,7 @@ Item { // Player instance
         WaveVisualizer {
             id: visualizerCanvas
             anchors.fill: parent
-            live: root.player?.isPlaying
+            live: root.player?.isPlaying ?? false
             points: root.visualizerPoints
             maxVisualizerValue: root.maxVisualizerValue
             smoothing: root.visualizerSmoothing
@@ -164,11 +154,24 @@ Item { // Player instance
         WheelHandler {
             acceptedDevices: PointerDevice.Mouse | PointerDevice.TouchPad
             onWheel: event => {
-                if (!(root.player?.volumeSupported && root.player?.canControl))
+                if (!root.canChangeVolume)
                     return;
 
-                const delta = event.angleDelta.y / 120;
-                root.player.volume = Math.max(0, Math.min(1, (root.player?.volume ?? 0) + delta * 0.05));
+                const direction = Math.sign(event.angleDelta.y);
+                if (direction === 0) {
+                    return;
+                }
+
+                const currentPercent = Math.round((root.player?.volume ?? 0) * 100);
+                const remainder = ((currentPercent % 5) + 5) % 5;
+                const nextPercent = direction > 0
+                    ? (remainder === 0 ? currentPercent + 5 : currentPercent + (5 - remainder))
+                    : (remainder === 0 ? currentPercent - 5 : currentPercent - remainder);
+                const newVolume = Math.max(0, Math.min(1, nextPercent / 100));
+                root.player.volume = newVolume;
+                if (newVolume > 0) {
+                    root.lastNonZeroVolume = newVolume;
+                }
             }
         }
 
@@ -209,12 +212,26 @@ Item { // Player instance
                     sourceSize.height: size
                 }
 
+                MouseArea {
+                    id: artMouseArea
+                    anchors.fill: parent
+                    hoverEnabled: true
+                    enabled: root.player?.canTogglePlaying ?? false
+                    cursorShape: enabled ? Qt.PointingHandCursor : Qt.ArrowCursor
+                    onClicked: {
+                        if (root.player?.canTogglePlaying) {
+                            root.player.isPlaying = !(root.player?.isPlaying ?? false);
+                        }
+                    }
+                }
+
                 Rectangle {
                     id: iconShadow
                     anchors.centerIn: parent
                     width: playPauseIcon.width + 16
                     height: width
                     radius: width / 2
+                    visible: root.player?.canTogglePlaying ?? false
                     color: ColorUtils.transparentize(blendedColors.colLayer0, 0.3)
                     scale: artMouseArea.containsMouse ? 1 : 0
 
@@ -234,21 +251,11 @@ Item { // Player instance
                         }
                     }
                 }
-
-                MouseArea {
-                    id: artMouseArea
-                    anchors.fill: parent
-                    hoverEnabled: true
-                    cursorShape: Qt.PointingHandCursor
-                    onClicked: root.player.togglePlaying()
-                }
             }
 
             ColumnLayout { // Info & controls
-                Layout.fillWidth: true
-                spacing: 0
                 ColumnLayout {
-                    Layout.fillWidth: true
+                    spacing: 0
                     StyledText {
                         id: trackTitle
                         Layout.fillWidth: true
@@ -263,7 +270,6 @@ Item { // Player instance
                     StyledText {
                         id: trackArtist
                         Layout.fillWidth: true
-                        font.pixelSize: Appearance.font.pixelSize.small
                         color: blendedColors.colSubtext
                         elide: Text.ElideRight
                         text: root.player?.trackArtist
@@ -276,15 +282,14 @@ Item { // Player instance
                     Layout.fillHeight: true
                 }
                 ColumnLayout {
-                    Layout.fillWidth: true
+                    spacing: 0
                     RowLayout {
-                        Layout.fillWidth: true
                         IconBtn {
                             iconSize: Appearance.font.pixelSize.larger
-                            iconName: "open_in_new"
+                            iconName: (root.player?.canRaise ?? false) ? "open_in_new" : "open_in_new_off"
                             downAction: () => {
-                                if (MprisController.canOpenExternal(root.player)) {
-                                    root.openExternal();
+                                if (root.player?.canRaise) {
+                                    root.player.raise();
                                 }
                             }
                         }
@@ -303,17 +308,33 @@ Item { // Player instance
                             IconBtn {
                                 iconSize: Appearance.font.pixelSize.larger
                                 iconName: (root.player?.volume ?? 0) <= 0 ? "volume_off" : (root.player?.volume ?? 0) < 0.5 ? "volume_down" : "volume_up"
-                                downAction: () => root.toggleMute()
+                                visible: root.canChangeVolume
+                                downAction: () => {
+                                    if (!root.canChangeVolume) {
+                                        return;
+                                    }
+
+                                    const currentVolume = root.player?.volume ?? 0;
+                                    if (currentVolume > 0) {
+                                        root.lastNonZeroVolume = currentVolume;
+                                        root.player.volume = 0;
+                                    } else {
+                                        root.player.volume = Math.max(0.01, root.lastNonZeroVolume);
+                                    }
+                                }
                             }
                         }
                     }
                     RowLayout {
-                        Layout.fillWidth: true
                         IconBtn {
                             visible: root.player?.canGoPrevious ?? false
                             iconName: "skip_previous"
                             downAction: () => root.player?.previous()
-                            altAction: () => root.player?.seek(-5)
+                            altAction: () => {
+                                if (root.player?.canSeek) {
+                                    root.player.seek(-5);
+                                }
+                            }
                         }
                         Item {
                             Layout.fillWidth: true
@@ -322,7 +343,7 @@ Item { // Player instance
                             Loader {
                                 id: sliderLoader
                                 anchors.fill: parent
-                                active: root.player?.canSeek ?? false
+                                active: (root.player?.canSeek ?? false) && (root.player?.positionSupported ?? false)
                                 sourceComponent: StyledSlider {
                                     id: seekSlider
                                     configuration: StyledSlider.Configuration.Wavy
@@ -331,66 +352,11 @@ Item { // Player instance
                                     handleColor: blendedColors.colPrimary
                                     trackDotSize: 0
                                     handleHeight: 16
-                                    implicitHeight: 18
-
-                                    Timer {
-                                        id: ignoreUpdatesTimer
-                                        interval: 800
-                                        repeat: false
-                                    }
-
-                                    Timer {
-                                        id: trackChangeTimer
-                                        interval: 800
-                                        repeat: false
-                                    }
-
-                                    Connections {
-                                        target: root.player
-                                        function onPostTrackChanged() {
-                                            seekSlider.value = 0;
-                                            trackChangeTimer.restart();
-                                        }
-                                    }
-
-                                    Binding {
-                                        target: seekSlider
-                                        property: "value"
-                                        value: {
-                                            const length = root.player?.length ?? 0;
-                                            if (length <= 0) return 0;
-                                            return (root.player?.position ?? 0) / length;
-                                        }
-                                        when: !seekSlider.pressed && !ignoreUpdatesTimer.running && !seekDebounceTimer.running && !trackChangeTimer.running
-                                        restoreMode: Binding.RestoreBindingOrValue
-                                    }
-
-                                    Timer {
-                                        id: seekDebounceTimer
-                                        interval: 150
-                                        repeat: false
-                                        onTriggered: {
-                                            const length = root.player?.length ?? 0;
-                                            if (!root.player?.canSeek || length <= 0) return;
-                                            root.player.position = seekSlider.value * length;
-                                            ignoreUpdatesTimer.restart();
-                                        }
-                                    }
-
+                                    Binding on value { when: !seekSlider.pressed; value: (root.player?.length ?? 0) > 0 ? (root.player?.position ?? 0) / (root.player?.length ?? 1) : 0 }
                                     onMoved: {
-                                        if (root.player?.canSeek) {
-                                            seekDebounceTimer.restart();
-                                        }
-                                    }
-
-                                    onPressedChanged: {
-                                        if (pressed) {
-                                            seekDebounceTimer.stop();
-                                            ignoreUpdatesTimer.stop();
-                                        } else {
-                                            if (root.player?.canSeek) {
-                                                seekDebounceTimer.restart();
-                                            }
+                                        const length = root.player?.length ?? 0;
+                                        if (root.player?.canSeek && root.player?.positionSupported && length > 0) {
+                                            root.player.position = value * length;
                                         }
                                     }
                                 }
@@ -398,18 +364,14 @@ Item { // Player instance
 
                             Loader {
                                 id: progressBarLoader
-                                anchors {
-                                    verticalCenter: parent.verticalCenter
-                                    left: parent.left
-                                    right: parent.right
-                                }
-                                active: !(root.player?.canSeek ?? false)
+                                anchors.fill: parent
+                                active: !sliderLoader.active
                                 sourceComponent: StyledProgressBar {
                                     wavy: root.player?.isPlaying ?? false
                                     highlightColor: blendedColors.colPrimary
                                     trackColor: blendedColors.colSecondaryContainer
-                                    value: root.player?.position / root.player?.length
-                                    implicitHeight: 18
+                                    stopPoint: false
+                                    value: (root.player?.length ?? 0) > 0 ? (root.player?.position ?? 0) / (root.player?.length ?? 1) : 0
                                 }
                             }
                         }
@@ -417,7 +379,11 @@ Item { // Player instance
                             visible: root.player?.canGoNext ?? false
                             iconName: "skip_next"
                             downAction: () => root.player?.next()
-                            altAction: () => root.player?.seek(5)
+                            altAction: () => {
+                                if (root.player?.canSeek) {
+                                    root.player.seek(5);
+                                }
+                            }
                         }
                     }
                 }

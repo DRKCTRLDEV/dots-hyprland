@@ -22,7 +22,8 @@ Item {
     Connections {
         target: PolkitService
         function onInteractionAvailableChanged() {
-            if (!PolkitService.interactionAvailable) return;
+            if (!PolkitService.interactionAvailable)
+                return;
             inputField.text = "";
             inputField.forceActiveFocus();
         }
@@ -34,7 +35,7 @@ Item {
         color: Appearance.colors.colScrim
         opacity: 0
         Component.onCompleted: {
-            opacity = 1
+            opacity = 1;
         }
         Behavior on opacity {
             animation: Appearance.animation.elementMoveFast.numberAnimation.createObject(this)
@@ -46,7 +47,7 @@ Item {
         backgroundWidth: 450
         show: false
         Component.onCompleted: {
-            show = true
+            show = true;
         }
 
         MaterialSymbol {
@@ -63,10 +64,17 @@ Item {
             text: Translation.tr("Authentication")
         }
 
-        WindowDialogParagraph {
+        StyledFlickable {
             Layout.fillWidth: true
-            horizontalAlignment: Text.AlignLeft
-            text: PolkitService.cleanMessage
+            Layout.preferredHeight: Math.floor(Appearance.font.pixelSize.small * 1.2 * 2) // limit to 2 lines
+            clip: true
+            flickableDirection: Flickable.VerticalFlick
+
+            WindowDialogParagraph {
+                horizontalAlignment: Text.AlignLeft
+                text: PolkitService.cleanMessage
+                width: parent.width
+            }
         }
 
         MaterialTextField {
@@ -76,7 +84,7 @@ Item {
             enabled: PolkitService.interactionAvailable
             placeholderText: PolkitService.cleanPrompt
             echoMode: root.usePasswordChars ? TextInput.Password : TextInput.Normal
-            onAccepted: root.submit();
+            onAccepted: root.submit()
 
             Keys.onPressed: event => { // Esc to close
                 if (event.key === Qt.Key_Escape) {
@@ -86,18 +94,17 @@ Item {
         }
 
         WindowDialogButtonRow {
-            Layout.bottomMargin: 10 // I honestly don't know why this is necessary
             Item {
                 Layout.fillWidth: true
             }
             DialogButton {
                 buttonText: Translation.tr("Cancel")
-                onClicked: PolkitService.cancel();
+                onClicked: PolkitService.cancel()
             }
             DialogButton {
                 enabled: PolkitService.interactionAvailable
                 buttonText: Translation.tr("OK")
-                onClicked: root.submit();
+                onClicked: root.submit()
             }
         }
     }

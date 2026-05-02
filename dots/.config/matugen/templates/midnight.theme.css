@@ -43,7 +43,7 @@ body {
     --window-control-size: 14px; /* size of custom window controls */
 
     /* dms button options */
-    --custom-dms-icon: on; /* off: use default discord icon, hide: remove icon entirely, custom: use custom icon */
+    --custom-dms-icon: off; /* off: use default discord icon, hide: remove icon entirely, custom: use custom icon */
     --dms-icon-svg-url: url('https://refact0r.github.io/midnight-discord/assets/Font_Awesome_5_solid_moon.svg'); /* icon svg url. MUST BE A SVG. */
     --dms-icon-svg-size: 90%; /* size of the svg (css mask-size property) */
     --dms-icon-color-before: var(--icon-secondary); /* normal icon color */
@@ -60,8 +60,8 @@ body {
     /* transparency/blur options */
     /* NOTE: TO USE TRANSPARENCY/BLUR, YOU MUST HAVE TRANSPARENT BG COLORS. FOR EXAMPLE: --bg-4: hsla(220, 15%, 10%, 0.7); */
     --transparency-tweaks: on; /* off: no changes, on: remove some elements for better transparency */
-    --remove-bg-layer: on; /* off: no changes, on: remove the base --bg-3 layer for use with window transparency (WILL OVERRIDE BACKGROUND IMAGE) */
-    --panel-blur: on; /* off: no changes, on: blur the background of panels */
+    --remove-bg-layer: off; /* off: no changes, on: remove the base --bg-3 layer for use with window transparency (WILL OVERRIDE BACKGROUND IMAGE) */
+    --panel-blur: off; /* off: no changes, on: blur the background of panels */
     --blur-amount: 12px; /* amount of blur */
     --bg-floating: var(--bg-3); /* set this to a more opaque color if floating panels look too transparent. only applies if panel blur is on  */
 
@@ -86,10 +86,10 @@ body {
     --text-5: hsl(220, 14%, 66%); /* muted channels/chats and timestamps */
 
     /* background and dark colors */
-    --bg-1: #{{colors.surface_container_high.default.hex_stripped}}B3; /* dark buttons when clicked */
-    --bg-2: #{{colors.surface_container.default.hex_stripped}}B3; /* dark buttons */
-    --bg-3: #{{colors.surface_variant.default.hex_stripped}}B3; /* spacing, secondary elements */
-    --bg-4: #{{colors.surface.default.hex_stripped}}B3; /* main background color */
+    --bg-1: {{colors.surface_container_high.default.hex}}; /* buttons when clicked */
+    --bg-2: {{colors.surface_container.default.hex}}; /* button/background surfaces */
+    --bg-3: {{colors.surface_container_low.default.hex}}; /* panels, spacing, secondary elements */
+    --bg-4: {{colors.surface.default.hex}}; /* main/window background (subtle contrast vs panels) */
     --active: #{{colors.primary.default.hex_stripped}}24; /* channels and buttons when clicked or selected */
     --active-2: #{{colors.primary.default.hex_stripped}}36; /* extra state for transparent buttons */
     --message-hover: #{{colors.on_surface.default.hex_stripped}}12; /* messages when hovered */

@@ -189,6 +189,7 @@ switch() {
 	cursorposy_inverted=$((screensizey - cursorposy))
 
 	matugen_args=(--source-color-index 0)
+    generate_colors_material_args=()
 
 	if [[ "$color_flag" == "1" ]]; then
 		matugen_args+=(color hex "$color")
@@ -294,10 +295,26 @@ switch() {
 
 	matugen "${matugen_args[@]}"
 
-	# Pass screen width, height, and wallpaper path to post_process
-	max_width_desired="$(hyprctl monitors -j | jq '([.[].width] | min)' | xargs)"
-	max_height_desired="$(hyprctl monitors -j | jq '([.[].height] | min)' | xargs)"
-	post_process "$max_width_desired" "$max_height_desired" "$imgpath"
+    # Set harmony and related properties
+    if [ -f "$SHELL_CONFIG_FILE" ]; then
+        harmony=$(jq -r '.appearance.wallpaperTheming.terminalGenerationProps.harmony' "$SHELL_CONFIG_FILE")
+        harmonize_threshold=$(jq -r '.appearance.wallpaperTheming.terminalGenerationProps.harmonizeThreshold' "$SHELL_CONFIG_FILE")
+        term_fg_boost=$(jq -r '.appearance.wallpaperTheming.terminalGenerationProps.termFgBoost' "$SHELL_CONFIG_FILE")
+        [[ "$harmony" != "null" && -n "$harmony" ]] && generate_colors_material_args+=(--harmony "$harmony")
+        [[ "$harmonize_threshold" != "null" && -n "$harmonize_threshold" ]] && generate_colors_material_args+=(--harmonize_threshold "$harmonize_threshold")
+        [[ "$term_fg_boost" != "null" && -n "$term_fg_boost" ]] && generate_colors_material_args+=(--term_fg_boost "$term_fg_boost")
+    fi
+
+    source "$(eval echo $ILLOGICAL_IMPULSE_VIRTUAL_ENV)/bin/activate"
+    python3 "$SCRIPT_DIR/generate_colors_material.py" "${generate_colors_material_args[@]}" \
+        > "$STATE_DIR"/user/generated/material_colors.scss
+    deactivate
+    "$SCRIPT_DIR"/applycolor.sh
+
+    # Pass screen width, height, and wallpaper path to post_process
+    max_width_desired="$(hyprctl monitors -j | jq '([.[].width] | min)' | xargs)"
+    max_height_desired="$(hyprctl monitors -j | jq '([.[].height] | min)' | xargs)"
+    post_process "$max_width_desired" "$max_height_desired" "$imgpath"
     handle_sddm "$sddm_wallpaper"
 }
 

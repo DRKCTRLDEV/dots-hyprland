@@ -1,5 +1,6 @@
 import QtQuick
 import Quickshell
+import qs
 import qs.modules.common.functions
 pragma Singleton
 pragma ComponentBehavior: Bound
@@ -31,8 +32,11 @@ Singleton {
         return Math.max(0, Math.min(0.22, y)) - 0.12 * (m3colors.darkmode ? 0 : 1)
     }
     property real autoContentTransparency: 0.9
-    property real backgroundTransparency: Config?.options.appearance.transparency.enable ? Config?.options.appearance.transparency.automatic ? autoBackgroundTransparency : Config?.options.appearance.transparency.backgroundTransparency : 0
-    property real contentTransparency: Config?.options.appearance.transparency.automatic ? autoContentTransparency : Config?.options.appearance.transparency.contentTransparency
+    readonly property bool transparencyEnabled: GlobalStates.gameModeActive ? false : Config?.options.appearance.transparency.enable
+    readonly property int barCornerStyle: GlobalStates.gameModeActive ? 2 : Config.options.bar.cornerStyle
+    readonly property int fakeScreenRounding: GlobalStates.gameModeActive ? 0 : Config.options.appearance.fakeScreenRounding
+    property real backgroundTransparency: transparencyEnabled ? Config?.options.appearance.transparency.automatic ? autoBackgroundTransparency : Config?.options.appearance.transparency.backgroundTransparency : 0
+    property real contentTransparency: transparencyEnabled ? (Config?.options.appearance.transparency.automatic ? autoContentTransparency : Config?.options.appearance.transparency.contentTransparency) : 0
 
     m3colors: QtObject {
         property bool darkmode: true
@@ -386,7 +390,7 @@ Singleton {
 
     sizes: QtObject {
         property real baseBarHeight: 40
-        property real barHeight: Config.options.bar.cornerStyle === 1 ?
+        property real barHeight: Appearance.barCornerStyle === 1 ?
             (baseBarHeight + root.sizes.hyprlandGapsOut * 2) : baseBarHeight
         property real barCenterSideModuleWidth: Config.options?.bar.verbose ? 360 : 140
         property real barCenterSideModuleWidthShortened: 280
@@ -406,7 +410,7 @@ Singleton {
         property real sidebarWidth: 460
         property real sidebarWidthExtended: 750
         property real baseVerticalBarWidth: 46
-        property real verticalBarWidth: Config.options.bar.cornerStyle === 1 ?
+        property real verticalBarWidth: Appearance.barCornerStyle === 1 ?
             (baseVerticalBarWidth + root.sizes.hyprlandGapsOut * 2) : baseVerticalBarWidth
         property real wallpaperSelectorWidth: 1200
         property real wallpaperSelectorHeight: 690

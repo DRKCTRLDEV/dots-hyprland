@@ -48,6 +48,12 @@ Rectangle {
             }
         }
 
+        ArrangeButton {
+            canvasWidth: root.parent.width
+            canvasHeight: root.parent.height
+            visible: Config.options.overlay.showArrangeButton
+        }
+
         Separator {}
         TimeWidget {}
         Separator {
@@ -108,6 +114,35 @@ Rectangle {
                 variableAxes: Appearance.font.variableAxes.numbers
                 pixelSize: 18
             }
+        }
+    }
+
+    component ArrangeButton: RippleButton {
+        required property real canvasWidth
+        required property real canvasHeight
+        Layout.alignment: Qt.AlignVCenter
+        implicitWidth: implicitHeight
+        colBackground: "transparent"
+        colBackgroundHover: Appearance.colors.colSecondaryContainerHover
+        colRipple: Appearance.colors.colSecondaryContainerActive
+        buttonRadius: root.radius - (root.height - height) / 2
+        onClicked: OverlayContext.arrange(false, canvasWidth, canvasHeight)
+        altAction: () => OverlayContext.arrange(true, canvasWidth, canvasHeight)
+
+        contentItem: Item {
+            anchors.centerIn: parent
+            implicitWidth: 32
+            implicitHeight: 32
+            MaterialSymbol {
+                anchors.centerIn: parent
+                iconSize: 24
+                text: "vertical_distribute"
+                color: Appearance.colors.colOnSurfaceVariant
+            }
+        }
+
+        StyledToolTip {
+            text: "Arrange (right-click: right first)"
         }
     }
 

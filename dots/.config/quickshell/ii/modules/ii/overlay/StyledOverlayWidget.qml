@@ -26,6 +26,9 @@ AbstractOverlayWidget {
     property bool showCenterButton: false
     property bool showClickabilityButton: true
 
+    // Entrance/exit animation state
+    property bool widgetShowing: false
+
     // Defaults n stuff
     required property var modelData
     readonly property string identifier: modelData.identifier
@@ -103,6 +106,15 @@ AbstractOverlayWidget {
     Component.onCompleted: {
         reportPinnedState();
         reportClickableState();
+        OverlayContext.registerWidgetInstance(root);
+        Qt.callLater(() => {
+            root.widgetShowing = true;
+            OverlayContext.placeNewWidget(root);
+        });
+    }
+
+    Component.onDestruction: {
+        OverlayContext.unregisterWidgetInstance(root);
     }
 
     Connections {

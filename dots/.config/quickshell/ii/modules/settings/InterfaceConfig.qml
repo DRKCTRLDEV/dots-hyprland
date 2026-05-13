@@ -308,6 +308,34 @@ ContentPage {
                 Config.options.overlay.darkenScreen = checked;
             }
         }
+        ConfigSwitch {
+            buttonIcon: "format_align_justify"
+            text: Translation.tr("Show arrange button")
+            checked: Config.options.overlay.showArrangeButton
+            onCheckedChanged: {
+                Config.options.overlay.showArrangeButton = checked;
+            }
+        }
+        ConfigSpinBox {
+            text: Translation.tr("Gaps out (edge margin)")
+            value: Config.options.overlay.gapsOut
+            from: 0
+            to: 200
+            stepSize: 2
+            onValueChanged: {
+                Config.options.overlay.gapsOut = value;
+            }
+        }
+        ConfigSpinBox {
+            text: Translation.tr("Gaps in (spacing)")
+            value: Config.options.overlay.gapsIn
+            from: 0
+            to: 200
+            stepSize: 2
+            onValueChanged: {
+                Config.options.overlay.gapsIn = value;
+            }
+        }
     }
 
     ContentSection {

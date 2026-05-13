@@ -22,8 +22,12 @@ Item {
     property real initScale: Config.options.overlay.openingZoomAnimation ? 1.08 : 1.000001
     scale: initScale
     Component.onCompleted: {
-        scale = 1
+        scale = 1;
+        OverlayContext.canvasWidth  = root.width;
+        OverlayContext.canvasHeight = root.height;
     }
+    onWidthChanged:  OverlayContext.canvasWidth  = root.width
+    onHeightChanged: OverlayContext.canvasHeight = root.height
     Behavior on scale {
         animation: Appearance.animation.elementMoveEnter.numberAnimation.createObject(this)
     }

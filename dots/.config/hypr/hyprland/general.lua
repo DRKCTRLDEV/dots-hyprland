@@ -100,7 +100,7 @@ hl.config({
 
         },
         -- Dim
-        dim_inactive = true,
+        dim_inactive = false,
         dim_strength = 0.05,
         dim_special = 0.2
     },

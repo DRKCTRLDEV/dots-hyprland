@@ -9,7 +9,7 @@ CACHE_DIR="$XDG_CACHE_HOME/quickshell"
 STATE_DIR="$XDG_STATE_HOME/quickshell"
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
-term_alpha=100 #Set this to < 100 make all your terminals transparent
+term_alpha=89 #Set this to < 100 make all your terminals transparent
 # sleep 0 # idk i wanted some delay or colors dont get applied properly
 if [ ! -d "$STATE_DIR"/user/generated ]; then
   mkdir -p "$STATE_DIR"/user/generated
@@ -74,8 +74,8 @@ apply_anyterm() {
 }
 
 apply_term() {
-	apply_kitty
-	apply_anyterm
+  apply_anyterm &
+  apply_kitty &
 }
 
 # Check if terminal theming is enabled in config

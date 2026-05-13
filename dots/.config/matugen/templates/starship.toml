@@ -32,113 +32,121 @@ $time\
 palette = 'colors'
 
 [palettes.colors]
-color1 = '{{base16.base08.default.hex}}'
-color2 = '{{colors.secondary_fixed_dim.default.hex}}'
-color3 = '{{colors.tertiary_fixed_dim.default.hex}}'
-color4 = '{{colors.on_primary_fixed_variant.default.hex}}'
-color5 = '{{colors.on_secondary_fixed_variant.default.hex}}'
-color6 = '{{colors.on_tertiary_fixed_variant.default.hex}}'
-color7 = '{{colors.on_surface_variant.default.hex}}'
-color8 = '{{colors.surface_container_highest.default.hex}}'
-color9 = '{{colors.primary.default.hex}}'
+color1 = "{{colors.on_primary_container.default.hex}}"
+color2 = "{{colors.primary.default.hex}}"
+color3 = "{{colors.secondary.default.hex}}"
+color4 = "{{colors.primary.default.hex}}"
+color5 = "{{colors.inverse_primary.default.hex}}"
+color6 = "{{colors.primary_container.default.hex}}"
+color7 = "{{colors.secondary_container.default.hex}}"
+color8 = "{{colors.on_primary.default.hex}}"
+
+color9  = "{{colors.primary_container.default.hex}}"
+color10 = "{{colors.on_primary.default.hex}}"
+color11 = "{{colors.on_secondary.default.hex}}"
+color12 = "{{colors.on_primary.default.hex}}"
+color13 = "{{colors.primary.default.hex}}"
+color14 = "{{colors.on_primary_container.default.hex}}"
+color15 = "{{colors.on_secondary_container.default.hex}}"
+color16 = "{{colors.primary.default.hex}}"
 
 [username]
 show_always = true
-style_user = "bg:color1"
-style_root = "bg:color1"
+style_user = "bg:color1 fg:color9"
+style_root = "bg:color1 fg:color9"
 format = '[$user ]($style)'
 disabled = false
 
 [os]
-style = "bg:color1"
+style = "bg:color1 fg:color9"
 disabled = true
 
 [directory]
-style = "bg:color4"
+style = "bg:color4 fg:color12"
 format = "[ $path ]($style)"
 truncation_length = 3
 truncation_symbol = "…/"
 
+[git_branch]
+symbol = ""
+style = "bg:color5 fg:color13"
+format = '[ $symbol $branch ]($style)'
+
+[git_status]
+style = "bg:color5 fg:color13"
+format = '[$all_status$ahead_behind ]($style)'
+
 [c]
 symbol = " "
-style = "bg:color6"
+style = "bg:color6 fg:color14"
 format = '[ $symbol ($version) ]($style)'
 
 [cpp]
 symbol = " "
-style = "bg:color6"
+style = "bg:color6 fg:color14"
 format = '[ $symbol ($version) ]($style)'
-
-[docker_context]
-symbol = " "
-style = "bg:color7"
-format = '[ $symbol $context ]($style)'
 
 [elixir]
 symbol = " "
-style = "bg:color6"
+style = "bg:color6 fg:color14"
 format = '[ $symbol ($version) ]($style)'
 
 [elm]
 symbol = " "
-style = "bg:color6"
+style = "bg:color6 fg:color14"
 format = '[ $symbol ($version) ]($style)'
-
-[git_branch]
-symbol = ""
-style = "bg:color5"
-format = '[ $symbol $branch ]($style)'
-
-[git_status]
-style = "bg:color5"
-format = '[$all_status$ahead_behind ]($style)'
 
 [golang]
 symbol = " "
-style = "bg:color6"
+style = "bg:color6 fg:color14"
 format = '[ $symbol ($version) ]($style)'
 
 [gradle]
-style = "bg:color6"
+style = "bg:color6 fg:color14"
 format = '[ $symbol ($version) ]($style)'
 
 [haskell]
 symbol = " "
-style = "bg:color6"
+style = "bg:color6 fg:color14"
 format = '[ $symbol ($version) ]($style)'
 
 [java]
 symbol = " "
-style = "bg:color6"
+style = "bg:color6 fg:color14"
 format = '[ $symbol ($version) ]($style)'
 
 [julia]
 symbol = " "
-style = "bg:color6"
+style = "bg:color6 fg:color14"
 format = '[ $symbol ($version) ]($style)'
 
 [nodejs]
 symbol = ""
-style = "bg:color6"
+style = "bg:color6 fg:color14"
 format = '[ $symbol ($version) ]($style)'
 
 [nim]
 symbol = "󰆥 "
-style = "bg:color6"
+style = "bg:color6 fg:color14"
 format = '[ $symbol ($version) ]($style)'
 
 [rust]
 symbol = ""
-style = "bg:color6"
+style = "bg:color6 fg:color14"
 format = '[ $symbol ($version) ]($style)'
 
 [scala]
 symbol = " "
-style = "bg:color6"
+style = "bg:color6 fg:color14"
 format = '[ $symbol ($version) ]($style)'
+
+[docker_context]
+symbol = " "
+style = "bg:color7 fg:color15"
+format = '[ $symbol $context ]($style)'
 
 [time]
 disabled = false
 time_format = "%R"
-style = "bg:color8"
+style = "bg:color8 fg:color16"
 format = '[ $time ]($style)'

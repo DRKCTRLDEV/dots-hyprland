@@ -33,10 +33,6 @@ output_path = '~/.local/state/quickshell/user/generated/color.txt'
 input_path = '~/.config/matugen/templates/wallpaper.txt'
 output_path = '~/.local/state/quickshell/user/generated/wallpaper/path.txt'
 
-[templates.starship]
-input_path = '~/.config/matugen/templates/starship.toml'
-output_path = '~/.config/starship.toml'
-
 [templates.vesktop]
 input_path = '~/.config/matugen/templates/midnight.theme.css'
 output_path = '~/.config/vesktop/themes/midnight.theme.css'

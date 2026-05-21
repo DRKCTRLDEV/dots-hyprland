@@ -19,6 +19,4 @@ hl.window_rule({ match = { class = ".*" }, no_blur = false })
 -- hl.window_rule({ match = { xwayland = 1 }, no_blur = true })
 
 -- ##### Custom WindowRules #####
-hl.window_rule({ match = { class = "^(steam)$", title = "^(?!Steam$).*$" }, float = true })
-hl.window_rule({ match = { class = "^(steam)$", title = "^(?!Steam$).*$" }, opacity = "1 override" })
-hl.window_rule({ match = { class = "^(steam)$", title = "^(?!Steam$).*$" }, no_blur = true })
+hl.window_rule({ match = { class = "steam", title = "Steam Settings" }, float = true })

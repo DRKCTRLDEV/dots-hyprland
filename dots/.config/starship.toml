@@ -1,0 +1,131 @@
+add_newline = false
+
+format = """
+[](255)\
+$os\
+$username\
+[](bg:254 fg:255)\
+$directory\
+[](fg:254 bg:253)\
+$git_branch\
+$git_status\
+[](fg:253 bg:252)\
+$c\
+$elixir\
+$elm\
+$golang\
+$gradle\
+$haskell\
+$java\
+$julia\
+$nodejs\
+$nim\
+$rust\
+$scala\
+[](fg:252 bg:251)\
+$docker_context\
+[](fg:251 bg:250)\
+$time\
+[ ](fg:250)\
+"""
+
+[os]
+style = "bg:255 fg:240"
+disabled = true
+
+[username]
+show_always = true
+style_user = "bg:255 fg:240"
+style_root = "bg:255 fg:240"
+format = '[$user ]($style)'
+disabled = false
+
+[directory]
+style = "bg:254 fg:233"
+format = "[ $path ]($style)"
+truncation_length = 3
+truncation_symbol = "…/"
+
+[git_branch]
+symbol = ""
+style = "bg:253 fg:234"
+format = '[ $symbol $branch ]($style)'
+
+[git_status]
+style = "bg:253 fg:234"
+format = '[$all_status$ahead_behind ]($style)'
+
+[c]
+symbol = " "
+style = "bg:252 fg:235"
+format = '[ $symbol ($version) ]($style)'
+
+[cpp]
+symbol = " "
+style = "bg:252 fg:235"
+format = '[ $symbol ($version) ]($style)'
+
+[elixir]
+symbol = " "
+style = "bg:252 fg:235"
+format = '[ $symbol ($version) ]($style)'
+
+[elm]
+symbol = " "
+style = "bg:252 fg:235"
+format = '[ $symbol ($version) ]($style)'
+
+[golang]
+symbol = " "
+style = "bg:252 fg:235"
+format = '[ $symbol ($version) ]($style)'
+
+[gradle]
+style = "bg:252 fg:235"
+format = '[ $symbol ($version) ]($style)'
+
+[haskell]
+symbol = " "
+style = "bg:252 fg:235"
+format = '[ $symbol ($version) ]($style)'
+
+[java]
+symbol = " "
+style = "bg:252 fg:235"
+format = '[ $symbol ($version) ]($style)'
+
+[julia]
+symbol = " "
+style = "bg:252 fg:235"
+format = '[ $symbol ($version) ]($style)'
+
+[nodejs]
+symbol = ""
+style = "bg:252 fg:235"
+format = '[ $symbol ($version) ]($style)'
+
+[nim]
+symbol = "󰆥 "
+style = "bg:252 fg:235"
+format = '[ $symbol ($version) ]($style)'
+
+[rust]
+symbol = ""
+style = "bg:252 fg:235"
+format = '[ $symbol ($version) ]($style)'
+
+[scala]
+symbol = " "
+style = "bg:252 fg:235"
+format = '[ $symbol ($version) ]($style)'
+
+[docker_context]
+symbol = " "
+style = "bg:251 fg:236"
+format = '[ $symbol $context ]($style)'
+
+[time]
+disabled = false
+time_format = "%R"
+style = "bg:250 fg:237"
+format = '[ $time ]($style)'

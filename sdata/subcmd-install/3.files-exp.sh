@@ -67,6 +67,12 @@ get_next_backup_number() {
 # MAIN EXECUTION
 # =============================================================================
 
+# Run user preference wizard
+case "$ask" in
+  false) true ;;
+  *) wizard_update_preferences ;;
+esac
+
 # Read patterns from YAML file
 readarray patterns < <(yq -o=j -I=0 '.patterns[]' "$CONFIG_FILE")
 

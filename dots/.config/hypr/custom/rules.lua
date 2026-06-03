@@ -5,6 +5,7 @@
 -- ##### Preset WindowRules #####
 -- Blur/Transparency Global:
 hl.window_rule({ match = { class = ".*" }, no_blur = false, opacity = "0.89 override 0.89 override" })
+hl.window_rule({ match = { fullscreen = "true" }, no_blur = true, opacity = "1.0 override 1.0 override" })
 
 -- Blur/Transparency Whitelist:
 -- hl.window_rule({ match = { class = "(?i).*(dolphin|code|kitty|spotify).*" }, no_blur = false, opacity = "0.89 override 0.89 override" })

@@ -51,7 +51,7 @@ Item {
         spacing: sidebarPadding
 
         Toolbar {
-            visible: tabButtonList.length > 0
+            visible: tabButtonList.length > 1
             Layout.alignment: Qt.AlignHCenter
             enableShadow: false
             ToolbarTabBar {

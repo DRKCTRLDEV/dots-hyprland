@@ -5,19 +5,23 @@ import QtQuick.Layouts
 
 GroupButton {
     id: root
-    property string displayText: ""
+    property string iconName: ""
+    property string labelText: ""
     property string tooltipText: ""
-    property real fixedWidth: 0
+    property real iconSize: Appearance.font.pixelSize.larger
+    property real labelPixelSize: Appearance.font.pixelSize.small
+    property real buttonSize: 36
 
-    horizontalPadding: 12
-    verticalPadding: 8
-    baseHeight: 36
-    baseWidth: Math.max(contentItem.implicitWidth + horizontalPadding * 2, fixedWidth)
+    baseWidth: root.buttonSize
+    baseHeight: root.buttonSize
     clickedWidth: baseWidth
     clickedHeight: baseHeight
+    horizontalPadding: 0
+    verticalPadding: 0
     buttonRadius: Appearance.rounding.small
     bounce: false
 
+    Layout.fillWidth: false
     Layout.fillHeight: false
     Layout.minimumWidth: baseWidth
     Layout.preferredWidth: baseWidth
@@ -30,12 +34,21 @@ GroupButton {
     colBackgroundHover: Appearance.colors.colLayer2Hover
     colBackgroundActive: Appearance.colors.colLayer2Active
 
-    contentItem: StyledText {
-        text: root.displayText
-        color: Appearance.colors.colOnLayer2
-        font.pixelSize: Appearance.font.pixelSize.small
-        horizontalAlignment: Text.AlignHCenter
-        verticalAlignment: Text.AlignVCenter
+    contentItem: Item {
+        MaterialSymbol {
+            anchors.centerIn: parent
+            visible: root.labelText.length === 0
+            iconSize: root.iconSize
+            text: root.iconName
+            color: root.enabled ? Appearance.colors.colOnLayer2 : Appearance.colors.colSubtext
+        }
+        StyledText {
+            anchors.centerIn: parent
+            visible: root.labelText.length > 0
+            text: root.labelText
+            color: root.enabled ? Appearance.colors.colOnLayer2 : Appearance.colors.colSubtext
+            font.pixelSize: root.labelPixelSize
+        }
     }
 
     Loader {

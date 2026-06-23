@@ -21,4 +21,23 @@ QtObject {
     property string functionResponse
     property bool functionPending: false
     property bool visibleToUser: true
+
+    function toJSON() {
+        return {
+            "role": role,
+            "rawContent": rawContent,
+            "fileMimeType": fileMimeType,
+            "fileUri": fileUri,
+            "localFilePath": localFilePath,
+            "model": model,
+            "thinking": false,
+            "done": true,
+            "annotations": annotations,
+            "annotationSources": annotationSources,
+            "functionName": functionName,
+            "functionCall": functionCall,
+            "functionResponse": functionResponse,
+            "visibleToUser": visibleToUser
+        };
+    }
 }

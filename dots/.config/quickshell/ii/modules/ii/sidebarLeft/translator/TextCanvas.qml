@@ -8,79 +8,52 @@ import QtQuick.Layouts
 
 Rectangle {
     id: root
-    property bool isInput: true // true for input, false for output
+    property bool editable: true
     property string placeholderText
-    property string text: ""
-    property var inputTextArea: isInput ? inputLoader.item : undefined
-    readonly property string displayedText: isInput ? inputLoader.item.text : 
-        root.text.length > 0 ? outputLoader.item.text : ""
-    default property alias actionButtons: actions.groupData
+    property alias text: canvasTextArea.text
+    property var inputTextArea: canvasTextArea
+    readonly property alias displayedText: canvasTextArea.text
+
+    property real defaultHeight: 96
+    property real maxHeight: Infinity
+
     Layout.fillWidth: true
-    implicitHeight: Math.max(150, inputColumn.implicitHeight)
+    implicitHeight: Math.min(
+        Math.max(defaultHeight, canvasTextArea.contentHeight + canvasTextArea.topPadding + canvasTextArea.bottomPadding),
+        maxHeight
+    )
     color: Appearance.colors.colLayer2
     radius: Appearance.rounding.normal
+    clip: true
 
-    signal inputTextChanged(); // Signal emitted when text changes
+    signal inputTextChanged
+    signal keyPressed(var event)
 
-    ColumnLayout {
-        id: inputColumn
+    ScrollView {
+        id: textScroll
         anchors.fill: parent
-        spacing: 0
+        clip: true
+        ScrollBar.horizontal.policy: ScrollBar.AlwaysOff
+        ScrollBar.vertical.policy: ScrollBar.AsNeeded
 
-        Loader {
-            id: inputLoader
-            active: root.isInput
-            visible: root.isInput
-            Layout.fillWidth: true
-            sourceComponent: StyledTextArea { // Input area
-                id: inputTextArea
-                placeholderText: root.placeholderText
-                wrapMode: TextEdit.Wrap
-                textFormat: TextEdit.PlainText
-                font.pixelSize: Appearance.font.pixelSize.small
-                color: Appearance.colors.colOnLayer1
-                padding: 15
-                background: null
-                onTextChanged: root.inputTextChanged()
-            }
-        }
-
-        Loader {
-            id: outputLoader
-            active: !root.isInput
-            visible: !root.isInput
-            Layout.fillWidth: true
-            sourceComponent: StyledText { // Output area
-                id: outputTextArea
-                padding: 15
-                wrapMode: Text.Wrap
-                font.pixelSize: Appearance.font.pixelSize.small
-                color: root.text.length > 0 ? Appearance.colors.colOnLayer1 : Appearance.colors.colSubtext
-                text: root.text.length > 0 ? root.text : root.placeholderText
-            }
-        }
-
-        Item { Layout.fillHeight: true } 
-
-        RowLayout { // Status row
-            Layout.fillWidth: true
-            Layout.margins: 10
-            spacing: 10
-
-            Loader {
-                active: root.isInput
-                visible: root.isInput
-                Layout.leftMargin: 10
-                sourceComponent: Text {
-                    text: Translation.tr("%1 characters").arg(inputLoader.item.text.length)
-                    color: Appearance.colors.colOnLayer1
-                    font.pixelSize: Appearance.font.pixelSize.smaller
+        StyledTextArea {
+            id: canvasTextArea
+            width: textScroll.availableWidth
+            readOnly: !root.editable
+            placeholderText: root.placeholderText
+            wrapMode: TextEdit.Wrap
+            textFormat: TextEdit.PlainText
+            font.pixelSize: Appearance.font.pixelSize.small
+            color: root.text.length > 0 || root.editable ? Appearance.colors.colOnLayer1 : Appearance.colors.colSubtext
+            padding: 10
+            persistentSelection: true
+            background: null
+            onTextChanged: {
+                if (root.editable) {
+                    root.inputTextChanged();
                 }
             }
-            Item { Layout.fillWidth: true }
-            ButtonGroup {
-                id: actions
-            }
+            Keys.onPressed: (event) => root.keyPressed(event)
         }
     }
 }

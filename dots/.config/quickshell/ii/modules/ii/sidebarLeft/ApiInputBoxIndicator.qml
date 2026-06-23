@@ -18,15 +18,15 @@ Item { // Model indicator
 
         MaterialSymbol {
             text: root.icon
-            iconSize: Appearance.font.pixelSize.normal
+            iconSize: Appearance.font.pixelSize.larger
         }
         StyledText {
             id: providerName
-            font.pixelSize: Appearance.font.pixelSize.smaller
+            font.pixelSize: Appearance.font.pixelSize.small
             color: Appearance.m3colors.m3onSurface
             elide: Text.ElideRight
             text: root.text
-            animateChange: true
+            animateChange: false
         }
     }
 

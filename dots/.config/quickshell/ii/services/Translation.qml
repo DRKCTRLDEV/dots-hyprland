@@ -44,6 +44,15 @@ Singleton {
         translationsDir: root.generatedTranslationsDir
         onLanguagesScanned: (languages) => {
             root.availableGeneratedLanguages = [...languages];
+            // Now that we know what generated translations exist, load the current language
+            if (languages.length > 0 && languages.includes(root.languageCode))
+                generatedTranslationFileView.reread();
+        }
+        // Don't fallback to en_US when the generated dir doesn't exist
+        onExited: (exitCode, exitStatus) => {
+            if (exitCode !== 0) {
+                root.availableGeneratedLanguages = [];
+            }
         }
     }
 
@@ -52,7 +61,9 @@ Singleton {
         translationFileView.languageCode = root.languageCode;
         generatedTranslationFileView.languageCode = root.languageCode;
         translationFileView.reread();
-        generatedTranslationFileView.reread();
+        // Only try to load generated translations if the scan found any
+        if (root.availableGeneratedLanguages.length > 0)
+            generatedTranslationFileView.reread();
     }
 
     TranslationReader {

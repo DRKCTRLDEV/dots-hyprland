@@ -15,13 +15,11 @@ Item {
     }
     implicitWidth: fabWidget.implicitWidth
     implicitHeight: fabWidget.implicitHeight
-    Loader {
-        active: root.enableShadow
-        anchors.fill: parent
-        sourceComponent: StyledRectangularShadow {
-            target: fabWidget
-            radius: fabWidget.buttonRadius
-        }
+    StyledRectangularShadow {
+        visible: root.enableShadow
+        anchors.fill: fabWidget
+        target: fabWidget
+        radius: fabWidget.buttonRadius
     }
     FloatingActionButton {
         id: fabWidget

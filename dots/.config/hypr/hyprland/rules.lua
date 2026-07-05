@@ -80,7 +80,7 @@ hl.window_rule({match = {class = "^(steam_app).*" }, immediate = true})
 hl.window_rule({match = {float = 0 }, no_shadow = true})
 
 -- ######## Workspace rules ########
-hl.workspace_rule({ workspace = "special:special", gaps_out = 30 })
+hl.workspace_rule({ workspace = "special:special", gaps_out = 18 })
 
 -- ######## Layer rules ########
 hl.layer_rule({ match = { namespace = ".*" }, xray = true})

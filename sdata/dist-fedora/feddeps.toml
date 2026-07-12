@@ -61,7 +61,6 @@ packages = [
   "breeze-icon-theme",
   "breeze-icon-theme-fedora",
   "kf6-breeze-icons",
-  "sddm-breeze",
   "breeze-plus-icon-theme",
   "darkly",
   "eza",

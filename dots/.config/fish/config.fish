@@ -1,3 +1,5 @@
+source ~/.config/fish/auto-Hypr.fish
+
 if status is-interactive
     # Don't Greet
     set fish_greeting

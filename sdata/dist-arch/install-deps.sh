@@ -19,7 +19,11 @@ remove_deprecated_dependencies(){
   list+=(hyprland-qtutils)
   list+=({quickshell,hyprutils,hyprpicker,hyprlang,hypridle,hyprland-qt-support,hyprland-qtutils,hyprlock,xdg-desktop-portal-hyprland,hyprcursor,hyprwayland-scanner,hyprland}-git)
   list+=(matugen-bin)
-  for i in ${list[@]};do try sudo pacman --noconfirm -Rdd $i;done
+  for i in "${list[@]}"; do
+    if pacman -Q "$i" &>/dev/null; then
+      try sudo pacman --noconfirm -Rdd "$i"
+    fi
+  done
 }
 # NOTE: `implicitize_old_dependencies()` was for the old days when we just switch from dependencies.conf to local PKGBUILDs.
 # However, let's just keep it as references for other distros writing their `sdata/dist-<OS_GROUP_ID>/install-deps.sh`, if they need it.
@@ -58,6 +62,36 @@ case $SKIP_SYSUPDATE in
   *) v sudo pacman -Syu;;
 esac
 
+# Align CachyOS's PipeWire packages when repository revisions diverge.
+repair_pipewire_stack(){
+  local packages=(pipewire pipewire-audio pipewire-alsa pipewire-pulse libpipewire gst-plugin-pipewire)
+  local package installed candidate
+  local needs_repair=false
+
+  [[ "$OS_DISTRO_ID" == "cachyos" ]] || return 0
+  command -v vercmp &>/dev/null || return 0
+  for package in "${packages[@]}"; do
+    installed=$(pacman -Q "$package" 2>/dev/null | awk '{print $2}') || continue
+    candidate=$(pacman -Si "$package" 2>/dev/null | awk -F': ' '/^Version/ {print $2; exit}')
+    if [[ -n "$installed" && -n "$candidate" ]] && (( $(vercmp "$installed" "$candidate") > 0 )); then
+      needs_repair=true
+      break
+    fi
+  done
+
+  if $needs_repair; then
+    local pacman_flags=(--needed)
+    [[ "$ask" == false ]] && pacman_flags+=(--noconfirm)
+    printf "${STY_YELLOW}[$0]: Synchronizing the PipeWire stack with the configured repositories (CachyOS package revision mismatch).${STY_RST}\n"
+    x sudo pacman -Syyuu "${pacman_flags[@]}" "${packages[@]}"
+  fi
+}
+
+if [[ "$SKIP_SYSUPDATE" != true ]]; then
+  showfun repair_pipewire_stack
+  v repair_pipewire_stack
+fi
+
 # Use yay. Because paru does not support cleanbuild.
 # Also see https://wiki.hyprland.org/FAQ/#how-do-i-update
 if ! command -v yay >/dev/null 2>&1;then
@@ -78,14 +112,32 @@ install-local-pkgbuild() {
   x pushd $location
 
   source ./PKGBUILD
-  x yay -S --sudoloop $installflags --asdeps "${depends[@]}"
-  # man makepkg:
-  # -A, --ignorearch: Ignore a missing or incomplete arch field in the build script.
-  # -s, --syncdeps: Install missing dependencies using pacman. When build-time or run-time dependencies are not found, pacman will try to resolve them.
-  # -f, --force: build a package even if it already exists in the PKGDEST
-  # -i, --install: Install or upgrade the package after a successful build using pacman(8).
-  # In https://github.com/end-4/dots-hyprland/issues/823#issuecomment-3394774645 it's suggested to use `sudo pacman -U --noconfirm *.pkg.tar.zst` instead of `makepkg -i`, however it's possible that multiple *.pkg.tar.zst exist, which makes this command not reliable.
-  x makepkg -Afsi --noconfirm
+
+  # Replace any installed packages declared as conflicts by the PKGBUILD.
+  local conflict
+  for conflict in "${conflicts[@]-}"; do
+    [[ -n "$conflict" ]] || continue
+    if pacman -Q "$conflict" &>/dev/null; then
+      printf "${STY_YELLOW}[$0]: Removing conflicting package $conflict before installing $pkgname.${STY_RST}\n"
+      x sudo pacman -R --noconfirm "$conflict"
+    fi
+  done
+
+  # Install only dependencies not already satisfied by the system.
+  local dependencies=("${depends[@]}" "${makedepends[@]}")
+  local missing=()
+  local dependency
+  for dependency in "${dependencies[@]}"; do
+    if ! pacman -T "$dependency" &>/dev/null; then
+      missing+=("$dependency")
+    fi
+  done
+  if ((${#missing[@]})); then
+    x yay -S --sudoloop $installflags --asdeps "${missing[@]}"
+  fi
+
+  # Dependencies are installed above; skip makepkg's second resolver pass.
+  x makepkg -Afi --noconfirm
   x popd
 }
 

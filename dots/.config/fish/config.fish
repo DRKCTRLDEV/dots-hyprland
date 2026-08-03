@@ -10,7 +10,7 @@ if status is-interactive
     if test "$TERM" != "linux"
         starship init fish | source
         enable_transience
-        alias ls 'eza --icons'
+        alias ls 'eza --icons=auto'
     end
 
     # Colors

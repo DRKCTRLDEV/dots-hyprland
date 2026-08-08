@@ -22,3 +22,6 @@ hl.window_rule({ match = { class = "steam", title = "Steam Settings" }, float = 
 
 -- MCA Selector: No Blur/Transparency
 hl.window_rule({ match = { class = "^net\\.querz\\.mcaselector\\.ui\\.Window$" }, no_blur = true, opacity = "1.0 override 1.0 override" })
+
+-- Nuvio Streaming: No Blur/Transparency
+hl.window_rule({ match = { title = "Nuvio" }, no_blur = true, opacity = "1.0 override 1.0 override" })

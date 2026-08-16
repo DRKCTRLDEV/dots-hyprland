@@ -135,6 +135,36 @@ ContentPage {
                 Config.options.dock.monochromeIcons = checked;
             }
         }
+        ConfigSwitch {
+            buttonIcon: "keep"
+            text: Translation.tr("Reserve space when pinned")
+            checked: Config.options.dock.reserveSpaceWhenPinned
+            onCheckedChanged: {
+                Config.options.dock.reserveSpaceWhenPinned = checked;
+            }
+            StyledToolTip {
+                text: Translation.tr("When enabled, a pinned dock reserves screen space and windows won't go under it.\nWhen disabled, the dock overlays whatever is on screen instead.")
+            }
+        }
+        ConfigRow {
+            uniform: true
+            ConfigSwitch {
+                buttonIcon: "keep"
+                text: Translation.tr("Show pin button")
+                checked: Config.options.dock.showPinButton
+                onCheckedChanged: {
+                    Config.options.dock.showPinButton = checked;
+                }
+            }
+            ConfigSwitch {
+                buttonIcon: "apps"
+                text: Translation.tr("Show launcher button")
+                checked: Config.options.dock.showLauncherButton
+                onCheckedChanged: {
+                    Config.options.dock.showLauncherButton = checked;
+                }
+            }
+        }
     }
 
     ContentSection {

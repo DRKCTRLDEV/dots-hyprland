@@ -35,7 +35,7 @@ Scope { // Scope
                 right: true
             }
 
-            exclusiveZone: root.pinned ? implicitHeight - (Appearance.sizes.hyprlandGapsOut) - (Appearance.sizes.elevationMargin - Appearance.sizes.hyprlandGapsOut) : 0
+            exclusiveZone: root.pinned && (Config.options?.dock.reserveSpaceWhenPinned ?? true) ? implicitHeight - (Appearance.sizes.hyprlandGapsOut) - (Appearance.sizes.elevationMargin - Appearance.sizes.hyprlandGapsOut) : 0
 
             implicitWidth: dockBackground.implicitWidth
             WlrLayershell.namespace: "quickshell:dock"
@@ -101,33 +101,40 @@ Scope { // Scope
                             spacing: 3
                             property real padding: 5
 
-                            VerticalButtonGroup {
-                                Layout.topMargin: Appearance.sizes.hyprlandGapsOut // why does this work
-                                GroupButton {
-                                    // Pin button
-                                    baseWidth: 35
-                                    baseHeight: 35
-                                    clickedWidth: baseWidth
-                                    clickedHeight: baseHeight + 20
-                                    buttonRadius: Appearance.rounding.normal
-                                    toggled: root.pinned
-                                    onClicked: root.pinned = !root.pinned
-                                    contentItem: MaterialSymbol {
-                                        text: "keep"
-                                        horizontalAlignment: Text.AlignHCenter
-                                        iconSize: Appearance.font.pixelSize.larger
-                                        color: root.pinned ? Appearance.m3colors.m3onPrimary : Appearance.colors.colOnLayer0
+                            DockButton {
+                                visible: Config.options?.dock.showPinButton ?? true
+                                onClicked: root.pinned = !root.pinned
+                                topInset: Appearance.sizes.hyprlandGapsOut + dockRow.padding
+                                bottomInset: Appearance.sizes.hyprlandGapsOut + dockRow.padding
+                                contentItem: MaterialSymbol {
+                                    anchors.fill: parent
+                                    horizontalAlignment: Text.AlignHCenter
+                                    font.pixelSize: parent.width / 2
+                                    text: "keep"
+                                    fill: root.pinned ? 1 : 0
+                                    rotation: root.pinned ? 45 : 0
+                                    color: Appearance.colors.colOnLayer0
+
+                                    Behavior on rotation {
+                                        animation: Appearance.animation.elementMoveFast.numberAnimation.createObject(this)
                                     }
                                 }
                             }
-                            DockSeparator {}
+                            DockSeparator {
+                                visible: Config.options?.dock.showPinButton ?? true
+                            }
                             DockApps {
                                 id: dockApps
                                 buttonPadding: dockRow.padding
+                                Layout.leftMargin: (Config.options?.dock.showPinButton ?? true) ? 0 : dockRow.padding * 2
+                                Layout.rightMargin: (Config.options?.dock.showLauncherButton ?? true) ? 0 : dockRow.padding * 2
                             }
-                            DockSeparator {}
+                            DockSeparator {
+                                visible: Config.options?.dock.showLauncherButton ?? true
+                            }
                             DockButton {
                                 Layout.fillHeight: true
+                                visible: Config.options?.dock.showLauncherButton ?? true
                                 onClicked: GlobalStates.overviewOpen = !GlobalStates.overviewOpen
                                 topInset: Appearance.sizes.hyprlandGapsOut + dockRow.padding
                                 bottomInset: Appearance.sizes.hyprlandGapsOut + dockRow.padding

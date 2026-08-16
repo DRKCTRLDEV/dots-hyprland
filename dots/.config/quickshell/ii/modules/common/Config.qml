@@ -312,6 +312,9 @@ Singleton {
                 property real hoverRegionHeight: 2
                 property bool pinnedOnStartup: false
                 property bool hoverToReveal: true // When false, only reveals on empty workspace
+                property bool reserveSpaceWhenPinned: true // When true, the pinned dock reserves screen space (windows won't go under it).
+                property bool showPinButton: true
+                property bool showLauncherButton: true
                 property list<string> pinnedApps: [ // IDs of pinned entries
                     "org.kde.dolphin", "kitty",]
                 property list<string> ignoredAppRegexes: []

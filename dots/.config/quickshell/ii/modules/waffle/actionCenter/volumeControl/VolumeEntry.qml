@@ -3,6 +3,7 @@ import QtQuick.Controls
 import QtQuick.Layouts
 import Quickshell
 import Quickshell.Services.Pipewire
+import org.kde.kirigami as Kirigami
 import qs
 import qs.services
 import qs.modules.common
@@ -14,18 +15,42 @@ import qs.modules.waffle.actionCenter
 RowLayout {
     id: root
     required property PwNode node
-    property alias icon: iconButton.iconName
-    property alias monochrome: iconButton.monochrome
-    monochrome: false
+    property string icon: ""
+    property bool monochrome: false
+
+    readonly property string fluentGlyphPath: root.icon === "" ? "" : `${Looks.iconsPath}/${root.icon}.svg`
+    readonly property string appIconSource: {
+        let icon;
+        icon = AppSearch.guessIcon(root.node?.properties["application.icon-name"] ?? "");
+        if (AppSearch.iconExists(icon))
+            return icon;
+        icon = AppSearch.guessIcon(root.node?.properties["node.name"] ?? "");
+        return AppSearch.iconExists(icon) ? icon : "";
+    }
 
     PwObjectTracker { // Necessary for useful info to be present in 'node'
         objects: [root.node]
     }
 
-    WPanelIconButton {
+    WButton {
         id: iconButton
-        iconName: WIcons.audioAppIcon(root.node)
+        implicitWidth: 40
+        implicitHeight: 40
         onClicked: root.node.audio.muted = !root.node?.audio.muted
+
+        contentItem: Item {
+            Kirigami.Icon {
+                id: iconContent
+                anchors.centerIn: parent
+                implicitWidth: 18
+                implicitHeight: 18
+                source: root.fluentGlyphPath !== "" ? root.fluentGlyphPath : (root.appIconSource !== "" ? root.appIconSource : `${Looks.iconsPath}/apps.svg`)
+                fallback: `${Looks.iconsPath}/apps.svg`
+                roundToIconSize: false
+                isMask: root.monochrome || root.fluentGlyphPath !== ""
+                color: Looks.colors.fg
+            }
+        }
 
         FluentIcon {
             id: muteIcon

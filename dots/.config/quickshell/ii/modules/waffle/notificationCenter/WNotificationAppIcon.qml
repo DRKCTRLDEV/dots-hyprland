@@ -21,7 +21,6 @@ Item {
         implicitWidth: root.implicitSize
         implicitHeight: root.implicitSize
 
-        source: root.icon || fallback
         fallback: `${Looks.iconsPath}/apps.svg`
         roundToIconSize: false
         isMask: !root.icon

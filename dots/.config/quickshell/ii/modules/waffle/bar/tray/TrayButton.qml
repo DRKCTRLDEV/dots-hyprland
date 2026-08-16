@@ -15,7 +15,13 @@ BarIconButton {
     required property SystemTrayItem item
     property alias menuOpen: menu.visible
     readonly property bool barAtBottom: Config.options.waffles.bar.bottom
-    iconSource: item.icon
+    readonly property string resolvedIconSource: {
+        const icon = root.item?.icon ?? "";
+        if (icon === "" || icon.includes("/") || icon.includes(":"))
+            return icon;
+        return Quickshell.iconPath(icon, "image-missing") || `${Looks.iconsPath}/apps.svg`;
+    }
+    iconSource: root.resolvedIconSource
     iconScale: 0
     Component.onCompleted: {
         root.iconScale = 1

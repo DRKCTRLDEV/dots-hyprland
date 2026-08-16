@@ -114,10 +114,6 @@ install-local-pkgbuild() {
   source ./PKGBUILD
 
   # Replace any installed packages declared as conflicts by the PKGBUILD.
-  # pacman -Q matches "provides" (e.g. "quickshell" provided by
-  # illogical-impulse-quickshell-git), so query the actual installed name with
-  # -Qq first - otherwise pacman -R fails with "target not found" for names
-  # that are only provided, not installed under that exact name.
   local conflict installed_conflict
   for conflict in "${conflicts[@]-}"; do
     [[ -n "$conflict" ]] || continue
@@ -200,4 +196,3 @@ case $SKIP_PLASMAINTG in
     esac
     ;;
 esac
-

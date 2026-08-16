@@ -67,6 +67,10 @@ Singleton {
             const index = root.list.findIndex((notif) => notif.notificationId === notificationId);
             const notifObject = root.list[index];
             print("[Notifications] Notification timer triggered for ID: " + notificationId + ", transient: " + notifObject?.isTransient);
+            if (notifObject == null) {
+                destroy()
+                return;
+            }
             if (notifObject.isTransient) root.discardNotification(notificationId);
             else root.timeoutNotification(notificationId);
             destroy()
@@ -92,7 +96,7 @@ Singleton {
     function stringifyList(list) {
         return JSON.stringify(list.map((notif) => notifToJSON(notif)), null, 2);
     }
-    
+
     onListChanged: {
         // Update latest time for each app
         root.list.forEach((notif) => {
@@ -245,7 +249,7 @@ Singleton {
             const action = notifServerNotif.actions.find((action) => action.identifier === notifIdentifier);
             // console.log("Action found: " + JSON.stringify(action));
             action.invoke()
-        } 
+        }
         else {
             console.log("Notification not found in server: " + id)
         }

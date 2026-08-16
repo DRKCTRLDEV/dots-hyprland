@@ -5,14 +5,17 @@ import QtQuick.Controls
 
 TextField {
     id: root
-    
+
     clip: true
     renderType: Text.NativeRendering
     verticalAlignment: Text.AlignVCenter
     color: Looks.colors.fg
 
     palette {
-        active: Looks.colors.accent
+        active {
+            highlight: Looks.colors.accent
+            highlightedText: Looks.colors.accentFg
+        }
     }
 
     font {

@@ -77,7 +77,7 @@ Scope {
     }
 
     IpcHandler {
-        target: "search"
+        target: "overview"
 
         function toggle() {
             GlobalStates.overviewOpen = !GlobalStates.overviewOpen;
@@ -93,9 +93,6 @@ Scope {
         }
         function toggleReleaseInterrupt() {
             GlobalStates.superReleaseMightTrigger = false;
-        }
-        function clipboardToggle() {
-            overviewScope.toggleClipboard();
         }
     }
 

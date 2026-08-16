@@ -26,7 +26,7 @@ AppButton {
         }
     }
 
-    property bool active: root.appEntry.toplevels.some(t => t.activated)
+    property bool active: root.appEntry.toplevels.some(t => t?.activated == true)
     property bool hasWindows: appEntry.toplevels.length > 0
 
     signal hoverPreviewRequested()

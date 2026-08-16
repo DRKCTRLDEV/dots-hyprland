@@ -36,6 +36,7 @@ Item {
         id: listView
         spacing: 2
         orientation: ListView.Horizontal
+        clip: true
         anchors {
             top: parent.top
             bottom: parent.bottom
@@ -64,7 +65,7 @@ Item {
         id: previewPopup
         property var appTopLevel: root.lastHoveredButton?.appToplevel
 
-        property bool shouldShow: (popupMouseArea.containsMouse || root.buttonHovered) && appTopLevel && appTopLevel.toplevels && appTopLevel.toplevels.length > 0
+        property bool shouldShow: !!((popupMouseArea.containsMouse || root.buttonHovered) && appTopLevel && appTopLevel.toplevels && appTopLevel.toplevels.length > 0)
 
         property bool show: false
         property real cachedCenterX: 0

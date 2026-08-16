@@ -48,20 +48,6 @@ WBarAttachedPanelContent {
                         }
                         return 230;
                     }
-                    
-                    Timer {
-                        id: enableTimer
-                        interval: Config.options.hacks.arbitraryRaceConditionDelay
-                        onTriggered: heightBehavior.enabled = true;
-                    }
-                    Behavior on implicitHeight {
-                        id: heightBehavior
-                        enabled: false
-                        Component.onCompleted: {
-                            enableTimer.restart();
-                        }
-                        animation: Looks.transition.enter.createObject(this)
-                    }
                 }
             }
         }

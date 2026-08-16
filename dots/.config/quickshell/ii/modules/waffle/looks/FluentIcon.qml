@@ -1,4 +1,5 @@
 import QtQuick
+import Quickshell
 import org.kde.kirigami as Kirigami
 import qs.services
 import qs.modules.common
@@ -13,7 +14,10 @@ Kirigami.Icon {
     implicitWidth: implicitSize
     implicitHeight: implicitSize
 
-    readonly property string fallbackSource: root.icon !== "" && AppSearch.iconExists(root.icon) ? root.icon : `${Looks.iconsPath}/image-missing.svg`
+    // Resolve to a file path, never a bare theme icon name: Kirigami looks names
+    // up via KIconLoader, which can fail (and warn) for icons that exist in the
+    // QIcon theme used by AppSearch/Quickshell.
+    readonly property string fallbackSource: root.icon !== "" && AppSearch.iconExists(root.icon) ? Quickshell.iconPath(root.icon, true) : `${Looks.iconsPath}/image-missing.svg`
     source: icon === "" ? "" : `${Looks.iconsPath}/${root.icon}${filled ? "-filled" : ""}.svg`
     fallback: root.fallbackSource
     roundToIconSize: false

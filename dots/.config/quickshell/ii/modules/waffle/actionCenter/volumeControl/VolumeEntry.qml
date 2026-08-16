@@ -19,13 +19,16 @@ RowLayout {
     property bool monochrome: false
 
     readonly property string fluentGlyphPath: root.icon === "" ? "" : `${Looks.iconsPath}/${root.icon}.svg`
+    // Resolve to a file path, never a bare theme icon name, so that the
+    // Kirigami.Icon below doesn't go through KIconLoader (which warns for
+    // names that only exist in the QIcon theme, e.g. "flatpak-symbolic").
     readonly property string appIconSource: {
         let icon;
         icon = AppSearch.guessIcon(root.node?.properties["application.icon-name"] ?? "");
         if (AppSearch.iconExists(icon))
-            return icon;
+            return Quickshell.iconPath(icon, true);
         icon = AppSearch.guessIcon(root.node?.properties["node.name"] ?? "");
-        return AppSearch.iconExists(icon) ? icon : "";
+        return AppSearch.iconExists(icon) ? Quickshell.iconPath(icon, true) : "";
     }
 
     PwObjectTracker { // Necessary for useful info to be present in 'node'

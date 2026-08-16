@@ -19,9 +19,12 @@ Kirigami.Icon {
     animated: true
     roundToIconSize: false
     readonly property string placeholderIconPath: `${Looks.iconsPath}/image-missing.svg`
-    readonly property string themeIconName: AppSearch.iconExists(root.iconName) ? root.iconName : ""
+    // Resolve theme icons to a file path rather than passing a bare icon name:
+    // AppSearch/Quickshell look up icons via QIcon, but Kirigami.Icon looks them
+    // up through KIconLoader, which can fail (and warn) for the same name.
+    readonly property string themeIconPath: AppSearch.iconExists(root.iconName) ? Quickshell.iconPath(root.iconName, true) : ""
     readonly property string customIconPath: tryCustomIcon ? `${Looks.iconsPath}/${root.iconName}${!root.separateLightDark ? "" : Looks.dark ? "-dark" : "-light"}.svg` : ""
-    property string effectiveSource: root.themeIconName !== "" ? root.themeIconName : root.placeholderIconPath
+    property string effectiveSource: root.themeIconPath !== "" ? root.themeIconPath : root.placeholderIconPath
     fallback: root.placeholderIconPath
     source: effectiveSource
 

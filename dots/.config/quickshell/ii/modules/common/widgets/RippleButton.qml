@@ -38,7 +38,14 @@ Button {
             colBackground), root.enabled ? 0 : 1)
     property color rippleColor: root.toggled ? colRippleToggled : colRipple
 
-    function startRipple(x, y) {
+    // Stored as a property var instead of a plain function so that invoking it
+    // from the MouseArea handler reads it as a data property (readVarProperty)
+    // rather than extracting a VME method. The latter can fail with
+    // "QQmlVMEMetaObject: Internal error - attempted to evaluate a function in
+    // an invalid context" on objects whose QML context was invalidated (e.g.
+    // dynamic popups created by the menu system), which would also break the
+    // ripple on every press.
+    property var startRipple: function(x, y) {
         const stateY = buttonBackground.y;
         rippleAnim.x = x;
         rippleAnim.y = y - stateY;

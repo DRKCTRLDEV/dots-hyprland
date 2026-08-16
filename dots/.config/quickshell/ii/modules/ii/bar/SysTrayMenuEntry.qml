@@ -16,6 +16,15 @@ RippleButton {
     property bool forceSpecialInteractionColumn: false
     readonly property bool hasIcon: menuEntry.icon.length > 0
     readonly property bool hasSpecialInteraction: menuEntry.buttonType !== QsMenuButtonType.None
+    // Resolve bare theme icon names to a file path so IconImage doesn't go
+    // through the theme lookup (which warns for names that only exist in the
+    // QIcon theme, e.g. "flatpak-symbolic" from flatpak tray menus).
+    readonly property string resolvedIconSource: {
+        const icon = root.menuEntry.icon ?? "";
+        if (icon === "" || icon.includes("/") || icon.includes(":"))
+            return icon;
+        return Quickshell.iconPath(icon, "image-missing");
+    }
 
     signal dismiss()
     signal openSubmenu(handle: QsMenuHandle)
@@ -100,7 +109,7 @@ RippleButton {
                 active: root.menuEntry.icon.length > 0
                 sourceComponent: IconImage {
                     asynchronous: true
-                    source: root.menuEntry.icon
+                    source: root.resolvedIconSource
                     implicitSize: 20
                     mipmap: true
                 }

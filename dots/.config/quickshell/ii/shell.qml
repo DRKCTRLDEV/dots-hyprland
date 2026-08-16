@@ -41,20 +41,26 @@ ShellRoot {
         Config.options.panelFamily = families[nextIndex]
     }
 
-    component PanelFamilyLoader: LazyLoader {
-        required property string identifier
-        property bool extraCondition: true
-        active: Config.ready && Config.options.panelFamily === identifier && extraCondition
-    }
-    
-    PanelFamilyLoader {
-        identifier: "ii"
-        component: IllogicalImpulseFamily {}
+    Component {
+        id: iiFamilyComponent
+        IllogicalImpulseFamily {}
     }
 
-    PanelFamilyLoader {
-        identifier: "waffle"
-        component: WaffleFamily {}
+    Component {
+        id: waffleFamilyComponent
+        WaffleFamily {}
+    }
+
+    Loader {
+        id: familyLoader
+        active: Config.ready
+        sourceComponent: {
+            switch (Config.options.panelFamily) {
+            case "ii": return iiFamilyComponent
+            case "waffle": return waffleFamilyComponent
+            default: return null
+            }
+        }
     }
 
 
@@ -74,4 +80,3 @@ ShellRoot {
         onPressed: root.cyclePanelFamily()
     }
 }
-

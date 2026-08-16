@@ -30,6 +30,7 @@ ButtonMouseArea {
     property real workspaceIconSizeShrinked: workspaceButtonWidth * 0.55
     property real workspaceIconOpacityShrinked: 1
     property real workspaceIconMarginShrinked: -4
+    property real widgetPadding: 0
     property int workspaceIndexInGroup: (monitor?.activeWorkspace?.id - 1) % wsModel.shownCount
     property real specialTextSize: workspaceButtonWidth * 0.5
 
@@ -66,7 +67,7 @@ ButtonMouseArea {
             switchWorkspaceToHovered();
         else if (mouse.button == Qt.RightButton)
             GlobalStates.overviewOpen = !GlobalStates.overviewOpen;
-        else if (mouse.button == Qt.BackButton) 
+        else if (mouse.button == Qt.BackButton)
             toggleSpecial()
     }
     onWheel: event => {
@@ -217,7 +218,10 @@ ButtonMouseArea {
                 delegate: WorkspaceItem {
                     id: wsApp
                     property var biggestWindow: wsModel.biggestWindow[index]
-                    property var mainAppIconSource: Quickshell.iconPath(AppSearch.guessIcon(biggestWindow?.class), "image-missing")
+                    property var mainAppIconName: {
+                        const icon = AppSearch.guessIcon(biggestWindow?.class);
+                        return AppSearch.iconExists(icon) ? icon : "";
+                    }
 
                     AppIcon {
                         id: appIcon
@@ -232,7 +236,7 @@ ButtonMouseArea {
                         animated: !wsApp.biggestWindow // Prevent the "image-missing" icon
                         visible: false // Prevent dupe: the colorizer already copies the icon
 
-                        source: wsApp.mainAppIconSource
+                        source: wsApp.mainAppIconName
                         implicitSize: NumberUtils.roundToEven(root.workspaceIconSize)
 
                         Behavior on opacity {

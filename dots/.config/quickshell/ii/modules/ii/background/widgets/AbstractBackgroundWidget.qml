@@ -18,10 +18,12 @@ AbstractWidget {
     property bool visibleWhenLocked: false
     property var configEntry: Config.options.background.widgets[configEntryName]
     property string placementStrategy: configEntry.placementStrategy
+    property real parallaxOffsetX: 0
+    property real parallaxOffsetY: 0
     property real targetX: Math.max(0, Math.min(configEntry.x, scaledScreenWidth - width))
     property real targetY : Math.max(0, Math.min(configEntry.y, scaledScreenHeight - height))
-    x: targetX
-    y: targetY
+    x: targetX - (root.placementStrategy === "centered" ? root.parallaxOffsetX : 0)
+    y: targetY - (root.placementStrategy === "centered" ? root.parallaxOffsetY : 0)
     visible: opacity > 0
     opacity: (GlobalStates.screenLocked && !visibleWhenLocked) ? 0 : 1
     Behavior on opacity {
@@ -51,17 +53,17 @@ AbstractWidget {
 
     property bool wallpaperIsVideo: Config.options.background.wallpaperPath.endsWith(".mp4") || Config.options.background.wallpaperPath.endsWith(".webm") || Config.options.background.wallpaperPath.endsWith(".mkv") || Config.options.background.wallpaperPath.endsWith(".avi") || Config.options.background.wallpaperPath.endsWith(".mov")
     property string wallpaperPath: wallpaperIsVideo ? Config.options.background.thumbnailPath : Config.options.background.wallpaperPath
-    
+
     onWallpaperPathChanged: refreshPlacementIfNeeded()
     onPlacementStrategyChanged: refreshPlacementIfNeeded()
     Connections {
         target: Config
         function onReadyChanged() { refreshPlacementIfNeeded() }
     }
-    
+
     onWidthChanged: { if (placementStrategy === "centered") refreshPlacementIfNeeded() }
     onHeightChanged: { if (placementStrategy === "centered") refreshPlacementIfNeeded() }
-    
+
     function refreshPlacementIfNeeded() {
         if (!Config.ready) return;
         if (root.placementStrategy === "centered") {
@@ -70,7 +72,7 @@ AbstractWidget {
         }
         if ((root.placementStrategy === "free" || root.placementStrategy === "centered") && !root.needsColText) return;
         leastBusyRegionProc.wallpaperPath = root.wallpaperPath;
-        
+
         let cmd = [Quickshell.shellPath("scripts/images/least-busy-region-venv.sh")
             , "--screen-width", Math.round(root.scaledScreenWidth)
             , "--screen-height", Math.round(root.scaledScreenHeight)
@@ -84,7 +86,7 @@ AbstractWidget {
             cmd.push("--busiest");
         }
         leastBusyRegionProc.command = cmd;
-        
+
         leastBusyRegionProc.running = false;
         leastBusyRegionProc.running = true;
     }
@@ -111,4 +113,3 @@ AbstractWidget {
         }
     }
 }
-

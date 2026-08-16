@@ -17,16 +17,19 @@ AbstractBackgroundWidget {
     implicitWidth: contentColumn.implicitWidth
 
     readonly property bool forceCenter: (GlobalStates.screenLocked && Config.options.lock.centerClock)
+    readonly property bool isCentered: root.forceCenter || root.placementStrategy === "centered"
     readonly property bool shouldShow: (!Config.options.background.widgets.clock.showOnlyWhenLocked || GlobalStates.screenLocked)
     needsColText: true
-    x: forceCenter ? ((root.screenWidth - root.width) / 2) : Math.max(0, Math.min(targetX, root.scaledScreenWidth - root.width))
-    y: forceCenter ? ((root.screenHeight - root.height) / 2) : Math.max(0, Math.min(targetY, root.scaledScreenHeight - root.height))
+    x: root.isCentered ? ((root.screenWidth - root.width) / 2) - root.parallaxOffsetX : Math.max(0, Math.min(targetX, root.scaledScreenWidth - root.width))
+    y: root.isCentered ? ((root.screenHeight - root.height) / 2) - root.parallaxOffsetY : Math.max(0, Math.min(targetY, root.scaledScreenHeight - root.height))
+    animateXPos: !root.isCentered
+    animateYPos: !root.isCentered
     visibleWhenLocked: true
 
     property var textHorizontalAlignment: {
         if (!Config.options.background.widgets.clock.digital.adaptiveAlignment || root.forceCenter || root.placementStrategy === "centered" || Config.options.background.widgets.clock.digital.vertical)
             return Text.AlignHCenter;
-        let centerX = root.x + root.width / 2;
+        let centerX = root.x + root.parallaxOffsetX + root.width / 2;
         if (centerX < root.scaledScreenWidth / 3)
             return Text.AlignLeft;
         if (centerX > root.scaledScreenWidth * 2 / 3)

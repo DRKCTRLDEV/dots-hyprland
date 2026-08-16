@@ -201,6 +201,7 @@ Singleton {
                     property bool enableWorkspace: false
                     property real workspaceZoom: 1.07 // Relative to wallpaper size
                     property bool enableSidebar: false
+                    property bool widgetsFollowParallax: true
                     property real widgetsFactor: 1.2
                 }
             }

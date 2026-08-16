@@ -38,6 +38,18 @@ ContentPage {
                 }
             }
         }
+        ConfigSwitch {
+            buttonIcon: "widgets"
+            text: Translation.tr("Widgets follow parallax")
+            checked: Config.options.background.parallax.widgetsFollowParallax
+            onCheckedChanged: {
+                Config.options.background.parallax.widgetsFollowParallax = checked;
+            }
+            StyledToolTip {
+                text: Translation.tr("When enabled, background widgets move along with the wallpaper as it pans. When disabled, they stay in place on screen.")
+            }
+        }
+
         ConfigSpinBox {
             icon: "loupe"
             text: Translation.tr("Preferred wallpaper zoom (%)")

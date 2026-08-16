@@ -226,8 +226,11 @@ Variants {
                 readonly property real wallpaperTotalOffsetX: wallpaper.x - baseWallpaperOffsetX
                 readonly property real wallpaperTotalOffsetY: wallpaper.y - baseWallpaperOffsetY
                 readonly property bool locked: GlobalStates.screenLocked
-                x: wallpaperTotalOffsetX * parallaxFactor * !locked
-                y: wallpaperTotalOffsetY * parallaxFactor * !locked
+                readonly property bool followParallax: Config.options.background.parallax.widgetsFollowParallax
+                readonly property real parallaxOffsetX: (followParallax ? wallpaperTotalOffsetX * parallaxFactor : 0) * !locked
+                readonly property real parallaxOffsetY: (followParallax ? wallpaperTotalOffsetY * parallaxFactor : 0) * !locked
+                x: parallaxOffsetX
+                y: parallaxOffsetY
 
                 transitions: Transition {
                     PropertyAnimation {
@@ -251,6 +254,8 @@ Variants {
                         scaledScreenWidth: bgRoot.screen.width
                         scaledScreenHeight: bgRoot.screen.height
                         wallpaperScale: 1
+                        parallaxOffsetX: widgetCanvas.parallaxOffsetX
+                        parallaxOffsetY: widgetCanvas.parallaxOffsetY
                     }
                 }
             }

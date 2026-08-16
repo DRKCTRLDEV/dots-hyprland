@@ -114,12 +114,17 @@ install-local-pkgbuild() {
   source ./PKGBUILD
 
   # Replace any installed packages declared as conflicts by the PKGBUILD.
-  local conflict
+  # pacman -Q matches "provides" (e.g. "quickshell" provided by
+  # illogical-impulse-quickshell-git), so query the actual installed name with
+  # -Qq first - otherwise pacman -R fails with "target not found" for names
+  # that are only provided, not installed under that exact name.
+  local conflict installed_conflict
   for conflict in "${conflicts[@]-}"; do
     [[ -n "$conflict" ]] || continue
-    if pacman -Q "$conflict" &>/dev/null; then
-      printf "${STY_YELLOW}[$0]: Removing conflicting package $conflict before installing $pkgname.${STY_RST}\n"
-      x sudo pacman -R --noconfirm "$conflict"
+    installed_conflict="$(pacman -Qq "$conflict" 2>/dev/null)"
+    if [[ -n "$installed_conflict" ]]; then
+      printf "${STY_YELLOW}[$0]: Removing conflicting package $installed_conflict before installing $pkgname.${STY_RST}\n"
+      x sudo pacman -R --noconfirm "$installed_conflict"
     fi
   done
 

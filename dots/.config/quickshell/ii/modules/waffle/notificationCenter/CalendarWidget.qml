@@ -20,6 +20,12 @@ BodyRectangle {
     // Locale
     property var locale: Qt.locale(Config.options.calendar.locale)
 
+    property bool autoButtonSize: false
+    property int buttonSpacing: 6
+    readonly property real buttonSize: autoButtonSize
+        ? Math.max(24, (Math.max(0, root.width - 10) - buttonSpacing * 6) / 7)
+        : 41
+
     implicitHeight: collapsed ? 0 : contentColumn.implicitHeight
     implicitWidth: contentColumn.implicitWidth
 
@@ -43,13 +49,13 @@ BodyRectangle {
             DayOfWeekRow {
                 Layout.fillWidth: true
                 locale: root.locale
-                spacing: calendarView.buttonSpacing
-                implicitHeight: calendarView.buttonSize
+                spacing: root.buttonSpacing
+                implicitHeight: root.buttonSize
                 delegate: Item {
                     id: dayOfWeekItem
                     required property var model
-                    implicitHeight: calendarView.buttonSize
-                    implicitWidth: calendarView.buttonSize
+                    implicitHeight: root.buttonSize
+                    implicitWidth: root.buttonSize
                     WText {
                         anchors.centerIn: parent
                         text: {
@@ -66,8 +72,8 @@ BodyRectangle {
                 id: calendarView
                 locale: root.locale
                 verticalPadding: 2
-                buttonSize: 41 // ???
-                buttonSpacing: 6
+                buttonSize: root.buttonSize
+                buttonSpacing: root.buttonSpacing
                 buttonVerticalSpacing: 1
                 Layout.fillWidth: true
                 delegate: DayButton {}

@@ -25,10 +25,8 @@ remove_deprecated_dependencies(){
     fi
   done
 }
-# NOTE: `implicitize_old_dependencies()` was for the old days when we just switch from dependencies.conf to local PKGBUILDs.
-# However, let's just keep it as references for other distros writing their `sdata/dist-<OS_GROUP_ID>/install-deps.sh`, if they need it.
+
 implicitize_old_dependencies(){
-# Convert old dependencies to non explicit dependencies so that they can be orphaned if not in meta packages
   remove_bashcomments_emptylines ./sdata/dist-arch/previous_dependencies.conf ./cache/old_deps_stripped.conf
   readarray -t old_deps_list < ./cache/old_deps_stripped.conf
   pacman -Qeq > ./cache/pacman_explicit_packages
@@ -42,13 +40,11 @@ implicitize_old_dependencies(){
   return 0
 }
 
-#####################################################################################
 if ! command -v pacman >/dev/null 2>&1; then
   printf "${STY_RED}[$0]: pacman not found, it seems that the system is not ArchLinux or Arch-based distros. Aborting...${STY_RST}\n"
   exit 1
 fi
 
-# Keep makepkg from resetting sudo credentials
 if [[ -z "${PACMAN_AUTH:-}" ]]; then
   export PACMAN_AUTH="sudo"
 fi
@@ -56,13 +52,11 @@ fi
 showfun remove_deprecated_dependencies
 v remove_deprecated_dependencies
 
-# Issue #363
 case $SKIP_SYSUPDATE in
   true) true;;
   *) v sudo pacman -Syu;;
 esac
 
-# Align CachyOS's PipeWire packages when repository revisions diverge.
 repair_pipewire_stack(){
   local packages=(pipewire pipewire-audio pipewire-alsa pipewire-pulse libpipewire gst-plugin-pipewire)
   local package installed candidate
@@ -92,8 +86,6 @@ if [[ "$SKIP_SYSUPDATE" != true ]]; then
   v repair_pipewire_stack
 fi
 
-# Use yay. Because paru does not support cleanbuild.
-# Also see https://wiki.hyprland.org/FAQ/#how-do-i-update
 if ! command -v yay >/dev/null 2>&1;then
   echo -e "${STY_YELLOW}[$0]: \"yay\" not found.${STY_RST}"
   showfun install-yay
@@ -103,8 +95,6 @@ fi
 showfun implicitize_old_dependencies
 v implicitize_old_dependencies
 
-# https://github.com/end-4/dots-hyprland/issues/581
-# yay -Bi is kinda hit or miss, instead cd into the relevant directory and manually source and install deps
 install-local-pkgbuild() {
   local location=$1
   local installflags=$2
@@ -113,7 +103,6 @@ install-local-pkgbuild() {
 
   source ./PKGBUILD
 
-  # Replace any installed packages declared as conflicts by the PKGBUILD.
   local conflict installed_conflict
   for conflict in "${conflicts[@]-}"; do
     [[ -n "$conflict" ]] || continue
@@ -124,7 +113,6 @@ install-local-pkgbuild() {
     fi
   done
 
-  # Install only dependencies not already satisfied by the system.
   local dependencies=("${depends[@]}" "${makedepends[@]}")
   local missing=()
   local dependency
@@ -137,17 +125,16 @@ install-local-pkgbuild() {
     x yay -S --sudoloop $installflags --asdeps "${missing[@]}"
   fi
 
-  # Dependencies are installed above; skip makepkg's second resolver pass.
   x makepkg -Afi --noconfirm
   x popd
 }
 
-# Install core dependencies from the meta-packages
-metapkgs=(./sdata/dist-arch/illogical-impulse-{audio,backlight,basic,fonts-themes,kde,portal,python,screencapture,toolkit,widgets})
-metapkgs+=(./sdata/dist-arch/illogical-impulse-hyprland)
-metapkgs+=(./sdata/dist-arch/illogical-impulse-microtex-git)
-metapkgs+=(./sdata/dist-arch/illogical-impulse-quickshell-git)
-metapkgs+=(./sdata/dist-arch/illogical-impulse-bibata-modern-classic-bin)
+source ./sdata/dist-arch/metapkgs.sh
+
+metapkgs=()
+for name in "${ARCH_METAPKG_NAMES[@]}"; do
+  metapkgs+=("./sdata/dist-arch/$name")
+done
 
 for i in "${metapkgs[@]}"; do
   metainstallflags="--needed"
@@ -177,7 +164,6 @@ install-dinit-service-packages(){
 showfun install-dinit-service-packages
 v install-dinit-service-packages
 
-## Optional dependencies
 if pacman -Qs ^plasma-browser-integration$ ;then SKIP_PLASMAINTG=true;fi
 case $SKIP_PLASMAINTG in
   true) true;;

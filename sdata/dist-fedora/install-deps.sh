@@ -1,16 +1,14 @@
 # This script is meant to be sourced.
 # It's not for directly running.
-# -------------------------
+
 # CONFIG
-# -------------------------
+
 user_config="${REPO_ROOT}/sdata/dist-fedora/user_data.yaml"
 rpmbuildroot="${REPO_ROOT}/cache/rpmbuild"
 rpm_specs="${REPO_ROOT}/sdata/dist-fedora/SPECS"
 deps_data_file="${REPO_ROOT}/sdata/dist-fedora/feddeps.toml"
 
-# -------------------------
 # FUNCTIONS
-# -------------------------
 
 # Recording DNF Transaction ID
 function r() {
@@ -39,42 +37,33 @@ function init_local_repo() {
     done
 }
 
-# -------------------------
 # MAIN
-# -------------------------
 
 if ! command -v dnf >/dev/null 2>&1; then
   printf "${STY_RED}[$0]: dnf not found, it seems that the system is not Fedora 42 or later distros. Aborting...${STY_RST}\n"
   exit 1
 fi
 
-# Update System
 case $SKIP_SYSUPDATE in
   true) true ;;
   *) v sudo dnf upgrade --refresh -y ;;
 esac
 
-# Remove version lock
 v sudo dnf versionlock delete quickshell-git 2>/dev/null
 
-# Install yq for parsing config files
 v sudo dnf install yq -y
 
-# Install development tools
 r v sudo dnf install createrepo_c -y
 
-# Install COPR repositories
 copr_repos_json=$(yq -o=j '.copr.repos // []' "$deps_data_file")
-eval "$(jq -r '@sh "copr_repos_array+=(\(.[]))"' <<<"$copr_repos_json")" # Fedora distro contains jq
+eval "$(jq -r '@sh "copr_repos_array+=(\(.[]))"' <<<"$copr_repos_json")"
 for copr in ${copr_repos_array[@]}; do
   v sudo dnf copr enable "$copr" -y
 done
 
-# Init local repo with prebuilt rpms
 showfun init_local_repo
 v init_local_repo
 
-# Install packages from toml file
 deps_data=$(yq -o=j '.' "$deps_data_file")
 echo "Starting to install packages from $deps_data_file ..."
 
@@ -93,9 +82,7 @@ while IFS= read -r deps_list_key; do
   echo "----------------------------------------"
 done < <(echo "$deps_data" | yq '.groups | keys[]? | select(length > 0)')
 
-
-# Add back versionlock at the end
-[ -n $nolock_qs ] || v sudo dnf versionlock add quickshell-git || true
+[ -n "${nolock_qs:-}" ] || v sudo dnf versionlock add quickshell-git || true
 
 echo -e "\n========================================"
 echo "All installations are completed."

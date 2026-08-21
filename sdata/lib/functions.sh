@@ -30,9 +30,8 @@ function v(){
     echo -e "${STY_YELLOW}[$0]: Skipped \"$*\"${STY_RST}"
   fi
 }
-# When use v() for a defined function, use x() INSIDE its definition to catch errors.
 function x(){
-  if "$@";then local cmdstatus=0;else local cmdstatus=1;fi # 0=normal; 1=failed; 2=failed but ignored
+  if "$@";then local cmdstatus=0;else local cmdstatus=1;fi
   while [ $cmdstatus == 1 ] ;do
     echo -e "${STY_RED}[$0]: Command \"${STY_GREEN}$*${STY_RED}\" has failed."
     echo -e "You may need to resolve the problem manually BEFORE repeating this command."
@@ -81,30 +80,23 @@ function prevent_sudo_or_root(){
   esac
 }
 
-# Initialize sudo session and keep it alive in background
-# Store PID in a global variable that can be accessed by trap
 declare -g SUDO_KEEPALIVE_PID=""
 
 function sudo_init_keepalive(){
-  # Check if sudo is available
   if ! command -v sudo >/dev/null 2>&1; then
     return 0
   fi
 
-  # Skip if already initialized
   if [[ -n "$SUDO_KEEPALIVE_PID" ]] && kill -0 "$SUDO_KEEPALIVE_PID" 2>/dev/null; then
     return 0
   fi
 
-  # Prompt for sudo password once at the beginning
   echo -e "${STY_CYAN}[$0]: Requesting sudo privileges for installation...${STY_RST}"
   if ! sudo true; then
     echo -e "${STY_RED}[$0]: Failed to obtain sudo privileges. Aborting...${STY_RST}"
     exit 1
   fi
 
-  # Start background process to keep sudo session alive
-  # This updates the sudo timestamp every 60 seconds
   (
     while true; do
       sleep 60
@@ -116,7 +108,6 @@ function sudo_init_keepalive(){
   echo -e "${STY_GREEN}[$0]: Sudo session initialized and will be kept alive (PID: $SUDO_KEEPALIVE_PID)${STY_RST}"
 }
 
-# Stop the sudo keepalive background process
 function sudo_stop_keepalive(){
   if [[ -n "$SUDO_KEEPALIVE_PID" ]] && kill -0 "$SUDO_KEEPALIVE_PID" 2>/dev/null; then
     kill "$SUDO_KEEPALIVE_PID" 2>/dev/null || true
@@ -125,7 +116,6 @@ function sudo_stop_keepalive(){
   fi
 }
 function git_auto_unshallow(){
-# We need this function for latest_commit_hash to work properly
   if [[ -f "$(git rev-parse --git-dir)/shallow" ]]; then
     echo "Shallow clone detected. Unshallowing..."
     git fetch --unshallow
@@ -161,75 +151,64 @@ function log_die() {
   exit 1
 }
 
-# Enhanced: Check if command exists
 function command_exists() {
   command -v "$1" >/dev/null 2>&1
 }
 
-# Enhanced: Require a command or die
 function require_command() {
   if ! command_exists "$1"; then
     log_die "Required command '$1' not found. Please install it first."
   fi
 }
 
-# Enhanced: Sanitize file paths to prevent directory traversal
 function sanitize_path() {
   local path="$1"
-  
-  # Remove null bytes, newlines, and control characters
+
   path=$(echo "$path" | tr -d '\000-\037')
-  
-  # Prevent directory traversal beyond current context
+
   case "$path" in
     ..|../*|*/../*|*/..|\.\./*)
       log_die "Invalid path detected (directory traversal attempt): $path"
       ;;
   esac
-  
+
   echo "$path"
 }
 
-# Enhanced: Safe file comparison that checks existence first
 function files_differ() {
   local file1="$1"
   local file2="$2"
-  
-  # Check if both files exist
+
   if [[ ! -f "$file1" ]] || [[ ! -f "$file2" ]]; then
-    return 0  # Consider them different if either doesn't exist
+    return 0
   fi
-  
-  # Quick size check first (faster than byte comparison)
+
   local size1 size2
   if command -v stat &>/dev/null; then
-    # Try both BSD and GNU stat formats
     size1=$(stat -f%z "$file1" 2>/dev/null || stat -c%s "$file1" 2>/dev/null)
     size2=$(stat -f%z "$file2" 2>/dev/null || stat -c%s "$file2" 2>/dev/null)
-    
+
     if [[ "$size1" != "$size2" ]]; then
-      return 0  # Different sizes = different files
+      return 0
     fi
   fi
-  
-  # Then byte-by-byte comparison
+
   cmp -s "$file1" "$file2" && return 1 || return 0
 }
 
-# Enhanced: Create backup of a file with timestamp
 function backup_file_simple() {
   local file="$1"
   local backup_suffix="${2:-.bak}"
-  
+
   if [[ ! -f "$file" ]]; then
     log_warning "Cannot backup non-existent file: $file"
     return 1
   fi
-  
+
   local timestamp
   timestamp=$(date +%Y%m%d-%H%M%S)
   local backup_name="${file}${backup_suffix}.${timestamp}"
-  
+
   if cp -p "$file" "$backup_name" 2>/dev/null; then
     log_info "Backed up: $file → $backup_name"
     return 0
@@ -239,19 +218,16 @@ function backup_file_simple() {
   fi
 }
 
-# Enhanced: Validate that a file path is within allowed directory
 function validate_path_in_directory() {
   local file_path="$1"
   local allowed_dir="$2"
-  
-  # Resolve to absolute paths
+
   local abs_file
   local abs_dir
-  
+
   abs_file=$(cd "$(dirname "$file_path")" 2>/dev/null && pwd -P)/$(basename "$file_path") || return 1
   abs_dir=$(cd "$allowed_dir" 2>/dev/null && pwd -P) || return 1
-  
-  # Check if file path starts with allowed directory
+
   case "$abs_file" in
     "$abs_dir"/*)
       return 0
@@ -263,7 +239,6 @@ function validate_path_in_directory() {
   esac
 }
 
-# Enhanced: Check if script is running in a CI/CD environment
 function is_ci_environment() {
   [[ -n "${CI:-}" ]] || \
   [[ -n "${GITHUB_ACTIONS:-}" ]] || \
@@ -272,34 +247,31 @@ function is_ci_environment() {
   [[ -n "${CIRCLECI:-}" ]]
 }
 
-# Enhanced: Progress bar (optional, for long operations)
 function show_progress() {
   local current="$1"
   local total="$2"
   local message="${3:-Processing}"
-  
+
   if ! command_exists tput; then
     return
   fi
-  
+
   local percent=$((current * 100 / total))
   local bar_length=40
   local filled=$((bar_length * current / total))
   local empty=$((bar_length - filled))
-  
+
   printf "\r${message}: [" >&2
   printf "%${filled}s" | tr ' ' '=' >&2
   printf "%${empty}s" | tr ' ' ' ' >&2
   printf "] %d%%" "$percent" >&2
-  
+
   if [[ $current -eq $total ]]; then
     echo >&2
   fi
 }
 
 
-# Enhanced: Cleanup temporary files on exit
-#declare -a TEMP_FILES_TO_CLEANUP=()
 function register_temp_file() {
   local temp_file="$1"
   TEMP_FILES_TO_CLEANUP+=("$temp_file")
@@ -314,46 +286,39 @@ function cleanup_temp_files() {
   TEMP_FILES_TO_CLEANUP=()
 }
 
-# Enhanced: Check disk space before operations
 function check_disk_space() {
   local path="${1:-.}"
-  local required_mb="${2:-100}"  # Default 100MB
-  
+  local required_mb="${2:-100}"
+
   if ! command_exists df; then
     log_warning "df command not available, skipping disk space check"
     return 0
   fi
-  
+
   local available_kb
   available_kb=$(df -k "$path" | awk 'NR==2 {print $4}')
   local available_mb=$((available_kb / 1024))
-  
+
   if [[ $available_mb -lt $required_mb ]]; then
     log_warning "Low disk space: ${available_mb}MB available, ${required_mb}MB recommended"
     return 1
   fi
-  
+
   return 0
 }
 
 function auto_update_git_submodule(){
   if git submodule status --recursive | grep -E '^[+-U]';then
-    # Note: `git pull --recurse-submodules` cannot substitute `git submodule update --init --recursive` cuz it does not init a submodule when needed.
     x git submodule update --init --recursive
   fi
 }
 
 function backup_clashing_targets(){
-  # For non-recursive dirs/files under target_dir, only backup those which clashes with the ones under source_dir
-  # However, ignore the ones listed in ignored_list
-
-  # Deal with arguments
   local source_dir="$1"
   local target_dir="$2"
   local backup_dir="$3"
   local -a ignored_list=("${@:4}")
 
-  # Find clash dirs/files, save as clash_list
   local clash_list=()
   local source_list=($(ls -A "$source_dir"))
   local target_list=($(ls -A "$target_dir"))
@@ -373,7 +338,6 @@ function backup_clashing_targets(){
   done
   clash_list=("${clash_list[@]}")
 
-  # Construct args_includes for rsync
   local args_includes=()
   for i in "${clash_list[@]}"; do
     if [[ -d "$target_dir/$i" ]]; then
@@ -394,7 +358,6 @@ function install_cmds(){
     "arch")
       local pkgs=()
       for cmd in "$@";do
-        # For package name which is not cmd name, use "case" syntax to replace
         case $cmd in
           ip) pkgs+=(iproute2);;
           *) pkgs+=($cmd) ;;
@@ -406,7 +369,6 @@ function install_cmds(){
     "debian")
       local pkgs=()
       for cmd in "$@";do
-        # For package name which is not cmd name, use "case" syntax to replace
         case $cmd in
           ip) pkgs+=(iproute2);;
           *) pkgs+=($cmd) ;;
@@ -418,7 +380,6 @@ function install_cmds(){
     "fedora")
       local pkgs=()
       for cmd in "$@";do
-        # For package name which is not cmd name, use "case" syntax to replace
         case $cmd in
           ip) pkgs+=(iproute);;
           *) pkgs+=($cmd) ;;
@@ -429,7 +390,6 @@ function install_cmds(){
     "suse")
       local pkgs=()
       for cmd in "$@";do
-        # For package name which is not cmd name, use "case" syntax to replace
         case $cmd in
           ip) pkgs+=(iproute2);;
           *) pkgs+=($cmd) ;;
@@ -457,6 +417,20 @@ function ensure_cmds(){
   if [[ ${#not_found_cmds[@]} -gt 0 ]]; then
     echo -e "${STY_YELLOW}[$0]: Not found: ${not_found_cmds[*]}.${STY_RST}"
     install_cmds "${not_found_cmds[@]}"
+  fi
+}
+
+function parse_getopt(){
+  local shortopts="$1"
+  local longopts="$2"
+  shift 2
+  para=$(getopt \
+    -o "$shortopts" \
+    -l "$longopts" \
+    -n "$0" -- "$@")
+  if [ $? != 0 ]; then
+    echo "$0: Error when getopt, please recheck parameters."
+    exit 1
   fi
 }
 

@@ -1,21 +1,25 @@
 require("hyprland/lib")
 
+-- Shared list of user-overridable custom config modules, in load order.
+-- Used here to create any missing files, and by `hyprland.lua` to require them.
+local customConfigs = {
+   "env",
+   "execs",
+   "general",
+   "rules",
+   "keybinds",
+   "variables"
+}
+
 hl.on("hyprland.start", function()
    local homeDir = os.getenv("HOME")
    if string.len(homeDir) == 0 then
       return
    end
    local baseCustomDir = homeDir .. "/.config/hypr/custom"
-   local files = {
-      baseCustomDir .. "/env.lua",
-      baseCustomDir .. "/execs.lua",
-      baseCustomDir .. "/general.lua",
-      baseCustomDir .. "/keybinds.lua",
-      baseCustomDir .. "/rules.lua",
-      baseCustomDir .. "/variables.lua"
-   }
    local createdFiles = 0
-   for _, file in ipairs(files) do
+   for _, name in ipairs(customConfigs) do
+      local file = baseCustomDir .. "/" .. name .. ".lua"
       if not is_file_exists(file) then
          create_if_not_exists(file)
          createdFiles = createdFiles + 1
@@ -27,3 +31,5 @@ hl.on("hyprland.start", function()
       -- hl.exec_cmd("hyprctl reload")
    end
 end)
+
+return customConfigs

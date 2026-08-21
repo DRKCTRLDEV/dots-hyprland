@@ -5,11 +5,18 @@
 require("hyprland.lib")
 require("hyprland.services")
 
+-- Shared list of user-overridable custom config modules (see create_custom_config.lua)
+local customConfigs = require("hyprland/services/create_custom_config")
+
+local function requireCustom(name)
+    if is_file_exists(HOME .. "/.config/hypr/custom/" .. name .. ".lua") then
+        require("custom." .. name)
+    end
+end
+
 -- Environment variables --
 require("hyprland.env")
-if is_file_exists(HOME .. "/.config/hypr/custom/env.lua") then
-    require("custom.env")
-end
+requireCustom("env")
 
 -- Default configurations --
 require("hyprland.execs")
@@ -18,18 +25,11 @@ require("hyprland.rules")
 require("hyprland.colors")
 require("hyprland.keybinds")
 
--- Custom configurations --
-if is_file_exists(HOME .. "/.config/hypr/custom/execs.lua") then
-    require("custom.execs")
-end
-if is_file_exists(HOME .. "/.config/hypr/custom/general.lua") then
-    require("custom.general")
-end
-if is_file_exists(HOME .. "/.config/hypr/custom/rules.lua") then
-    require("custom.rules")
-end
-if is_file_exists(HOME .. "/.config/hypr/custom/keybinds.lua") then
-    require("custom.keybinds")
+-- Custom configurations (env is loaded above; variables is loaded by keybinds.lua)
+for _, name in ipairs(customConfigs) do
+    if name ~= "env" and name ~= "variables" then
+        requireCustom(name)
+    end
 end
 
 -- nwg-displays support --

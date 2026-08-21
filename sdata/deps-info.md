@@ -65,7 +65,7 @@ Tips:
   - [source](https://github.com/mjkim0727/breeze-plus)
   - Used in kde-material-you-colors config.
 - `darkly-bin`
-  - `darkly` is supposed to be set as the theme for Qt apps, just have not figured out how to properly set it yet.
+  - `darkly` is the theme used for Qt apps.
 - `eza`
   - Used in Fish config: `alias ls 'eza --icons'`
 - `fish`

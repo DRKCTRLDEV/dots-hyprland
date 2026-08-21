@@ -60,24 +60,29 @@ LockScreen {
             }
         }
 
-        GaussianBlur {
+        Loader {
+            id: blurLoader
             z: 1
             anchors.fill: bg
-            source: bg
-            radius: 100
-            samples: radius * 2 + 1
-            scale: root.passwordView ? 1.1 : 1
-            opacity: root.passwordView ? 1 : 0
+            active: Config.options.lock.blur.enable
 
-            Behavior on opacity {
-                animation: Looks.transition.opacity.createObject(this)
-            }
+            sourceComponent: GaussianBlur {
+                source: bg
+                radius: Config.options.lock.blur.radius
+                samples: radius * 2 + 1
+                scale: root.passwordView ? Config.options.lock.blur.extraZoom : 1
+                opacity: root.passwordView ? 1 : 0
 
-            Behavior on scale {
-                NumberAnimation {
-                    duration: 400
-                    easing.type: Easing.BezierSpline
-                    easing.bezierCurve: Looks.transition.easing.bezierCurve.easeIn
+                Behavior on opacity {
+                    animation: Looks.transition.opacity.createObject(this)
+                }
+
+                Behavior on scale {
+                    NumberAnimation {
+                        duration: 400
+                        easing.type: Easing.BezierSpline
+                        easing.bezierCurve: Looks.transition.easing.bezierCurve.easeIn
+                    }
                 }
             }
         }

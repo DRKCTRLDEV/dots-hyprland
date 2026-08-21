@@ -6,12 +6,15 @@ import QtQuick
 import QtQuick.Layouts
 import Quickshell
 import Quickshell.Widgets
+import Quickshell.Wayland
+import Quickshell.Hyprland
 
 DockButton {
     id: root
     property var appToplevel
     property var appListRoot
-    property int lastFocused: -1
+    property var lastDockActivated: null
+    property var mruList: []
     property real iconSize: 35
     property real countDotWidth: 10
     property real countDotHeight: 4
@@ -21,6 +24,50 @@ DockButton {
     property var desktopEntry: DesktopEntries.heuristicLookup(appToplevel.appId)
     enabled: !isSeparator
     implicitWidth: isSeparator ? 1 : implicitHeight - topInset - bottomInset
+
+    function orderedToplevels() {
+        const list = Array.prototype.slice.call(appToplevel?.toplevels ?? []);
+        if (list.length === 0) return [];
+        if (Config.options.dock.cycleOrder === "numerical") {
+            return list.sort((a, b) => {
+                const wa = a?.HyprlandToplevel?.workspace?.id ?? 1e9;
+                const wb = b?.HyprlandToplevel?.workspace?.id ?? 1e9;
+                return wa - wb;
+            });
+        }
+        const mru = root.mruList.filter(t => list.indexOf(t) !== -1);
+        for (const t of list) {
+            if (mru.indexOf(t) === -1) mru.push(t);
+        }
+        root.mruList = mru;
+        return mru;
+    }
+
+    function activateNext() {
+        const list = root.orderedToplevels();
+        if (list.length === 0) return;
+        const activeIdx = list.findIndex(t => t?.activated === true);
+        const next = list[(activeIdx + 1) % list.length];
+        root.lastDockActivated = next;
+        next.activate();
+    }
+
+    Connections {
+        target: ToplevelManager
+
+        function onActiveToplevelChanged() {
+            const t = ToplevelManager.activeToplevel;
+            if (t === root.lastDockActivated) {
+                root.lastDockActivated = null;
+                return;
+            }
+            if (t && appToplevel && appToplevel.toplevels.find(x => x === t) !== undefined) {
+                const mru = root.mruList.filter(x => x !== t);
+                mru.unshift(t);
+                root.mruList = mru;
+            }
+        }
+    }
 
     Connections {
         target: DesktopEntries
@@ -51,7 +98,6 @@ DockButton {
             onEntered: {
                 appListRoot.lastHoveredButton = root
                 appListRoot.buttonHovered = true
-                lastFocused = appToplevel.toplevels.length - 1
             }
             onExited: {
                 if (appListRoot.lastHoveredButton === root) {
@@ -62,12 +108,11 @@ DockButton {
     }
 
     onClicked: {
-        if (appToplevel.toplevels.length === 0) {
+        if (!appToplevel || appToplevel.toplevels.length === 0) {
             root.desktopEntry?.execute();
             return;
         }
-        lastFocused = (lastFocused + 1) % appToplevel.toplevels.length
-        appToplevel.toplevels[lastFocused].activate()
+        root.activateNext();
     }
 
     middleClickAction: () => {
@@ -103,7 +148,7 @@ DockButton {
                 sourceComponent: Item {
                     Desaturate {
                         id: desaturatedIcon
-                        visible: false // There's already color overlay
+                        visible: false
                         anchors.fill: parent
                         source: iconImageLoader
                         desaturation: 0.8
@@ -128,8 +173,8 @@ DockButton {
                     delegate: Rectangle {
                         required property int index
                         radius: Appearance.rounding.full
-                        implicitWidth: (appToplevel.toplevels.length <= 3) ? 
-                            root.countDotWidth : root.countDotHeight // Circles when too many
+                        implicitWidth: (appToplevel.toplevels.length <= 3) ?
+                            root.countDotWidth : root.countDotHeight
                         implicitHeight: root.countDotHeight
                         color: appIsActive ? Appearance.colors.colPrimary : ColorUtils.transparentize(Appearance.colors.colOnLayer0, 0.4)
                     }

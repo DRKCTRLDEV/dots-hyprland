@@ -10,7 +10,6 @@ from multiprocessing import Pool
 from pathlib import Path
 from typing import List, Union
 
-import click
 import gi
 from loguru import logger
 from tqdm import tqdm
@@ -93,20 +92,43 @@ def get_all_files(*, dir_path: Path, recursive: bool) -> List[Path]:
     print("Found {} files in the directory: {}".format(len(all_files), dir_path.resolve()))
     return all_files
 
-@click.command()
-@click.option(
-    "-d", "--img_dirs", required=True, help='directories to generate thumbnails seperated by space, eg: "dir1/dir2 dir3"'
-)
-@click.option(
-    "-s", "--size", default="normal", type=click.Choice(["normal", "large", "x-large", "xx-large"]), help="Thumbnail size: normal, large, x-large, xx-large"
-)
-@click.option("-w", "--workers", default=1, help="no of cpus to use for processing")
-@click.option(
-    "-i", "--only_images", is_flag=True, default=False, help="Whether to only look for images to be thumbnailed"
-)
-@click.option("-r", "--recursive", is_flag=True, default=False, help="Whether to recursively look for files")
-@click.option("--machine_progress", is_flag=True, default=False, help="Print machine-readable progress lines instead of a progress bar")
-def main(img_dirs: str, size: str, workers: str, only_images: bool, recursive: bool, machine_progress: bool) -> None:
+def main(argv):
+    img_dirs = ""
+    size = "normal"
+    workers = 1
+    only_images = False
+    recursive = False
+    machine_progress = False
+
+    i = 0
+    while i < len(argv):
+        arg = argv[i]
+        if arg in ("-d", "--img_dirs") and i + 1 < len(argv):
+            img_dirs = argv[i + 1]
+            i += 2
+        elif arg in ("-s", "--size") and i + 1 < len(argv):
+            size = argv[i + 1]
+            i += 2
+        elif arg in ("-w", "--workers") and i + 1 < len(argv):
+            workers = int(argv[i + 1])
+            i += 2
+        elif arg in ("-i", "--only_images"):
+            only_images = True
+            i += 1
+        elif arg in ("-r", "--recursive"):
+            recursive = True
+            i += 1
+        elif arg == "--machine_progress":
+            machine_progress = True
+            i += 1
+        else:
+            i += 1
+
+    if not img_dirs:
+        sys.exit("Error: Missing required option '-d/--img_dirs'")
+    if size not in thumbnail_size_map:
+        sys.exit(f"Error: Invalid size '{size}'. Must be one of: normal, large, x-large, xx-large")
+
     img_dirs = [Path(img_dir) for img_dir in img_dirs.split()]
     global factory
     factory = GnomeDesktop.DesktopThumbnailFactory.new(thumbnail_size_map[size])
@@ -116,4 +138,4 @@ def main(img_dirs: str, size: str, workers: str, only_images: bool, recursive: b
 
 
 if __name__ == "__main__":
-    main()
+    main(sys.argv[1:])

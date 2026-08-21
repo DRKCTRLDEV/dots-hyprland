@@ -50,34 +50,31 @@ cp_file(){
   x mkdir -p "$(dirname ${INSTALLED_LISTFILE})"
   realpath -se "$2" >> "${INSTALLED_LISTFILE}"
 }
+_rsync_dir_impl(){
+  # NOTE: This function is only for using in other functions
+  local src="$1"
+  local dest_dir="$2"
+  shift 2
+  local extra_flags=("$@")
+  x mkdir -p "$dest_dir"
+  local dest="$(realpath -se $dest_dir)"
+  x mkdir -p "$(dirname ${INSTALLED_LISTFILE})"
+  rsync -a "${extra_flags[@]}" --out-format='%i %n' "$src"/ "$dest_dir"/ | awk -v d="$dest" '$1 ~ /^>/{ sub(/^[^ ]+ /,""); printf d "/" $0 "\n" }' >> "${INSTALLED_LISTFILE}"
+}
 rsync_dir(){
   # NOTE: This function is only for using in other functions
-  x mkdir -p "$2"
-  local dest="$(realpath -se $2)"
-  x mkdir -p "$(dirname ${INSTALLED_LISTFILE})"
-  rsync -a --out-format='%i %n' "$1"/ "$2"/ | awk -v d="$dest" '$1 ~ /^>/{ sub(/^[^ ]+ /,""); printf d "/" $0 "\n" }' >> "${INSTALLED_LISTFILE}"
+  _rsync_dir_impl "$1" "$2"
 }
 rsync_dir__ignore_existing(){
   # NOTE: This function is only for using in other functions
-  x mkdir -p "$2"
-  local dest="$(realpath -se $2)"
-  x mkdir -p "$(dirname ${INSTALLED_LISTFILE})"
-  rsync -a --ignore-existing --out-format='%i %n' "$1"/ "$2"/ | awk -v d="$dest" '$1 ~ /^>/{ sub(/^[^ ]+ /,""); printf d "/" $0 "\n" }' >> "${INSTALLED_LISTFILE}"
+  _rsync_dir_impl "$1" "$2" --ignore-existing
 }
 rsync_dir__sync(){
   # NOTE: This function is only for using in other functions
-  # `--delete' for rsync to make sure that
-  # original dotfiles and new ones in the SAME DIRECTORY
-  # (eg. in ~/.config/hypr) won't be mixed together
-  x mkdir -p "$2"
-  local dest="$(realpath -se $2)"
-  x mkdir -p "$(dirname ${INSTALLED_LISTFILE})"
-  rsync -a --delete --out-format='%i %n' "$1"/ "$2"/ | awk -v d="$dest" '$1 ~ /^>/{ sub(/^[^ ]+ /,""); printf d "/" $0 "\n" }' >> "${INSTALLED_LISTFILE}"
+  _rsync_dir_impl "$1" "$2" --delete
 }
 rsync_dir__sync_exclude(){
   # NOTE: This function is only for using in other functions
-  # Same as rsync_dir__sync but with exclude patterns support
-  # Usage: rsync_dir__sync_exclude <src> <dest> <exclude_pattern1> [<exclude_pattern2> ...]
   local src="$1"
   local dest_dir="$2"
   shift 2
@@ -85,10 +82,7 @@ rsync_dir__sync_exclude(){
   for pattern in "$@"; do
     excludes+=(--exclude "$pattern")
   done
-  x mkdir -p "$dest_dir"
-  local dest="$(realpath -se $dest_dir)"
-  x mkdir -p "$(dirname ${INSTALLED_LISTFILE})"
-  rsync -a --delete "${excludes[@]}" --out-format='%i %n' "$src"/ "$dest_dir"/ | awk -v d="$dest" '$1 ~ /^>/{ sub(/^[^ ]+ /,""); printf d "/" $0 "\n" }' >> "${INSTALLED_LISTFILE}"
+  _rsync_dir_impl "$src" "$dest_dir" --delete "${excludes[@]}"
 }
 function install_file(){
   # NOTE: Do not add prefix `v` or `x` when using this function
@@ -118,57 +112,52 @@ function install_file__auto_backup(){
     v cp_file $s $t
   fi
 }
+function _install_dir_impl(){
+  # NOTE: Do not add prefix `v` or `x` when using this function
+  local mode="$1"
+  local rsync_fn="$2"
+  local s="$3"
+  local t="$4"
+  shift 4
+  case "$mode" in
+    overwrite)
+      if [ -d $t ];then
+        warning_overwrite
+      fi
+      v "$rsync_fn" $s $t "$@"
+      ;;
+    skip_ifexist)
+      if [ -d $t ];then
+        echo -e "${STY_BLUE}[$0]: \"$t\" already exists, will not do anything.${STY_RST}"
+      else
+        echo -e "${STY_YELLOW}[$0]: \"$t\" does not exist yet.${STY_RST}"
+        v "$rsync_fn" $s $t "$@"
+      fi
+      ;;
+  esac
+}
 function install_dir(){
   # NOTE: Do not add prefix `v` or `x` when using this function
-  local s=$1
-  local t=$2
-  if [ -d $t ];then
-    warning_overwrite
-  fi
-  v rsync_dir $s $t
+  _install_dir_impl overwrite rsync_dir "$1" "$2"
 }
 function install_dir__sync(){
   # NOTE: Do not add prefix `v` or `x` when using this function
-  local s=$1
-  local t=$2
-  if [ -d $t ];then
-    warning_overwrite
-  fi
-  v rsync_dir__sync $s $t
+  _install_dir_impl overwrite rsync_dir__sync "$1" "$2"
 }
 function install_dir__skip_ifexist(){
   # NOTE: Do not add prefix `v` or `x` when using this function
-  local s=$1
-  local t=$2
-  if [ -d $t ];then
-    echo -e "${STY_BLUE}[$0]: \"$t\" already exists, will not do anything.${STY_RST}"
-  else
-    echo -e "${STY_YELLOW}[$0]: \"$t\" does not exist yet.${STY_RST}"
-    v rsync_dir $s $t
-  fi
+  _install_dir_impl skip_ifexist rsync_dir "$1" "$2"
 }
 function install_dir__ignore_existing(){
   # NOTE: Do not add prefix `v` or `x` when using this function
-  local s=$1
-  local t=$2
-  if [ -d $t ];then
-    echo -e "${STY_BLUE}[$0]: \"$t\" already exists, will not do anything.${STY_RST}"
-  else
-    echo -e "${STY_YELLOW}[$0]: \"$t\" does not exist yet.${STY_RST}"
-    v rsync_dir__ignore_existing $s $t
-  fi
+  _install_dir_impl skip_ifexist rsync_dir__ignore_existing "$1" "$2"
 }
 function install_dir__sync_exclude(){
   # NOTE: Do not add prefix `v` or `x` when using this function
-  # Sync directory with exclude patterns
-  # Usage: install_dir__sync_exclude <src> <dest> <exclude_pattern1> [<exclude_pattern2> ...]
-  local s=$1
-  local t=$2
+  local s="$1"
+  local t="$2"
   shift 2
-  if [ -d $t ];then
-    warning_overwrite
-  fi
-  v rsync_dir__sync_exclude $s $t "$@"
+  _install_dir_impl overwrite rsync_dir__sync_exclude "$s" "$t" "$@"
 }
 function install_google_sans_flex(){
   local font_name="Google Sans Flex"
@@ -181,17 +170,16 @@ function install_google_sans_flex(){
   x cd $src_dir
   try git init -b main
   try git remote add origin $src_url
-  x git pull origin main 
+  x git pull origin main
   x git submodule update --init --recursive
   warning_overwrite
-  rsync_dir "$src_dir" "$target_dir" 
+  rsync_dir "$src_dir" "$target_dir"
   x fc-cache -fv
   x cd $REPO_ROOT
   x mkdir -p "$(dirname ${INSTALLED_LISTFILE})"
   realpath -se "$target_dir" >> "${INSTALLED_LISTFILE}"
 }
 
-#####################################################################################
 # In case some dirs does not exists
 for i in "$XDG_BIN_HOME" "$XDG_CACHE_HOME" "$XDG_CONFIG_HOME" "$XDG_DATA_HOME"; do
   if ! test -e "$i"; then
@@ -228,7 +216,6 @@ if [[ ! "$OS_GROUP_ID" == "fedora" ]]; then
   v install_google_sans_flex
 fi
 
-#####################################################################################
 
 v gen_firstrun
 v dedup_and_sort_listfile "${INSTALLED_LISTFILE}" "${INSTALLED_LISTFILE}"
@@ -237,7 +224,6 @@ v dedup_and_sort_listfile "${INSTALLED_LISTFILE}" "${INSTALLED_LISTFILE}"
 sleep 1
 try hyprctl reload
 
-#####################################################################################
 printf "\n"
 printf "\n"
 printf "\n"

@@ -32,8 +32,7 @@ fi
 
 arch=$(portageq envvar ACCEPT_KEYWORDS)
 
-# Exclude hyprland, will deal with that separately
-metapkgs=(illogical-impulse-{audio,backlight,basic,bibata-modern-classic-bin,fonts-themes,hyprland,kde,microtex-git,portal,python,quickshell-git,screencapture,toolkit,widgets})
+source ./sdata/dist-gentoo/metapkgs.sh
 
 ebuild_dir="/var/db/repos/ii-dots"
 
@@ -59,7 +58,7 @@ x sudo rm -fr ${ebuild_dir}/app-misc/illogical-impulse-*
 source ./sdata/dist-gentoo/import-local-pkgs.sh
 
 ########## INSTALL ILLOGICAL-IMPUSEL EBUILDS
-for i in "${metapkgs[@]}"; do
+for i in "${GENTOO_METAPKG_NAMES[@]}"; do
 	x sudo mkdir -p ${ebuild_dir}/app-misc/${i}
 	v sudo cp ./sdata/dist-gentoo/${i}/${i}*.ebuild ${ebuild_dir}/app-misc/${i}/
 	v sudo ebuild ${ebuild_dir}/app-misc/${i}/*.ebuild digest

@@ -1,6 +1,8 @@
 # This script is meant to be sourced.
 # It's not for directly running.
 
-for i in illogical-impulse-{quickshell-git,audio,backlight,basic,bibata-modern-classic-bin,fonts-themes,hyprland,kde,microtex-git,portal,python,screencapture,toolkit,widgets} plasma-browser-integration; do
+source ./sdata/dist-arch/metapkgs.sh
+
+for i in "${ARCH_METAPKG_NAMES[@]}" plasma-browser-integration; do
   v yay -Rns $i
 done

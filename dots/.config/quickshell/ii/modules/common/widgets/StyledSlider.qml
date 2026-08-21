@@ -50,7 +50,7 @@ Slider {
     property real trackDotSize: 3
     property bool usePercentTooltip: true
     property string tooltipContent: usePercentTooltip ? `${Math.round(((value - from) / (to - from)) * 100)}%` : `${Math.round(value)}`
-    property bool wavy: configuration === StyledSlider.Configuration.Wavy // If true, the progress bar will have a wavy fill effect
+    property bool wavy: configuration === StyledSlider.Configuration.Wavy
     property bool animateWave: true
     property real waveAmplitudeMultiplier: wavy ? 0.5 : 0
     property real waveFrequency: 6
@@ -64,7 +64,7 @@ Slider {
     from: 0
     to: 1
 
-    Behavior on value { // This makes the adjusted value (like volume) shift smoothly
+    Behavior on value {
         SmoothedAnimation {
             velocity: Appearance.animation.elementMoveFast.velocity
         }
@@ -92,7 +92,7 @@ Slider {
     MouseArea {
         anchors.fill: parent
         onPressed: (mouse) => mouse.accepted = false
-        cursorShape: root.pressed ? Qt.ClosedHandCursor : Qt.PointingHandCursor 
+        cursorShape: root.pressed ? Qt.ClosedHandCursor : Qt.PointingHandCursor
     }
 
     background: Item {
@@ -108,7 +108,6 @@ Slider {
         property var leftWidths: leftValues.map((v, i, a) => a[i + 1] - v).slice(0, -1)
         property var rightWidths: rightValues.map((v, i, a) => a[i + 1] - v).slice(0, -1)
 
-        // Fill left
         Repeater {
             model: background.leftWidths.length
 
@@ -166,7 +165,6 @@ Slider {
             }
         }
 
-        // Fill right
         Repeater {
             model: background.rightWidths.length
 
@@ -186,7 +184,6 @@ Slider {
             }
         }
 
-        // Stop indicators
         Repeater {
             model: root.stopIndicatorValues
             TrackDot {

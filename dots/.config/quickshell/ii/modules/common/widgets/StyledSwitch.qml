@@ -15,7 +15,6 @@ Switch {
 
     PointingHandInteraction {}
 
-    // Custom track styling
     background: Rectangle {
         width: parent.width
         height: parent.height
@@ -32,7 +31,6 @@ Switch {
         }
     }
 
-    // Custom thumb styling
     indicator: Rectangle {
         width: (root.pressed || root.down) ? (28 * root.scale) : root.checked ? (24 * root.scale) : (16 * root.scale)
         height: (root.pressed || root.down) ? (28 * root.scale) : root.checked ? (24 * root.scale) : (16 * root.scale)

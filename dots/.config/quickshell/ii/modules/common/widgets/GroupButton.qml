@@ -6,7 +6,7 @@ import QtQuick.Controls
 import QtQuick.Layouts
 
 /**
- * Material 3 button with expressive bounciness. 
+ * Material 3 button with expressive bounciness.
  * See https://m3.material.io/components/button-groups/overview
  */
 Button {
@@ -46,12 +46,12 @@ Button {
     property real radius: root.down ? root.buttonRadiusPressed : root.buttonRadius
     property real leftRadius: root.down ? root.buttonRadiusPressed : root.buttonRadius
     property real rightRadius: root.down ? root.buttonRadiusPressed : root.buttonRadius
-    property color color: root.enabled ? (root.toggled ? 
-        (root.down ? colBackgroundToggledActive : 
-            root.hovered ? colBackgroundToggledHover : 
+    property color color: root.enabled ? (root.toggled ?
+        (root.down ? colBackgroundToggledActive :
+            root.hovered ? colBackgroundToggledHover :
             colBackgroundToggled) :
-        (root.down ? colBackgroundActive : 
-            root.hovered ? colBackgroundHover : 
+        (root.down ? colBackgroundActive :
+            root.hovered ? colBackgroundHover :
             colBackground)) : colBackground
 
     onDownChanged: {
@@ -85,7 +85,7 @@ Button {
         anchors.fill: parent
         cursorShape: Qt.PointingHandCursor
         acceptedButtons: Qt.LeftButton | Qt.RightButton | Qt.MiddleButton
-        onPressed: (event) => { 
+        onPressed: (event) => {
             if(event.button === Qt.RightButton) {
                 if (root.altAction) root.altAction();
                 return;
@@ -111,8 +111,8 @@ Button {
         }
 
         onPressAndHold: () => {
-            altAction(); 
-            root.down = false; 
+            altAction();
+            root.down = false;
             root.clicked = false;
         };
     }

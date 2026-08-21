@@ -93,7 +93,7 @@ ApplicationWindow {
                 if (event.key === Qt.Key_PageDown) {
                     root.currentPage = Math.min(root.currentPage + 1, root.pages.length - 1)
                     event.accepted = true;
-                } 
+                }
                 else if (event.key === Qt.Key_PageUp) {
                     root.currentPage = Math.max(root.currentPage - 1, 0)
                     event.accepted = true;
@@ -170,7 +170,7 @@ ApplicationWindow {
                     }
                     spacing: 10
                     expanded: root.width > 900
-                    
+
                     NavigationRailExpandButton {
                         focus: root.visible
                     }

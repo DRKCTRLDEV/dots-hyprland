@@ -13,17 +13,12 @@ import qs.modules.waffle.looks
 Rectangle {
     id: root
     property AggregatedAppCategoryModel aggregatedCategory
-    property list<DesktopEntry> desktopEntries: [...DesktopEntries.applications.values.filter(app => {
-        const appCategories = app.categories;
-        const gridCategories = root.aggregatedCategory.categories;
-        return appCategories.some(cat => gridCategories.indexOf(cat) !== -1);
-    })].sort((a, b) => a.name.localeCompare(b.name));
+    property list<DesktopEntry> desktopEntries: AppCategoryIndex.appsForCategories(root.aggregatedCategory.categories)
 
     property Item windowRootItem: {
         var item = root;
-        // print("FINDING ROOT")
         while (item.parent != null) {
-            if (item.parent.toString().includes("ProxyWindow"))
+            if (item.parent instanceof PanelWindow)
                 break;
             item = item.parent;
         }

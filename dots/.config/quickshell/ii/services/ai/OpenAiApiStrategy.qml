@@ -2,9 +2,8 @@ import QtQuick
 
 ApiStrategy {
     property bool isReasoning: false
-    
+
     function buildEndpoint(model: AiModel): string {
-        // console.log("[AI] Endpoint: " + model.endpoint);
         return model.endpoint;
     }
 
@@ -31,32 +30,33 @@ ApiStrategy {
         return `-H "Authorization: Bearer \$\{${apiKeyEnvVarName}\}"`;
     }
 
+    function handleStreamData(dataJson, message) {
+        return null;
+    }
+
     function parseResponseLine(line, message) {
-        // Remove 'data: ' prefix if present and trim whitespace
         let cleanData = line.trim();
         if (cleanData.startsWith("data:")) {
             cleanData = cleanData.slice(5).trim();
         }
 
-        // console.log("[AI] OpenAI: Data:", cleanData);
-        
-        // Handle special cases
         if (!cleanData || cleanData.startsWith(":")) return {};
         if (cleanData === "[DONE]") {
             return { finished: true };
         }
-        
-        // Real stuff
+
         try {
             const dataJson = JSON.parse(cleanData);
 
-            // Error response handling
             if (dataJson.error) {
                 const errorMsg = `**Error**: ${dataJson.error.message || JSON.stringify(dataJson.error)}`;
                 message.rawContent += errorMsg;
                 message.content += errorMsg;
                 return { finished: true };
             }
+
+            const handled = handleStreamData(dataJson, message);
+            if (handled) return handled;
 
             let newContent = "";
 
@@ -84,7 +84,6 @@ ApiStrategy {
             message.content += newContent;
             message.rawContent += newContent;
 
-            // Usage metadata
             if (dataJson.usage) {
                 return {
                     tokenUsage: {
@@ -98,21 +97,20 @@ ApiStrategy {
             if (dataJson.done) {
                 return { finished: true };
             }
-            
+
         } catch (e) {
             console.log("[AI] OpenAI: Could not parse line: ", e);
             message.rawContent += line;
             message.content += line;
         }
-        
+
         return {};
     }
-    
+
     function onRequestFinished(message) {
-        // OpenAI format doesn't need special finish handling
         return {};
     }
-    
+
     function reset() {
         isReasoning = false;
     }

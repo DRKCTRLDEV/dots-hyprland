@@ -2,6 +2,7 @@ import qs.modules.common
 import qs.modules.common.functions
 import qs.modules.common.widgets
 import QtQuick
+import qs.modules.ii.bar as Bar
 
 Item {
     id: root
@@ -11,7 +12,11 @@ Item {
     implicitHeight: resourceProgress.implicitHeight
     implicitWidth: Appearance.sizes.verticalBarWidth
 
-    property bool warning: percentage * 100 >= warningThreshold
+    property Bar.ResourceLogic resourceLogic: Bar.ResourceLogic {
+        percentage: root.percentage
+        warningThreshold: root.warningThreshold
+    }
+    property bool warning: resourceLogic.warning
 
     ClippedFilledCircularProgress {
         id: resourceProgress

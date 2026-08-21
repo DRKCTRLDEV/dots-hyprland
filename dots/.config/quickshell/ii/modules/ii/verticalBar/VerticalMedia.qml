@@ -13,33 +13,21 @@ import qs.modules.ii.bar as Bar
 MouseArea {
     id: root
     property bool borderless: Config.options.bar.borderless
-    readonly property MprisPlayer activePlayer: MprisController.activePlayer
-    readonly property string cleanedTitle: StringUtils.cleanMusicTitle(activePlayer?.trackTitle) || Translation.tr("No media")
+    property Bar.MediaLogic media: Bar.MediaLogic {
+        updateInterval: Config.options.media.updateInterval
+    }
+    readonly property MprisPlayer activePlayer: media.activePlayer
+    readonly property string cleanedTitle: media.cleanedTitle
 
     visible: activePlayer != null
     Layout.fillHeight: true
     implicitHeight: mediaCircProg.implicitHeight
     implicitWidth: Appearance.sizes.verticalBarWidth
 
-    Timer {
-        running: activePlayer?.playbackState == MprisPlaybackState.Playing
-        interval: Config.options.media.updateInterval
-        repeat: true
-        onTriggered: activePlayer.positionChanged()
-    }
-
     acceptedButtons: Qt.MiddleButton | Qt.BackButton | Qt.ForwardButton | Qt.RightButton | Qt.LeftButton
     hoverEnabled: !Config.options.bar.tooltips.clickToShow
     onPressed: (event) => {
-        if (event.button === Qt.MiddleButton) {
-            activePlayer.togglePlaying();
-        } else if (event.button === Qt.BackButton) {
-            activePlayer.previous();
-        } else if (event.button === Qt.ForwardButton || event.button === Qt.RightButton) {
-            activePlayer.next();
-        } else if (event.button === Qt.LeftButton) {
-            GlobalStates.mediaControlsOpen = !GlobalStates.mediaControlsOpen
-        }
+        media.handlePress(event)
     }
 
     ClippedFilledCircularProgress {

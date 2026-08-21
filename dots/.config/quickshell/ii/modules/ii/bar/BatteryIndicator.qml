@@ -7,11 +7,12 @@ import QtQuick.Layouts
 MouseArea {
     id: root
     property bool borderless: Config.options.bar.borderless
-    readonly property var chargeState: Battery.chargeState
-    readonly property bool isCharging: Battery.isCharging
-    readonly property bool isPluggedIn: Battery.isPluggedIn
-    readonly property real percentage: Battery.percentage
-    readonly property bool isLow: percentage <= Config.options.battery.low / 100
+    property BatteryLogic battery: BatteryLogic {}
+    readonly property var chargeState: battery.chargeState
+    readonly property bool isCharging: battery.isCharging
+    readonly property bool isPluggedIn: battery.isPluggedIn
+    readonly property real percentage: battery.percentage
+    readonly property bool isLow: battery.isLow
 
     implicitWidth: batteryProgress.implicitWidth
     implicitHeight: Appearance.sizes.barHeight

@@ -13,7 +13,11 @@ Item {
     visible: width > 0 && height > 0
     implicitWidth: resourceRowLayout.x < 0 ? 0 : resourceRowLayout.implicitWidth
     implicitHeight: Appearance.sizes.barHeight
-    property bool warning: percentage * 100 >= warningThreshold
+    property ResourceLogic resourceLogic: ResourceLogic {
+        percentage: root.percentage
+        warningThreshold: root.warningThreshold
+    }
+    property bool warning: resourceLogic.warning
 
     RowLayout {
         id: resourceRowLayout

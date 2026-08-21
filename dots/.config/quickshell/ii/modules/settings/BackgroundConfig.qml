@@ -13,10 +13,7 @@ ContentPage {
         ConfigSwitch {
             buttonIcon: "unfold_more_double"
             text: Translation.tr("Vertical")
-            checked: Config.options.background.parallax.vertical
-            onCheckedChanged: {
-                Config.options.background.parallax.vertical = checked;
-            }
+            configPath: "background.parallax.vertical"
         }
 
         ConfigRow {
@@ -24,27 +21,18 @@ ContentPage {
             ConfigSwitch {
                 buttonIcon: "counter_1"
                 text: Translation.tr("Depends on workspace")
-                checked: Config.options.background.parallax.enableWorkspace
-                onCheckedChanged: {
-                    Config.options.background.parallax.enableWorkspace = checked;
-                }
+                configPath: "background.parallax.enableWorkspace"
             }
             ConfigSwitch {
                 buttonIcon: "side_navigation"
                 text: Translation.tr("Depends on sidebars")
-                checked: Config.options.background.parallax.enableSidebar
-                onCheckedChanged: {
-                    Config.options.background.parallax.enableSidebar = checked;
-                }
+                configPath: "background.parallax.enableSidebar"
             }
         }
         ConfigSwitch {
             buttonIcon: "widgets"
             text: Translation.tr("Widgets follow parallax")
-            checked: Config.options.background.parallax.widgetsFollowParallax
-            onCheckedChanged: {
-                Config.options.background.parallax.widgetsFollowParallax = checked;
-            }
+            configPath: "background.parallax.widgetsFollowParallax"
             StyledToolTip {
                 text: Translation.tr("When enabled, background widgets move along with the wallpaper as it pans. When disabled, they stay in place on screen.")
             }
@@ -75,20 +63,14 @@ ContentPage {
                 Layout.fillWidth: false
                 buttonIcon: "check"
                 text: Translation.tr("Enable")
-                checked: Config.options.background.widgets.clock.enable
-                onCheckedChanged: {
-                    Config.options.background.widgets.clock.enable = checked;
-                }
+                configPath: "background.widgets.clock.enable"
             }
             Item {
                 Layout.fillWidth: true
             }
             ConfigSelectionArray {
                 Layout.fillWidth: false
-                currentValue: Config.options.background.widgets.clock.placementStrategy
-                onSelected: newValue => {
-                    Config.options.background.widgets.clock.placementStrategy = newValue;
-                }
+                configPath: "background.widgets.clock.placementStrategy"
                 options: [
                     {
                         displayName: Translation.tr("Draggable"),
@@ -117,10 +99,7 @@ ContentPage {
         ConfigSwitch {
             buttonIcon: "lock_clock"
             text: Translation.tr("Show only when locked")
-            checked: Config.options.background.widgets.clock.showOnlyWhenLocked
-            onCheckedChanged: {
-                Config.options.background.widgets.clock.showOnlyWhenLocked = checked;
-            }
+            configPath: "background.widgets.clock.showOnlyWhenLocked"
         }
 
             ConfigRow {
@@ -128,18 +107,12 @@ ContentPage {
                 ConfigSwitch {
                     buttonIcon: "vertical_distribute"
                     text: Translation.tr("Vertical")
-                    checked: Config.options.background.widgets.clock.digital.vertical
-                    onCheckedChanged: {
-                        Config.options.background.widgets.clock.digital.vertical = checked;
-                    }
+                    configPath: "background.widgets.clock.digital.vertical"
                 }
                 ConfigSwitch {
                     buttonIcon: "animation"
                     text: Translation.tr("Animate time change")
-                    checked: Config.options.background.widgets.clock.digital.animateChange
-                    onCheckedChanged: {
-                        Config.options.background.widgets.clock.digital.animateChange = checked;
-                    }
+                    configPath: "background.widgets.clock.digital.animateChange"
                 }
             }
 
@@ -149,18 +122,12 @@ ContentPage {
                 ConfigSwitch {
                     buttonIcon: "date_range"
                     text: Translation.tr("Show date")
-                    checked: Config.options.background.widgets.clock.digital.showDate
-                    onCheckedChanged: {
-                        Config.options.background.widgets.clock.digital.showDate = checked;
-                    }
+                    configPath: "background.widgets.clock.digital.showDate"
                 }
                 ConfigSwitch {
                     buttonIcon: "activity_zone"
                     text: Translation.tr("Use adaptive alignment")
-                    checked: Config.options.background.widgets.clock.digital.adaptiveAlignment
-                    onCheckedChanged: {
-                        Config.options.background.widgets.clock.digital.adaptiveAlignment = checked;
-                    }
+                    configPath: "background.widgets.clock.digital.adaptiveAlignment"
                     StyledToolTip {
                         text: Translation.tr("Aligns the date and quote to left, center or right depending on its position on the screen.")
                     }
@@ -179,52 +146,40 @@ ContentPage {
 
             ConfigSlider {
                 text: Translation.tr("Font weight")
-                value: Config.options.background.widgets.clock.digital.font.weight
+                configPath: "background.widgets.clock.digital.font.weight"
                 usePercentTooltip: false
                 buttonIcon: "format_bold"
                 from: 1
                 to: 1000
                 stopIndicatorValues: [350]
-                onValueChanged: {
-                    Config.options.background.widgets.clock.digital.font.weight = value;
-                }
             }
 
             ConfigSlider {
                 text: Translation.tr("Font size")
-                value: Config.options.background.widgets.clock.digital.font.size
+                configPath: "background.widgets.clock.digital.font.size"
                 usePercentTooltip: false
                 buttonIcon: "format_size"
                 from: 50
                 to: 700
                 stopIndicatorValues: [90]
-                onValueChanged: {
-                    Config.options.background.widgets.clock.digital.font.size = value;
-                }
             }
 
             ConfigSlider {
                 text: Translation.tr("Font width")
-                value: Config.options.background.widgets.clock.digital.font.width
+                configPath: "background.widgets.clock.digital.font.width"
                 usePercentTooltip: false
                 buttonIcon: "fit_width"
                 from: 25
                 to: 125
                 stopIndicatorValues: [100]
-                onValueChanged: {
-                    Config.options.background.widgets.clock.digital.font.width = value;
-                }
             }
             ConfigSlider {
                 text: Translation.tr("Font roundness")
-                value: Config.options.background.widgets.clock.digital.font.roundness
+                configPath: "background.widgets.clock.digital.font.roundness"
                 usePercentTooltip: false
                 buttonIcon: "line_curve"
                 from: 0
                 to: 100
-                onValueChanged: {
-                    Config.options.background.widgets.clock.digital.font.roundness = value;
-                }
             }
         }
 
@@ -234,10 +189,7 @@ ContentPage {
             ConfigSwitch {
                 buttonIcon: "check"
                 text: Translation.tr("Enable")
-                checked: Config.options.background.widgets.clock.quote.enable
-                onCheckedChanged: {
-                    Config.options.background.widgets.clock.quote.enable = checked;
-                }
+                configPath: "background.widgets.clock.quote.enable"
             }
             MaterialTextArea {
                 Layout.fillWidth: true

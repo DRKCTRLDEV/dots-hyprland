@@ -1,5 +1,6 @@
 import qs.modules.common.widgets
 import qs.modules.common
+import qs.modules.common.functions
 import QtQuick
 import QtQuick.Layouts
 
@@ -11,6 +12,23 @@ RowLayout {
     property alias stepSize: spinBoxWidget.stepSize
     property alias from: spinBoxWidget.from
     property alias to: spinBoxWidget.to
+
+    property string configPath: ""
+    property bool loadingConfig: true
+
+    Component.onCompleted: {
+        if (root.configPath.length > 0) {
+            root.value = ConfigPathUtils.getValue(root.configPath, root.value);
+        }
+        root.loadingConfig = false;
+    }
+
+    onValueChanged: {
+        if (root.configPath.length > 0 && !root.loadingConfig) {
+            ConfigPathUtils.setValue(root.configPath, root.value);
+        }
+    }
+
     spacing: 10
     Layout.leftMargin: 8
     Layout.rightMargin: 8

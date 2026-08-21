@@ -7,17 +7,6 @@ import Quickshell.Io
 ContentPage {
     id: root
 
-    property bool sddmInstalled: false
-
-    Process {
-        id: sddmCheck
-        running: true
-        command: ["bash", "-c", "which sddm"]
-        onExited: (exitCode, exitStatus) => {
-            root.sddmInstalled = (exitCode === 0)
-        }
-    }
-
     ContentSection {
         icon: "colors"
         title: Translation.tr("Color generation")
@@ -25,18 +14,12 @@ ContentPage {
         ConfigSwitch {
             buttonIcon: "hardware"
             text: Translation.tr("Shell & utilities")
-            checked: Config.options.appearance.wallpaperTheming.enableAppsAndShell
-            onCheckedChanged: {
-                Config.options.appearance.wallpaperTheming.enableAppsAndShell = checked;
-            }
+            configPath: "appearance.wallpaperTheming.enableAppsAndShell"
         }
         ConfigSwitch {
             buttonIcon: "tv_options_input_settings"
             text: Translation.tr("Qt apps")
-            checked: Config.options.appearance.wallpaperTheming.enableQtApps
-            onCheckedChanged: {
-                Config.options.appearance.wallpaperTheming.enableQtApps = checked;
-            }
+            configPath: "appearance.wallpaperTheming.enableQtApps"
             StyledToolTip {
                 text: Translation.tr("Shell & utilities theming must also be enabled")
             }
@@ -44,29 +27,9 @@ ContentPage {
         ConfigSwitch {
             buttonIcon: "terminal"
             text: Translation.tr("Terminal")
-            checked: Config.options.appearance.wallpaperTheming.enableTerminal
-            onCheckedChanged: {
-                Config.options.appearance.wallpaperTheming.enableTerminal = checked;
-            }
+            configPath: "appearance.wallpaperTheming.enableTerminal"
             StyledToolTip {
                 text: Translation.tr("Shell & utilities theming must also be enabled")
-            }
-        }
-        ConfigSwitch {
-            id: sddmSwitch
-            buttonIcon: "lock"
-            text: Translation.tr("SDDM")
-            enabled: root.sddmInstalled
-            checked: enabled && Config.options.appearance.wallpaperTheming.enableSddm
-            onCheckedChanged: {
-                if (enabled) {
-                    Config.options.appearance.wallpaperTheming.enableSddm = checked;
-                }
-            }
-            StyledToolTip {
-                text: root.sddmInstalled 
-                    ? Translation.tr("Shell & utilities theming must also be enabled")
-                    : Translation.tr("SDDM is not installed. Re-run ./setup install without --skip-sddm to install it.")
             }
         }
         ConfigRow {
@@ -74,10 +37,7 @@ ContentPage {
             ConfigSwitch {
                 buttonIcon: "dark_mode"
                 text: Translation.tr("Force dark mode in terminal")
-                checked: Config.options.appearance.wallpaperTheming.terminalGenerationProps.forceDarkMode
-                onCheckedChanged: {
-                     Config.options.appearance.wallpaperTheming.terminalGenerationProps.forceDarkMode= checked;
-                }
+                configPath: "appearance.wallpaperTheming.terminalGenerationProps.forceDarkMode"
                 StyledToolTip {
                     text: Translation.tr("Ignored if terminal theming is not enabled")
                 }
@@ -98,13 +58,10 @@ ContentPage {
         ConfigSpinBox {
             icon: "gradient"
             text: Translation.tr("Terminal: Harmonize threshold")
-            value: Config.options.appearance.wallpaperTheming.terminalGenerationProps.harmonizeThreshold
+            configPath: "appearance.wallpaperTheming.terminalGenerationProps.harmonizeThreshold"
             from: 0
             to: 100
             stepSize: 10
-            onValueChanged: {
-                Config.options.appearance.wallpaperTheming.terminalGenerationProps.harmonizeThreshold = value;
-            }
         }
         ConfigSpinBox {
             icon: "format_color_text"

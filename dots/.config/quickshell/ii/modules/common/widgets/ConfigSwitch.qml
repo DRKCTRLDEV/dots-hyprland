@@ -1,5 +1,6 @@
 import qs.modules.common.widgets
 import qs.modules.common
+import qs.modules.common.functions
 import QtQuick
 import QtQuick.Layouts
 import QtQuick.Controls
@@ -9,11 +10,27 @@ RippleButton {
     property string buttonIcon
     property alias iconSize: iconWidget.iconSize
 
+    property string configPath: ""
+    property bool loadingConfig: true
+
     Layout.fillWidth: true
     implicitHeight: contentItem.implicitHeight + 8 * 2
     font.pixelSize: Appearance.font.pixelSize.small
-    
+
     onClicked: checked = !checked
+
+    Component.onCompleted: {
+        if (root.configPath.length > 0) {
+            root.checked = ConfigPathUtils.getValue(root.configPath, root.checked);
+        }
+        root.loadingConfig = false;
+    }
+
+    onCheckedChanged: {
+        if (root.configPath.length > 0 && !root.loadingConfig) {
+            ConfigPathUtils.setValue(root.configPath, root.checked);
+        }
+    }
 
     contentItem: RowLayout {
         spacing: 10
@@ -40,4 +57,3 @@ RippleButton {
         }
     }
 }
-

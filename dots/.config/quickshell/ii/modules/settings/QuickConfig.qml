@@ -176,10 +176,7 @@ ContentPage {
         ConfigSwitch {
             buttonIcon: "ev_shadow"
             text: Translation.tr("Transparency")
-            checked: Config.options.appearance.transparency.enable
-            onCheckedChanged: {
-                Config.options.appearance.transparency.enable = checked;
-            }
+            configPath: "appearance.transparency.enable"
         }
     }
 
@@ -224,10 +221,7 @@ ContentPage {
                 title: Translation.tr("Bar style")
 
                 ConfigSelectionArray {
-                    currentValue: Config.options.bar.cornerStyle
-                    onSelected: newValue => {
-                        Config.options.bar.cornerStyle = newValue; // Update local copy
-                    }
+                    configPath: "bar.cornerStyle"
                     options: [
                         {
                             displayName: Translation.tr("Hug"),
@@ -254,10 +248,7 @@ ContentPage {
                 title: Translation.tr("Screen round corner")
 
                 ConfigSelectionArray {
-                    currentValue: Config.options.appearance.fakeScreenRounding
-                    onSelected: newValue => {
-                        Config.options.appearance.fakeScreenRounding = newValue;
-                    }
+                    configPath: "appearance.fakeScreenRounding"
                     options: [
                         {
                             displayName: Translation.tr("No"),

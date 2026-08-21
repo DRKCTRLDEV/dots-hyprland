@@ -12,10 +12,7 @@ ContentPage {
         ConfigSwitch {
             buttonIcon: "counter_2"
             text: Translation.tr("Unread indicator: show count")
-            checked: Config.options.bar.indicators.notifications.showUnreadCount
-            onCheckedChanged: {
-                Config.options.bar.indicators.notifications.showUnreadCount = checked;
-            }
+            configPath: "bar.indicators.notifications.showUnreadCount"
         }
     }
 
@@ -63,10 +60,7 @@ ContentPage {
                 Layout.fillWidth: false
 
                 ConfigSelectionArray {
-                    currentValue: Config.options.bar.autoHide.enable
-                    onSelected: newValue => {
-                        Config.options.bar.autoHide.enable = newValue; // Update local copy
-                    }
+                    configPath: "bar.autoHide.enable"
                     options: [
                         {
                             displayName: Translation.tr("No"),
@@ -90,10 +84,7 @@ ContentPage {
                 Layout.fillWidth: true
 
                 ConfigSelectionArray {
-                    currentValue: Config.options.bar.cornerStyle
-                    onSelected: newValue => {
-                        Config.options.bar.cornerStyle = newValue; // Update local copy
-                    }
+                    configPath: "bar.cornerStyle"
                     options: [
                         {
                             displayName: Translation.tr("Hug"),
@@ -119,10 +110,7 @@ ContentPage {
                 Layout.fillWidth: false
 
                 ConfigSelectionArray {
-                    currentValue: Config.options.bar.borderless
-                    onSelected: newValue => {
-                        Config.options.bar.borderless = newValue; // Update local copy
-                    }
+                    configPath: "bar.borderless"
                     options: [
                         {
                             displayName: Translation.tr("Pills"),
@@ -147,19 +135,13 @@ ContentPage {
         ConfigSwitch {
             buttonIcon: "keep"
             text: Translation.tr('Make icons pinned by default')
-            checked: Config.options.tray.invertPinnedItems
-            onCheckedChanged: {
-                Config.options.tray.invertPinnedItems = checked;
-            }
+            configPath: "tray.invertPinnedItems"
         }
 
         ConfigSwitch {
             buttonIcon: "colors"
             text: Translation.tr('Tint icons')
-            checked: Config.options.tray.monochromeIcons
-            onCheckedChanged: {
-                Config.options.tray.monochromeIcons = checked;
-            }
+            configPath: "tray.monochromeIcons"
         }
     }
 
@@ -172,18 +154,12 @@ ContentPage {
             ConfigSwitch {
                 buttonIcon: "content_cut"
                 text: Translation.tr("Screen snip")
-                checked: Config.options.bar.utilButtons.showScreenSnip
-                onCheckedChanged: {
-                    Config.options.bar.utilButtons.showScreenSnip = checked;
-                }
+                configPath: "bar.utilButtons.showScreenSnip"
             }
             ConfigSwitch {
                 buttonIcon: "colorize"
                 text: Translation.tr("Color picker")
-                checked: Config.options.bar.utilButtons.showColorPicker
-                onCheckedChanged: {
-                    Config.options.bar.utilButtons.showColorPicker = checked;
-                }
+                configPath: "bar.utilButtons.showColorPicker"
             }
         }
         ConfigRow {
@@ -191,18 +167,12 @@ ContentPage {
             ConfigSwitch {
                 buttonIcon: "keyboard"
                 text: Translation.tr("Keyboard toggle")
-                checked: Config.options.bar.utilButtons.showKeyboardToggle
-                onCheckedChanged: {
-                    Config.options.bar.utilButtons.showKeyboardToggle = checked;
-                }
+                configPath: "bar.utilButtons.showKeyboardToggle"
             }
             ConfigSwitch {
                 buttonIcon: "mic"
                 text: Translation.tr("Mic toggle")
-                checked: Config.options.bar.utilButtons.showMicToggle
-                onCheckedChanged: {
-                    Config.options.bar.utilButtons.showMicToggle = checked;
-                }
+                configPath: "bar.utilButtons.showMicToggle"
             }
         }
         ConfigRow {
@@ -210,18 +180,12 @@ ContentPage {
             ConfigSwitch {
                 buttonIcon: "dark_mode"
                 text: Translation.tr("Dark/Light toggle")
-                checked: Config.options.bar.utilButtons.showDarkModeToggle
-                onCheckedChanged: {
-                    Config.options.bar.utilButtons.showDarkModeToggle = checked;
-                }
+                configPath: "bar.utilButtons.showDarkModeToggle"
             }
             ConfigSwitch {
                 buttonIcon: "speed"
                 text: Translation.tr("Performance Profile toggle")
-                checked: Config.options.bar.utilButtons.showPerformanceProfileToggle
-                onCheckedChanged: {
-                    Config.options.bar.utilButtons.showPerformanceProfileToggle = checked;
-                }
+                configPath: "bar.utilButtons.showPerformanceProfileToggle"
             }
         }
         ConfigRow {
@@ -229,10 +193,7 @@ ContentPage {
             ConfigSwitch {
                 buttonIcon: "videocam"
                 text: Translation.tr("Record")
-                checked: Config.options.bar.utilButtons.showScreenRecord
-                onCheckedChanged: {
-                    Config.options.bar.utilButtons.showScreenRecord = checked;
-                }
+                configPath: "bar.utilButtons.showScreenRecord"
             }
         }
     }
@@ -243,10 +204,7 @@ ContentPage {
         ConfigSwitch {
             buttonIcon: "check"
             text: Translation.tr("Enable")
-            checked: Config.options.bar.weather.enable
-            onCheckedChanged: {
-                Config.options.bar.weather.enable = checked;
-            }
+            configPath: "bar.weather.enable"
         }
     }
 
@@ -257,52 +215,37 @@ ContentPage {
         ConfigSwitch {
             buttonIcon: "counter_1"
             text: Translation.tr('Always show numbers')
-            checked: Config.options.bar.workspaces.alwaysShowNumbers
-            onCheckedChanged: {
-                Config.options.bar.workspaces.alwaysShowNumbers = checked;
-            }
+            configPath: "bar.workspaces.alwaysShowNumbers"
         }
 
         ConfigSwitch {
             buttonIcon: "award_star"
             text: Translation.tr('Show app icons')
-            checked: Config.options.bar.workspaces.showAppIcons
-            onCheckedChanged: {
-                Config.options.bar.workspaces.showAppIcons = checked;
-            }
+            configPath: "bar.workspaces.showAppIcons"
         }
 
         ConfigSwitch {
             buttonIcon: "colors"
             text: Translation.tr('Tint app icons')
-            checked: Config.options.bar.workspaces.monochromeIcons
-            onCheckedChanged: {
-                Config.options.bar.workspaces.monochromeIcons = checked;
-            }
+            configPath: "bar.workspaces.monochromeIcons"
         }
 
         ConfigSpinBox {
             icon: "view_column"
             text: Translation.tr("Workspaces shown")
-            value: Config.options.bar.workspaces.shown
+            configPath: "bar.workspaces.shown"
             from: 1
             to: 30
             stepSize: 1
-            onValueChanged: {
-                Config.options.bar.workspaces.shown = value;
-            }
         }
 
         ConfigSpinBox {
             icon: "touch_long"
             text: Translation.tr("Number show delay when pressing Super (ms)")
-            value: Config.options.bar.workspaces.showNumberDelay
+            configPath: "bar.workspaces.showNumberDelay"
             from: 0
             to: 1000
             stepSize: 50
-            onValueChanged: {
-                Config.options.bar.workspaces.showNumberDelay = value;
-            }
         }
 
         ContentSubsection {
@@ -340,10 +283,7 @@ ContentPage {
         ConfigSwitch {
             buttonIcon: "ads_click"
             text: Translation.tr("Click to show")
-            checked: Config.options.bar.tooltips.clickToShow
-            onCheckedChanged: {
-                Config.options.bar.tooltips.clickToShow = checked;
-            }
+            configPath: "bar.tooltips.clickToShow"
         }
     }
 }

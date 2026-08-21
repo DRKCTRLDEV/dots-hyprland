@@ -23,7 +23,23 @@ Flow {
     ]
     property var currentValue: null
 
+    property string configPath: ""
+
     signal selected(var newValue)
+
+    Component.onCompleted: {
+        if (root.configPath.length > 0) {
+            root.currentValue = Qt.binding(function() {
+                return ConfigPathUtils.getValue(root.configPath, null);
+            });
+        }
+    }
+
+    onSelected: newValue => {
+        if (root.configPath.length > 0) {
+            ConfigPathUtils.setValue(root.configPath, newValue);
+        }
+    }
 
     Repeater {
         model: root.options

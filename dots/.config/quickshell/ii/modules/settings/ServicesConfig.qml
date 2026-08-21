@@ -30,24 +30,18 @@ ContentPage {
         ConfigSpinBox {
             icon: "timer_off"
             text: Translation.tr("Total duration timeout (s)")
-            value: Config.options.musicRecognition.timeout
+            configPath: "musicRecognition.timeout"
             from: 10
             to: 100
             stepSize: 2
-            onValueChanged: {
-                Config.options.musicRecognition.timeout = value;
-            }
         }
         ConfigSpinBox {
             icon: "av_timer"
             text: Translation.tr("Polling interval (s)")
-            value: Config.options.musicRecognition.interval
+            configPath: "musicRecognition.interval"
             from: 2
             to: 10
             stepSize: 1
-            onValueChanged: {
-                Config.options.musicRecognition.interval = value;
-            }
         }
     }
 
@@ -73,13 +67,10 @@ ContentPage {
         ConfigSpinBox {
             icon: "av_timer"
             text: Translation.tr("Polling interval (ms)")
-            value: Config.options.resources.updateInterval
+            configPath: "resources.updateInterval"
             from: 100
             to: 10000
             stepSize: 100
-            onValueChanged: {
-                Config.options.resources.updateInterval = value;
-            }
         }
     }
 
@@ -114,10 +105,7 @@ ContentPage {
 
         ConfigSwitch {
             text: Translation.tr("Use Levenshtein distance-based algorithm instead of fuzzy")
-            checked: Config.options.search.sloppy
-            onCheckedChanged: {
-                Config.options.search.sloppy = checked;
-            }
+            configPath: "search.sloppy"
             StyledToolTip {
                 text: Translation.tr("Could be better if you make a ton of typos,\nbut results can be weird and might not work with acronyms\n(e.g. \"GIMP\" might not give you the paint program)")
             }
@@ -234,18 +222,12 @@ ContentPage {
             ConfigSwitch {
                 buttonIcon: "assistant_navigation"
                 text: Translation.tr("Enable GPS based location")
-                checked: Config.options.bar.weather.enableGPS
-                onCheckedChanged: {
-                    Config.options.bar.weather.enableGPS = checked;
-                }
+                configPath: "bar.weather.enableGPS"
             }
             ConfigSwitch {
                 buttonIcon: "thermometer"
                 text: Translation.tr("Fahrenheit unit")
-                checked: Config.options.bar.weather.useUSCS
-                onCheckedChanged: {
-                    Config.options.bar.weather.useUSCS = checked;
-                }
+                configPath: "bar.weather.useUSCS"
                 StyledToolTip {
                     text: Translation.tr("It may take a few seconds to update")
                 }
@@ -264,13 +246,10 @@ ContentPage {
         ConfigSpinBox {
             icon: "av_timer"
             text: Translation.tr("Polling interval (m)")
-            value: Config.options.bar.weather.fetchInterval
+            configPath: "bar.weather.fetchInterval"
             from: 5
             to: 50
             stepSize: 5
-            onValueChanged: {
-                Config.options.bar.weather.fetchInterval = value;
-            }
         }
     }
 }

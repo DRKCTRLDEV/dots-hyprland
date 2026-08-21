@@ -14,7 +14,6 @@ import qs.modules.common.functions
 Item {
     id: root
     property real maxWindowPreviewHeight: 200
-    property real maxWindowPreviewWidth: 300
     property real windowControlsHeight: 30
     property real buttonPadding: 5
 
@@ -166,8 +165,8 @@ Item {
                                 windowButton.modelData?.activate();
                             }
                             contentItem: ColumnLayout {
-                                implicitWidth: screencopyView.implicitWidth
-                                implicitHeight: screencopyView.implicitHeight
+                                implicitWidth: screencopyView.width
+                                implicitHeight: screencopyView.height
 
                                 ButtonGroup {
                                     contentWidth: parent.width - anchors.margins * 2
@@ -208,7 +207,12 @@ Item {
                                         captureSource: windowButton.modelData
                                         live: true
                                         paintCursor: true
-                                        constraintSize: Qt.size(root.maxWindowPreviewWidth, root.maxWindowPreviewHeight)
+                                        height: root.maxWindowPreviewHeight
+                                        width: screencopyView.hasContent
+                                            ? Math.max(1, Math.round(root.maxWindowPreviewHeight
+                                                * screencopyView.sourceSize.width
+                                                / Math.max(screencopyView.sourceSize.height, 1)))
+                                            : 1
                                         layer.enabled: true
                                         layer.effect: OpacityMask {
                                             maskSource: Rectangle {

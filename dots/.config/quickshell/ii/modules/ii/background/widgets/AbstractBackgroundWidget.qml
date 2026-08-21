@@ -71,20 +71,17 @@ AbstractWidget {
             root.targetY = (root.scaledScreenHeight - root.height) / 2;
         }
         if ((root.placementStrategy === "free" || root.placementStrategy === "centered") && !root.needsColText) return;
-        leastBusyRegionProc.wallpaperPath = root.wallpaperPath;
 
         let cmd = [Quickshell.shellPath("scripts/images/least-busy-region-venv.sh")
-            , "--screen-width", Math.round(root.scaledScreenWidth)
-            , "--screen-height", Math.round(root.scaledScreenHeight)
-            , "--width", leastBusyRegionProc.contentWidth
-            , "--height", leastBusyRegionProc.contentHeight
-            , "--horizontal-padding", leastBusyRegionProc.horizontalPadding
-            , "--vertical-padding", leastBusyRegionProc.verticalPadding
             , root.wallpaperPath
+            , Math.round(root.scaledScreenWidth)
+            , Math.round(root.scaledScreenHeight)
+            , leastBusyRegionProc.contentWidth
+            , leastBusyRegionProc.contentHeight
+            , leastBusyRegionProc.horizontalPadding
+            , leastBusyRegionProc.verticalPadding
+            , root.placementStrategy === "mostBusy" ? "most" : "least"
         ];
-        if (root.placementStrategy === "mostBusy") {
-            cmd.push("--busiest");
-        }
         leastBusyRegionProc.command = cmd;
 
         leastBusyRegionProc.running = false;
@@ -92,7 +89,6 @@ AbstractWidget {
     }
     Process {
         id: leastBusyRegionProc
-        property string wallpaperPath: root.wallpaperPath
         // TODO: make these less arbitrary
         property int contentWidth: 300
         property int contentHeight: 300
@@ -102,7 +98,6 @@ AbstractWidget {
             id: leastBusyRegionOutputCollector
             onStreamFinished: {
                 const output = leastBusyRegionOutputCollector.text;
-                // console.log("[Background] Least busy region output:", output)
                 if (output.length === 0) return;
                 const parsedContent = JSON.parse(output);
                 root.dominantColor = parsedContent.dominant_color || Appearance.colors.colPrimary;

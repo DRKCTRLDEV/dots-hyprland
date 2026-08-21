@@ -7,20 +7,17 @@ import google.oauth2.service_account
 
 def get_token(json_str):
     try:
-        # Load the string into a dictionary
         info = json.loads(json_str)
-        
-        # Initialize credentials
+
         creds = google.oauth2.service_account.Credentials.from_service_account_info(info)
         scoped_creds = creds.with_scopes(['https://www.googleapis.com/auth/cloud-platform'])
-        
-        # Refresh to get the access token
+
         request = google.auth.transport.requests.Request()
         scoped_creds.refresh(request)
 
         token = scoped_creds.token
         expiry = int(calendar.timegm(scoped_creds.expiry.utctimetuple()))
-        
+
         print(json.dumps({
             "token": token,
             "expiry": expiry
@@ -31,8 +28,9 @@ def get_token(json_str):
         sys.exit(1)
 
 if __name__ == "__main__":
-    if len(sys.argv) < 2:
-        sys.stderr.write("Usage: python3 get_token.py '<json_string>'\n")
+    json_str = sys.stdin.read()
+    if not json_str.strip():
+        sys.stderr.write("Usage: echo '<json_string>' | python3 token_from_key.py\n")
         sys.exit(1)
-    
-    get_token(sys.argv[1])
+
+    get_token(json_str)

@@ -22,9 +22,7 @@ Singleton {
     readonly property string tokenForKeyScriptPath: Quickshell.shellPath("services/gCloud/token-from-key-venv.sh")
 
     function load() {
-        // Init load will be handled by Component.onCompleted
         if (!tokenReady) return;
-        // We just reload if key expired
         if (new Date() >= root.tokenExpiry) {
             root.tokenReady = false;
             root.keyReady = false;
@@ -56,19 +54,16 @@ Singleton {
             root.tokenReady = true;
             return;
         }
-        tokenProc.runSequence([(() => { // prep token fetcher
-                tokenProc.environment.SERVICE_KEY_CONTENT = JSON.stringify(root.keyContent);
-                tokenProc.command = [ //
-                    "bash", "-c" //
-                    , `${tokenForKeyScriptPath} "$SERVICE_KEY_CONTENT"`];
-            }), //
-            [], // run token fetcher
+        tokenProc.runSequence([(() => {
+                tokenProc.stdinEnabled = true;
+                tokenProc.command = [tokenForKeyScriptPath];
+            }),
+            [],
             ((out) => {
                 try {
                     const data = JSON.parse(out)
                     root.token = data.token
-                    // Js wants millis instead of seconds
-                    root.tokenExpiry = new Date(data.expiry * 1000) 
+                    root.tokenExpiry = new Date(data.expiry * 1000)
                     root.tokenError = false;
                 } catch(e) {
                     root.tokenError = true;
@@ -111,5 +106,11 @@ Singleton {
 
     MultiTurnProcess {
         id: tokenProc
+        onRunningChanged: {
+            if (running) {
+                write(JSON.stringify(root.keyContent));
+                stdinEnabled = false;
+            }
+        }
     }
 }

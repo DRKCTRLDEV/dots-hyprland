@@ -9,8 +9,8 @@ source ./sdata/lib/dist-determine.sh
 
 prevent_sudo_or_root
 set -e
+ask=true
 
-#####################################################################################
 showhelp_global(){
 printf "${STY_CYAN}NOTE:
   The old \"./install.sh\"   is now \"./setup install\"
@@ -61,7 +61,6 @@ case $1 in
   # Wrong subcommand
   *)printf "${STY_RED}Unknown subcommand \"$1\".${STY_RST}\n";showhelp_global;exit 1;;
 esac
-#####################################################################################
 if [[ -f "${SUBCMD_DIR}/options.sh" ]];
   then source "${SUBCMD_DIR}/options.sh"
 fi
@@ -75,9 +74,6 @@ case ${SUBCMD_NAME} in
     sudo_init_keepalive
     # Set trap to cleanup when this subcommand exits
     trap sudo_stop_keepalive EXIT INT TERM
-    if [[ "${SKIP_ALLGREETING}" != true ]]; then
-      source ${SUBCMD_DIR}/0.greeting.sh
-    fi
     if [[ "${SKIP_ALLDEPS}" != true ]]; then
       source ${SUBCMD_DIR}/1.deps-router.sh
     fi

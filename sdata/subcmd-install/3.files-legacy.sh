@@ -3,7 +3,6 @@
 
 # shellcheck shell=bash
 
-#####################################################################################
 # MISC (For dots/.config/* but not quickshell, not fish, not Hyprland, not fontconfig)
 case "${SKIP_MISCCONF}" in
   true) true;;

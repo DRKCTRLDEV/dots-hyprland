@@ -3,7 +3,6 @@
 
 # shellcheck shell=bash
 
-#####################################################################################
 # Notes by @clsty:
 #
 # I'm not the one who developed this script (see issue#2284 which discussed about the history).
@@ -13,7 +12,6 @@
 # The redundant logic should be cleaned up someday.
 #
 # This also applies for exp-update.tester.sh, TBH I don't think that file is really needed, and it also looks like AI-generated. Just guessing though.
-#####################################################################################
 #
 # exp-update.sh - Enhanced dotfiles update script
 #

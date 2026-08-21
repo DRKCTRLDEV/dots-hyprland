@@ -41,7 +41,6 @@ function outdate_detect(){
     echo "UPDATED"
   fi
 }
-#####################################################################################
 
 if [[ "$INSTALL_VIA_NIX" == "true" ]]; then
 

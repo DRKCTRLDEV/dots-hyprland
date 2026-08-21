@@ -13,7 +13,6 @@ function setup_user_group(){
     fi
 }
 
-#####################################################################################
 # These python packages are installed using uv into the venv (virtual environment). Once the folder of the venv gets deleted, they are all gone cleanly. So it's considered as setups, not dependencies.
 showfun install-python-packages
 v install-python-packages

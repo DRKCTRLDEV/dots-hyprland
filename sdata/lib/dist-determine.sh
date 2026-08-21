@@ -62,9 +62,7 @@ function print_os_group_id_architecture(){
     printf "=============\n\n"
     printf "${STY_RST}"
 }
-#####################################################################################
 
-####################
 # Detect distro
 # Helpful link(s):
 # http://stackoverflow.com/questions/29581754
@@ -82,7 +80,6 @@ export OS_DISTRO_ID=$(awk -F'=' '/^ID=/ { gsub(/["\x27]/,"",$2); print tolower($
 export OS_DISTRO_ID_LIKE=$(awk -F'=' '/^ID_LIKE=/ { gsub(/["\x27]/,"",$2); print tolower($2) }' ${OS_RELEASE_FILE} 2> /dev/null)
 
 
-####################
 # Determine distro ID
 
 if [[ "$OS_DISTRO_ID" =~ ^(arch|endeavouros|cachyos)$ ]]; then
@@ -117,7 +114,6 @@ else
   print_os_group_id_functions=(print_os_group_id{,_fallback,_unsupported})
 fi
 
-####################
 # Detect architecture
 # Helpful link(s):
 # http://stackoverflow.com/questions/45125516

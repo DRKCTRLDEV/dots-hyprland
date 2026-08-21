@@ -11,7 +11,6 @@ printf "1. It is far from enough to precisely revert all changes.\n"
 printf "2. It has not been fully tested, use at your own risk.\n"
 printf "${STY_RST}"
 pause
-##############################################################################################################################
 
 # Undo Step 3
 printf "${STY_CYAN}Undo install step 3...\n${STY_RST}"
@@ -114,7 +113,6 @@ done
 x dedup_and_sort_listfile "$empty_dir_listfile" "$empty_dir_listfile"
 deletion_prompt "$empty_dir_listfile"
 
-##############################################################################################################################
 
 printf "${STY_CYAN}Undo install step 2...\n${STY_RST}"
 user=$(whoami)
@@ -130,7 +128,6 @@ v sudo gpasswd -d "$user" input
 warn_undo_break_system
 v sudo rm /etc/modules-load.d/i2c-dev.conf
 
-##############################################################################################################################
 
 printf "${STY_CYAN}Undo install step 1...\n${STY_RST}"
 

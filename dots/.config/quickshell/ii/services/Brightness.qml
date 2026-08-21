@@ -1,9 +1,6 @@
 pragma Singleton
 pragma ComponentBehavior: Bound
 
-// From https://github.com/caelestia-dots/shell with modifications.
-// License: GPLv3
-
 import qs.modules.common
 import qs.modules.common.functions
 import Quickshell
@@ -11,9 +8,6 @@ import Quickshell.Io
 import Quickshell.Hyprland
 import QtQuick
 
-/**
- * For managing brightness of monitors. Supports both brightnessctl and ddcutil.
- */
 Singleton {
     id: root
     signal brightnessChanged()
@@ -28,7 +22,6 @@ Singleton {
     }
 
     function increaseBrightness(): void {
-        // if gamma is not yet 100, first increase gamma
         if (Hyprsunset.gamma !== 100) {
             Hyprsunset.setGamma(Hyprsunset.gamma + 5);
             return;
@@ -43,9 +36,8 @@ Singleton {
     function decreaseBrightness(): void {
         const focusedName = Hyprland.focusedMonitor.name;
         const monitor = monitors.find(m => focusedName === m.screen.name);
-        if (monitor && monitor.brightness > 0) 
+        if (monitor && monitor.brightness > 0)
             monitor.setBrightness(monitor.brightness - 0.05);
-        // if brightness is 0, then decrease gamma
         else {
             Hyprsunset.setGamma(Hyprsunset.gamma - 5);
         }
@@ -118,7 +110,7 @@ Singleton {
             }
         }
         onMultipliedBrightnessChanged: {
-            if (monitor.animationEnabled) syncBrightness();
+            if (monitor.animateChanges) syncBrightness();
             else setTimer.restart();
         }
 
@@ -145,7 +137,7 @@ Singleton {
             }
         }
 
-        // We need a delay for DDC monitors because they can be quite slow and might act weird with rapid changes
+        // Delay DDC monitors as they can be slow and may act weird with rapid changes
         property var setTimer: Timer {
             id: setTimer
             interval: monitor.isDdc ? 300 : 0
@@ -188,9 +180,8 @@ Singleton {
     property int contentSwitchDelay: 30
     property string screenshotDir: "/tmp/quickshell/brightness/antiflashbang"
     function brightnessMultiplierForLightness(x: real): real {
-        // I hand picked some values and fitted an exponential curve for this
+        // I hand picked some values into an exponential curve for this
         // 6.600135 + 216.360356 * e^(-0.0811129189x)
-        // Division by 100 is to normalize to [0, 1]
         return (6.600135 + 216.360356 * Math.pow(Math.E, -0.0811129189 * x)) / 100.0;
     }
     Variants {
@@ -242,8 +233,6 @@ Singleton {
             }
         }
     }
-
-    // External trigger points
 
     IpcHandler {
         target: "brightness"

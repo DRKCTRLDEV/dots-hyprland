@@ -7,13 +7,11 @@ import Quickshell
 import Quickshell.Io
 import Quickshell.Hyprland
 
-/**
- * Automatically reloads generated material colors.
- * It is necessary to run reapplyTheme() on startup because Singletons are lazily loaded.
- */
 Singleton {
     id: root
     property string filePath: Directories.generatedMaterialThemePath
+
+    signal themeApplied()
 
     function reapplyTheme() {
         themeFileView.reload()
@@ -23,14 +21,15 @@ Singleton {
         const json = JSON.parse(fileContent)
         for (const key in json) {
             if (json.hasOwnProperty(key)) {
-                // Convert snake_case to CamelCase
                 const camelCaseKey = key.replace(/_([a-z])/g, (g) => g[1].toUpperCase())
                 const m3Key = `m3${camelCaseKey}`
                 Appearance.m3colors[m3Key] = json[key]
             }
         }
-        
+
         Appearance.m3colors.darkmode = (Appearance.m3colors.m3background.hslLightness < 0.5)
+
+        root.themeApplied()
     }
 
     function resetFilePathNextTime() {
@@ -58,7 +57,7 @@ Singleton {
         }
     }
 
-	FileView { 
+	FileView {
         id: themeFileView
         path: Qt.resolvedUrl(root.filePath)
         watchChanges: true

@@ -10,7 +10,6 @@ Options for install:
   -f, --force               (Dangerous) Force mode without any confirm
   -F, --fisrtrun            Act like it is the first run
   -c, --clean               Clean the build cache first
-      --skip-allgreeting    Skip the whole process greeting
       --skip-alldeps        Skip the whole process installing dependency
       --skip-allsetups      Skip the whole process setting up permissions/services etc
       --skip-allfiles       Skip the whole process copying configuration files
@@ -45,12 +44,7 @@ cleancache(){
 }
 
 # `man getopt` to see more
-para=$(getopt \
-  -o hfFk:cs \
-  -l help,force,firstrun,fontset:,clean,skip-allgreeting,skip-alldeps,skip-allsetups,skip-allfiles,ignore-outdate,skip-sysupdate,skip-plasmaintg,skip-backup,skip-quickshell,skip-fish,skip-hyprland,skip-hyprland-entry,skip-fontconfig,skip-miscconf,core,exp-files,via-nix \
-  -n "$0" -- "$@")
-[ $? != 0 ] && echo "$0: Error when getopt, please recheck parameters." && exit 1
-#####################################################################################
+parse_getopt "hfFk:cs" "help,force,firstrun,fontset:,clean,skip-alldeps,skip-allsetups,skip-allfiles,ignore-outdate,skip-sysupdate,skip-plasmaintg,skip-backup,skip-quickshell,skip-fish,skip-hyprland,skip-hyprland-entry,skip-fontconfig,skip-miscconf,core,exp-files,via-nix" "$@"
 ## getopt Phase 1
 # ignore parameter's order, execute options below first
 eval set -- "$para"
@@ -62,7 +56,6 @@ while true ; do
     *) shift ;;
   esac
 done
-#####################################################################################
 ## getopt Phase 2
 
 eval set -- "$para"
@@ -73,7 +66,6 @@ while true ; do
     ## Ones without parameter
     -f|--force) ask=false;shift;;
     -F|--firstrun) INSTALL_FIRSTRUN=true;shift;;
-    --skip-allgreeting) SKIP_ALLGREETING=true;shift;;
     --skip-alldeps) SKIP_ALLDEPS=true;shift;;
     --skip-allsetups) SKIP_ALLSETUPS=true;shift;;
     --skip-allfiles) SKIP_ALLFILES=true;shift;;

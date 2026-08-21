@@ -25,11 +25,7 @@ How it works:
 "
 }
 
-para=$(getopt \
-  -o hns \
-  -l help,dry-run,skip-notice,skip-fetch \
-  -n "$0" -- "$@")
-[ $? != 0 ] && echo "$0: Error when getopt, please recheck parameters." && exit 1
+parse_getopt "hns" "help,dry-run,skip-notice,skip-fetch" "$@"
 
 eval set -- "$para"
 while true ; do

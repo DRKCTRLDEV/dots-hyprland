@@ -45,12 +45,7 @@ Note 3:
 "
 }
 # `man getopt` to see more
-para=$(getopt \
-  -o hcd \
-  -l help,clean,daemon,no-guard,res:,fps:,pos:,sca:,ext: \
-  -n "$0" -- "$@")
-[ $? != 0 ] && echo "$0: Error when getopt, please recheck parameters." && exit 1
-#####################################################################################
+parse_getopt "hcd" "help,clean,daemon,no-guard,res:,fps:,pos:,sca:,ext:" "$@"
 eval set -- "$para"
 while true ; do
   case "$1" in

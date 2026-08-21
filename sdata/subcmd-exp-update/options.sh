@@ -36,12 +36,7 @@ Ignore file patterns support:
 "
 }
 # `man getopt` to see more
-para=$(getopt \
-  -o hfpnvs \
-  -l help,force,packages,dry-run,verbose,skip-notice,non-interactive,default-choice: \
-  -n "$0" -- "$@")
-[ $? != 0 ] && echo "$0: Error when getopt, please recheck parameters." && exit 1
-#####################################################################################
+parse_getopt "hfpnvs" "help,force,packages,dry-run,verbose,skip-notice,non-interactive,default-choice:" "$@"
 ## getopt Phase 1
 # ignore parameter's order, execute options below first
 eval set -- "$para"
@@ -52,7 +47,6 @@ while true ; do
     *) shift ;;
   esac
 done
-#####################################################################################
 ## getopt Phase 2
 
 FORCE_CHECK=false

@@ -11,12 +11,7 @@ Options:
 "
 }
 # `man getopt` to see more
-para=$(getopt \
-  -o c \
-  -l help \
-  -n "$0" -- "$@")
-[ $? != 0 ] && echo "$0: Error when getopt, please recheck parameters." && exit 1
-#####################################################################################
+parse_getopt "c" "help" "$@"
 eval set -- "$para"
 while true ; do
   case "$1" in

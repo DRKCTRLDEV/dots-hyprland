@@ -11,12 +11,7 @@ Options:
 "
 }
 # `man getopt` to see more
-para=$(getopt \
-  -o h \
-  -l help \
-  -n "$0" -- "$@")
-[ $? != 0 ] && echo "$0: Error when getopt, please recheck parameters." && exit 1
-#####################################################################################
+parse_getopt "h" "help" "$@"
 ## getopt Phase 1
 # ignore parameter's order, execute options below first
 eval set -- "$para"

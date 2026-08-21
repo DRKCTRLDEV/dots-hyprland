@@ -130,7 +130,6 @@ Singleton {
                     property bool enableAppsAndShell: true
                     property bool enableQtApps: true
                     property bool enableTerminal: true
-                    property bool enableSddm: true
                     property JsonObject terminalGenerationProps: JsonObject {
                         property real harmony: 0.6
                         property real harmonizeThreshold: 100

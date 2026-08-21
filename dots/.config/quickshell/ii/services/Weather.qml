@@ -7,10 +7,10 @@ import QtQuick
 import QtPositioning
 
 import qs.modules.common
+import qs.modules.common.functions
 
 Singleton {
     id: root
-    // 10 minute
     readonly property int fetchInterval: Config.options.bar.weather.fetchInterval * 60 * 1000
     readonly property string city: Config.options.bar.weather.city
     readonly property bool useUSCS: Config.options.bar.weather.useUSCS
@@ -81,18 +81,16 @@ Singleton {
     }
 
     function getData() {
-        let command = "curl -s wttr.in";
+        let location;
 
         if (root.gpsActive && root.location.valid) {
-            command += `/${root.location.lat},${root.location.long}`;
+            location = `${root.location.lat},${root.location.long}`;
         } else {
-            command += `/${formatCityName(root.city)}`;
+            location = formatCityName(root.city);
         }
 
-        // format as json
-        command += "?format=j1";
+        let command = `curl -s 'wttr.in/${StringUtils.shellSingleQuoteEscape(location)}?format=j1'`;
         command += " | ";
-        // only take the current weather, location, asytronmy data
         command += "jq '{current: .current_condition[0], location: .nearest_area[0], astronomy: .weather[0].astronomy[0]}'";
         fetcher.command[2] = command;
         fetcher.running = true;
@@ -118,7 +116,6 @@ Singleton {
                 try {
                     const parsedData = JSON.parse(text);
                     root.refineData(parsedData);
-                    // console.info(`[ data: ${JSON.stringify(parsedData)}`);
                 } catch (e) {
                     console.error(`[WeatherService] ${e.message}`);
                 }
@@ -131,15 +128,12 @@ Singleton {
         updateInterval: root.fetchInterval
 
         onPositionChanged: {
-            // update the location if the given location is valid
-            // if it fails getting the location, use the last valid location
             if (position.latitudeValid && position.longitudeValid) {
                 root.location.lat = position.coordinate.latitude;
                 root.location.long = position.coordinate.longitude;
                 root.location.valid = true;
-                // console.info(`📍 Location: ${position.coordinate.latitude}, ${position.coordinate.longitude}`);
                 root.getData();
-                // if can't get initialized with valid location deactivate the GPS
+                if (Config.options.bar.weather.enableGPS) root.gpsActive = true;
             } else {
                 root.gpsActive = root.location.valid ? true : false;
                 console.error("[WeatherService] Failed to get the GPS location.");

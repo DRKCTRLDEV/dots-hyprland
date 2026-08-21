@@ -22,19 +22,21 @@ QuickToggleModel {
                 "general:gaps_out": 0,
                 "general:border_size": 1,
                 "decoration:rounding": 0,
-                "general:allow_tearing": 1
-            });
+                "general:allow_tearing": 1,
+                "windowrule:opacity": "1.0 override 1.0 override"
+            }, true);
         } else {
-            HyprlandConfig.resetMany([ //
-                "animations:enabled", //
-                "decoration:shadow:enabled", //
-                "decoration:blur:enabled", //
-                "general:gaps_in", //
-                "general:gaps_out", //
-                "general:border_size", //
-                "decoration:rounding", //
-                "general:allow_tearing", //
-            ]);
+            HyprlandConfig.resetMany([
+                "animations:enabled",
+                "decoration:shadow:enabled",
+                "decoration:blur:enabled",
+                "general:gaps_in",
+                "general:gaps_out",
+                "general:border_size",
+                "decoration:rounding",
+                "general:allow_tearing",
+                "windowrule:opacity",
+            ], true);
         }
     }
 

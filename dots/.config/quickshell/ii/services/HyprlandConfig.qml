@@ -8,47 +8,44 @@ import Quickshell.Hyprland
 import qs.modules.common
 import qs.modules.common.functions
 
-/**
- * Configs Hyprland
- */
 Singleton {
     id: root
-    
+
     signal reloaded()
 
     readonly property string configuratorScriptPath: Quickshell.shellPath("scripts/hyprland/hyprconfigurator.py")
     readonly property string shellOverridesPath: FileUtils.trimFileProtocol(`${Directories.config}/hypr/hyprland/shellOverrides/main.lua`)
 
-    function set(key: string, value: var) {
-        Quickshell.execDetached(["bash", "-c", //
-            `${root.configuratorScriptPath} --file ${root.shellOverridesPath} --set "${key}" "${value}"` //
-        ])
+    function set(key: string, value: var, reload) {
+        let cmd = `'${StringUtils.shellSingleQuoteEscape(root.configuratorScriptPath)}' --file '${StringUtils.shellSingleQuoteEscape(root.shellOverridesPath)}' --set '${StringUtils.shellSingleQuoteEscape(key)}' '${StringUtils.shellSingleQuoteEscape(value)}'`;
+        if (reload) cmd += " && hyprctl reload";
+        Quickshell.execDetached(["bash", "-c", cmd])
     }
-    
-    function setMany(entries: var) {
+
+    function setMany(entries: var, reload) {
         let args = ""
         for (let key in entries) {
-            args += `--set "${key}" "${entries[key]}" `
+            args += `--set '${StringUtils.shellSingleQuoteEscape(key)}' '${StringUtils.shellSingleQuoteEscape(entries[key])}' `
         }
-        Quickshell.execDetached(["bash", "-c", //
-            `${root.configuratorScriptPath} --file ${root.shellOverridesPath} ${args}` //
-        ])
+        let cmd = `'${StringUtils.shellSingleQuoteEscape(root.configuratorScriptPath)}' --file '${StringUtils.shellSingleQuoteEscape(root.shellOverridesPath)}' ${args}`;
+        if (reload) cmd += " && hyprctl reload";
+        Quickshell.execDetached(["bash", "-c", cmd])
     }
-    
-    function reset(key: string) {
-        Quickshell.execDetached(["bash", "-c", //
-            `${root.configuratorScriptPath} --file ${root.shellOverridesPath} --reset "${key}"` //
-        ])
+
+    function reset(key: string, reload) {
+        let cmd = `'${StringUtils.shellSingleQuoteEscape(root.configuratorScriptPath)}' --file '${StringUtils.shellSingleQuoteEscape(root.shellOverridesPath)}' --reset '${StringUtils.shellSingleQuoteEscape(key)}'`;
+        if (reload) cmd += " && hyprctl reload";
+        Quickshell.execDetached(["bash", "-c", cmd])
     }
-    
-    function resetMany(keys: list<string>) {
+
+    function resetMany(keys: list<string>, reload) {
         let args = ""
         for (let i = 0; i < keys.length; i++) {
-            args += `--reset "${keys[i]}" `
+            args += `--reset '${StringUtils.shellSingleQuoteEscape(keys[i])}' `
         }
-        Quickshell.execDetached(["bash", "-c", //
-            `${root.configuratorScriptPath} --file ${root.shellOverridesPath} ${args}` //
-        ])
+        let cmd = `'${StringUtils.shellSingleQuoteEscape(root.configuratorScriptPath)}' --file '${StringUtils.shellSingleQuoteEscape(root.shellOverridesPath)}' ${args}`;
+        if (reload) cmd += " && hyprctl reload";
+        Quickshell.execDetached(["bash", "-c", cmd])
     }
 
     Connections {

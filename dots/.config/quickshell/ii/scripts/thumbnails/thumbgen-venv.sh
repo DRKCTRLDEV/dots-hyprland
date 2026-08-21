@@ -1,9 +1,6 @@
 #!/usr/bin/env bash
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
-source $(eval echo $ILLOGICAL_IMPULSE_VIRTUAL_ENV)/bin/activate
-GIO_USE_VFS=local "$SCRIPT_DIR/thumbgen.py" "$@"
-THUMBGEN_EXIT_CODE=$?
-deactivate
-
-exit $THUMBGEN_EXIT_CODE
+source "$SCRIPT_DIR/../lib/venv.sh"
+GIO_USE_VFS=local run_in_venv "$SCRIPT_DIR/thumbgen.py" "$@"
+exit $?

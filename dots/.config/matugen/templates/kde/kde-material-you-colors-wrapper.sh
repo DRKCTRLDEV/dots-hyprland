@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
 
+XDG_CONFIG_HOME="${XDG_CONFIG_HOME:-$HOME/.config}"
 XDG_STATE_HOME="${XDG_STATE_HOME:-$HOME/.local/state}"
 
 color=$(tr -d '\n' < "$XDG_STATE_HOME/quickshell/user/generated/color.txt")
@@ -43,6 +44,5 @@ case "$scheme_variant_str" in
         ;;
 esac
 
-source "$(eval echo $ILLOGICAL_IMPULSE_VIRTUAL_ENV)/bin/activate"
-kde-material-you-colors "$mode_flag" --color "$color" -sv "$sv_num"
-deactivate
+source "$XDG_CONFIG_HOME/quickshell/ii/scripts/lib/venv.sh"
+run_in_venv kde-material-you-colors "$mode_flag" --color "$color" -sv "$sv_num"

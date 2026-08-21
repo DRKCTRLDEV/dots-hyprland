@@ -79,10 +79,10 @@ Item { // Player instance
         sourceComponent: Process {
             property string targetFile: root.artUrl
             property string artFilePath: root.artFilePath
-            command: ["bash", "-c", `[ -f '${artFilePath}' ] || curl -4 -sSL '${targetFile}' -o '${artFilePath}'`]
+            command: ["bash", "-c", `[ -f '${StringUtils.shellSingleQuoteEscape(artFilePath)}' ] || curl -4 -sSL '${StringUtils.shellSingleQuoteEscape(targetFile)}' -o '${StringUtils.shellSingleQuoteEscape(artFilePath)}'`]
             running: true
             onExited: (exitCode, exitStatus) => {
-                root.downloaded = true;
+                root.downloaded = exitCode === 0;
                 coverArtDownloaderLoader.active = false;
             }
         }

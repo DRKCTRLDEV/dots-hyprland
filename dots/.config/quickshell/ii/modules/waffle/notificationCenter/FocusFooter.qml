@@ -35,7 +35,7 @@ FooterRectangle {
             implicitWidth: 81
             horizontalAlignment: Text.AlignHCenter
             color: Looks.colors.subfg
-            text: Translation.tr("%1 mins").arg(`<font color="${Looks.colors.fg.toString()}">${TimerService.focusTime / 60}</font>`)
+            text: Translation.trPlural("%1 min", "%1 mins", TimerService.focusTime / 60).arg(`<font color="${Looks.colors.fg.toString()}">${TimerService.focusTime / 60}</font>`)
         }
 
         SmallBorderedIconButton {

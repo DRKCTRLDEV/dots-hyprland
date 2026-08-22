@@ -63,7 +63,7 @@ WPanelPageColumn {
 
         WToolTip {
             extraVisibleCondition: !powerMenu.visible
-            text: qsTr("Power")
+            text: Translation.tr("Power")
         }
 
         onClicked: {

@@ -116,10 +116,10 @@ ContentPage {
                         displayName: Translation.tr("Auto (System)"),
                         value: "auto"
                     },
-                    ...Translation.allAvailableLanguages.map(lang => {
+                    ...Translation.languagesByEnglishName.map(lang => {
                         return {
-                            displayName: lang,
-                            value: lang
+                            displayName: Translation.languageDisplayName(lang),
+                            value: lang.code
                         };
                     })]
 

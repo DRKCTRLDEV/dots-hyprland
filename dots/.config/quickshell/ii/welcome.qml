@@ -41,12 +41,6 @@ ApplicationWindow {
     height: 650
     color: Appearance.m3colors.m3background
 
-    Process {
-        id: translationProc
-        property string locale: ""
-        command: [Directories.aiTranslationScriptPath, translationProc.locale]
-    }
-
     ColumnLayout {
         anchors {
             fill: parent
@@ -145,10 +139,10 @@ ApplicationWindow {
                                     displayName: Translation.tr("Auto (System)"),
                                     value: "auto"
                                 },
-                                ...Translation.allAvailableLanguages.map(lang => {
+                                ...Translation.languagesByEnglishName.map(lang => {
                                     return {
-                                        displayName: lang,
-                                        value: lang
+                                        displayName: Translation.languageDisplayName(lang),
+                                        value: lang.code
                                     };
                                 })]
                         }

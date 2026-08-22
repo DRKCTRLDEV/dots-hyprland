@@ -1,285 +1,66 @@
-# Translation Management Tool Suite
+# Localization system
 
-This suite is used to manage project translation files, automatically extract translatable texts, compare differences between language files, and provide maintenance functions.
+One file per language in this directory (`de_DE.json`, `ru_RU.json`, …), plus
+generated `manifest.json` and the tooling in `tools/i18n.py`. The runtime is
+`services/Translation.qml`.
 
-## Tool Components
+The English source text is the key, so files stay readable and hand-editable:
 
-### 1. `translation-manager.py` - Main Translation Manager
-- Extract translatable texts
-- Compare and update translation files
-- Interactive addition/removal of translation keys
-
-### 2. `translation-cleaner.py` - Translation File Maintenance Tool
-- Clean unused translation keys
-- Synchronize key structure across different language files
-
-### 3. `manage-translations.sh` - Convenient Wrapper Script
-- Provides a unified command-line interface
-- Displays translation status
-- Simplifies common operations
-
-## Quick Start
-
-### Using the Wrapper Script (Recommended)
-
-```bash
-# Enter the tools directory
-cd .config/quickshell/translations/tools
-
-# Show help
-./manage-translations.sh --help
-
-# Show current translation status
-./manage-translations.sh status
-
-# Extract translatable texts
-./manage-translations.sh extract
-
-# Update all translation files
-./manage-translations.sh update
-
-# Update a specific language
-./manage-translations.sh update -l zh_CN
-
-# Clean unused keys
-./manage-translations.sh clean
-
-# Synchronize keys across all language files
-./manage-translations.sh sync
+```json
+{ "Dark": "Dunkel", "Copy path": "" }
 ```
 
-Or run from the project root:
-```bash
-# Run from the project root
-.config/quickshell/translations/tools/manage-translations.sh status
-.config/quickshell/translations/tools/manage-translations.sh update
-```
+An empty value means "untranslated" (falls back to English). There is no
+`en_US.json` — English is the implicit source and the fallback. At runtime the
+shell reads `manifest.json` + the one language file and does plain lookups —
+no scanning, discovery or compilation. Language selection: `II_UI_LANG` env
+var → `Config.options.language.ui` → system locale → its language family
+(`pt_PT` → `pt_BR`) → English. User overrides live in
+`~/.config/illogical-impulse/translations/<lang>.json` (same format) and win
+over the bundled file.
 
-## Detailed Usage
+Plurals use `Translation.trPlural("%1 notification", "%1 notifications", count)`
+— count 1 → singular, else plural (French: 0 is singular; ja/zh/tr/vi/id
+always use the plural). Missing translations never show raw keys or empty
+strings.
 
-### Translation Manager (`translation-manager.py`)
-
-Basic usage:
-```bash
-# Process all languages
-./translation-manager.py
-
-# Specify a particular language
-./translation-manager.py --language zh_CN
-
-# Extract translatable texts only
-./translation-manager.py --extract-only
-
-# Show extracted texts
-./translation-manager.py --extract-only --show-temp
-```
-
-Parameter description:
-- `--translations-dir`, `-t`: Translation files directory (default: `.config/quickshell/translations`)
-- `--source-dir`, `-s`: Source code directory (default: `.config/quickshell`)
-- `--language`, `-l`: Specify the language code to process
-- `--extract-only`, `-e`: Only extract translatable texts
-- `--show-temp`: Show the content of the temporary extraction file
-
-### Translation Cleaner (`translation-cleaner.py`)
+## Tooling
 
 ```bash
-# Clean unused translation keys
-./translation-cleaner.py --clean
-
-# Synchronize translation keys (using en_US as the base)
-./translation-cleaner.py --sync
-
-# Specify a different source language for syncing
-./translation-cleaner.py --sync --source-lang zh_CN
-
-# Clean without creating backups
-./translation-cleaner.py --clean --no-backup
+cd dots/.config/quickshell/ii/translations/tools
+./i18n.py status                 # per-language health
+./i18n.py validate [--strict]    # all checks (exit 1 on errors)
+./i18n.py extract                # strings found in QML/JS sources
+./i18n.py manifest               # regenerate manifest.json
+./i18n.py update [--prune]       # add missing keys; --prune drops unused
+./i18n.py add pl_PL              # create a new language file
+./i18n.py export de_DE --out de.csv   # CSV or PO
+./i18n.py import de_DE de.csv
+./i18n.py preview de_DE [--untranslated] [--html out.html]
+./i18n.py format                 # normalize formatting
 ```
+
+`validate` checks: missing/unused keys, duplicate keys, malformed JSON,
+placeholder (`%1…%N`) consistency between key and translation, formatting
+(sorting, whitespace, tabs), and manifest freshness.
 
 ## Workflow
 
-### Regular Translation Update Workflow
+**Translate a language:** `export de_DE --out de.csv` → translate the values
+(keep `%1…%N`, `\n` and `<tt>…</tt>` markup; empty = untranslated) → `import
+de_DE de.csv` → `validate` + `preview de_DE --untranslated`.
 
-1. **Check status**:
-   ```bash
-   ./manage-translations.sh status
-   ```
+**Add a language:** `add pl_PL` → `manifest` → `validate`, then translate via
+export/import. No application-code changes needed.
 
-2. **Update translations**:
-   ```bash
-   ./manage-translations.sh update
-   ```
+**After a refactor:** `update` (adds new keys) → review `validate` warnings →
+`update --prune` to drop stale keys → `format`.
 
-3. **Clean unused keys** (optional):
-   ```bash
-   ./manage-translations.sh clean
-   ```
+**Release:** `validate --strict` clean → `manifest` → commit language files +
+manifest + source changes.
 
-### Adding a New Language
+## Intentionally untranslated
 
-1. **Create a new language file**:
-   ```bash
-   ./manage-translations.sh update -l new_lang
-   ```
-
-2. **Synchronize key structure**:
-   ```bash
-   ./manage-translations.sh sync
-   ```
-
-### Cleanup After Large Refactoring
-
-1. **Backup translation files**:
-   ```bash
-   cp -r .config/quickshell/translations .config/quickshell/translations.backup
-   ```
-
-2. **Clean unused keys**:
-   ```bash
-   ./manage-translations.sh clean
-   ```
-
-3. **Synchronize all languages**:
-   ```bash
-   ./manage-translations.sh sync
-   ```
-
-## Supported Translatable Text Formats
-
-The tool recognizes the following formats for translatable texts:
-
-```qml
-// Basic format
-Translation.tr("Hello, world!")
-Translation.tr('Hello, world!')
-Translation.tr(`Hello, world!`)
-
-// With line breaks
-Translation.tr("Line 1\nLine 2")
-
-// With escape characters
-Translation.tr("Say \"Hello\"")
-
-// With parameter placeholders
-Translation.tr("Hello, %1!").arg(name)
-```
-
-## Example Output
-
-### Status Display
-```
-$ ./manage-translations.sh status
-Analyzing translation status...
-=== Current Project Status ===
-166 translatable texts extracted
-
-=== Translation File Status ===
-  en_US: 470 keys
-  zh_CN: 470 keys
-```
-
-### Update Translations
-```
-$ ./manage-translations.sh update -l zh_CN
-Updating translation files...
-==================================================
-Processing language: zh_CN
-==================================================
-Analysis result:
-  Missing keys: 5
-  Extra keys: 20
-
-Found 5 missing translation keys:
-1. "New feature text"
-2. "Another new text"
-...
-
-Add these 5 missing keys? (y/n): y
-5 keys added
-
-Found 20 extra translation keys:
-1. "Removed old text" -> "已删除的旧文本"
-...
-
-Delete these 20 extra keys? (y/n): y
-20 keys deleted
-
-Translation file saved
-```
-
-### Clean Unused Keys
-```
-$ ./manage-translations.sh clean
-Cleaning unused translation keys...
-Processing language: zh_CN
-Found 50 unused keys:
-  1. "old_unused_text"
-  2. "deprecated_message"
-  ...
-
-Delete these 50 unused keys? (y/n): y
-50 keys deleted
-Original key count: 470, after cleaning: 420
-```
-
-## Advanced Features
-
-### Custom Directory Structure
-
-```bash
-# Use custom directories
-./translation-manager.py \
-  --translations-dir /path/to/translations \
-  --source-dir /path/to/source
-```
-
-### Ignore Mark Feature
-
-For dynamic resources or special texts that should not be automatically cleaned, you can add `/*keep*/` at the end of the translation value. The tool will automatically ignore these keys and will not delete them during cleaning or syncing.
-
-Example:
-```json
-{
-  "dynamic_key": "Some dynamic value /*keep*/"
-}
-```
-
-## Notes
-
-1. **Backup is important**: The tool automatically creates backups before cleaning, but it is recommended to manually back up important files
-
-2. **Text extraction limitations**:
-   - ~~Only supports static strings, not dynamically constructed strings~~
-   - Dynamic resources (such as variable concatenation or runtime-generated text) cannot be automatically extracted. You need to manually add them to the translation file and use the `/*keep*/` mark for ignore management.
-   - Must use the `Translation.tr()` format
-
-3. **File encoding**: All files must use UTF-8 encoding
-
-4. **Key naming conventions**: It is recommended to use English for key names and avoid special characters
-
-## Troubleshooting
-
-### Common Issues
-
-**Q: Text does not appear after adding Translation.tr?**
-A: You need to import the translation feature in your QML file using `import "root:/"`, otherwise the translation text will not be displayed correctly.
-
-**Q: The number of extracted texts does not match expectations?**
-A: Check whether all translatable texts use the `Translation.tr()` format and ensure there are no dynamically constructed strings.
-
-**Q: Some translations are missing after syncing?**
-A: Check whether the source language file contains all necessary keys, and consider using a different source language for syncing.
-
-**Q: The cleaning operation deleted needed keys?**
-A: Restore from the automatically created backup file and check whether `Translation.tr()` is used correctly in the source code.
-
-### Restore Backup
-
-```bash
-# Restore a single file
-cp .config/quickshell/translations/zh_CN.json.backup .config/quickshell/translations/zh_CN.json
-
-# Restore all files
-cp .config/quickshell/translations.backup/* .config/quickshell/translations/
-```
+`GlobalShortcut.description` (~70 protocol-metadata strings never rendered by
+the shell), reusable-widget placeholder defaults, icons/symbols/URLs, and the
+`shapes/example*.qml` demos.

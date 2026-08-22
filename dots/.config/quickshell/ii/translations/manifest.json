@@ -1,0 +1,100 @@
+{
+  "defaultLanguage": "en_US",
+  "familyFallbacks": {
+    "de": "de_DE",
+    "en": "en_US",
+    "es": "es_MX",
+    "fr": "fr_FR",
+    "he": "he_HE",
+    "id": "id_ID",
+    "it": "it_IT",
+    "ja": "ja_JP",
+    "pt": "pt_BR",
+    "ru": "ru_RU",
+    "tr": "tr_TR",
+    "uk": "uk_UA",
+    "vi": "vi_VN",
+    "zh": "zh_CN"
+  },
+  "generatedAt": "2026-08-21T18:13:18.002987+00:00",
+  "languages": [
+    {
+      "code": "de_DE",
+      "englishName": "German",
+      "nativeName": "Deutsch"
+    },
+    {
+      "code": "en_GB",
+      "englishName": "English (UK)",
+      "nativeName": "English (UK)"
+    },
+    {
+      "code": "en_US",
+      "englishName": "English (US)",
+      "nativeName": "English (US)"
+    },
+    {
+      "code": "es_MX",
+      "englishName": "Spanish",
+      "nativeName": "Español"
+    },
+    {
+      "code": "fr_FR",
+      "englishName": "French",
+      "nativeName": "Français"
+    },
+    {
+      "code": "he_HE",
+      "englishName": "Hebrew",
+      "nativeName": "עברית"
+    },
+    {
+      "code": "id_ID",
+      "englishName": "Indonesian",
+      "nativeName": "Bahasa Indonesia"
+    },
+    {
+      "code": "it_IT",
+      "englishName": "Italian",
+      "nativeName": "Italiano"
+    },
+    {
+      "code": "ja_JP",
+      "englishName": "Japanese",
+      "nativeName": "日本語"
+    },
+    {
+      "code": "pt_BR",
+      "englishName": "Portuguese",
+      "nativeName": "Português (Brasil)"
+    },
+    {
+      "code": "ru_RU",
+      "englishName": "Russian",
+      "nativeName": "Русский"
+    },
+    {
+      "code": "tr_TR",
+      "englishName": "Turkish",
+      "nativeName": "Türkçe"
+    },
+    {
+      "code": "uk_UA",
+      "englishName": "Ukrainian",
+      "nativeName": "Українська"
+    },
+    {
+      "code": "vi_VN",
+      "englishName": "Vietnamese",
+      "nativeName": "Tiếng Việt"
+    },
+    {
+      "code": "zh_CN",
+      "englishName": "Chinese",
+      "nativeName": "中文（简体）"
+    }
+  ],
+  "revision": "82efd4f34838",
+  "sourceLanguage": "en_US",
+  "version": 2
+}

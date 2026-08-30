@@ -1,10 +1,11 @@
 # This script is meant to be sourced.
 # It's not for directly running.
 
-source ./sdata/dist-gentoo/metapkgs.sh
-
-for i in "${GENTOO_METAPKG_NAMES[@]}"; do
-  v sudo emerge --unmerge $i
+for pkg in "${metapkgs[@]}"; do
+  v sudo emerge --unmerge "${pkg}"
 done
 
-v sudo emerge --depclean
+v sudo rm -rf -- "/var/db/repos/ii-dots"
+v sudo rm -f  --  "/etc/portage/repos.conf/ii-dots.conf"
+v sudo rm -f  --  "/etc/portage/package.accept_keywords/illogical-impulse"
+v sudo rm -f  --  "/etc/portage/package.use/illogical-impulse"

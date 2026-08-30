@@ -29,8 +29,18 @@ overlay_dst="/var/db/repos/ii-dots"
 x sudo mkdir -p "${overlay_dst}"
 x sudo mkdir -p /etc/portage/repos.conf
 
+# Purge any legacy (pre-overlay rework) ebuilds from a previous install so a
+# changed layout/category doesn't leave stale app-misc/... package dirs behind.
+v sudo rm -rf "${overlay_dst}"
+v sudo mkdir -p "${overlay_dst}"
+
 v sudo rsync -a --delete --chown=root:root "./sdata/dist-gentoo/overlay/" "${overlay_dst}/"
 v sudo cp "./sdata/dist-gentoo/ii-dots.conf" "/etc/portage/repos.conf/ii-dots.conf"
+
+# Re-generate digests for every shipped ebuild. The overlay is rsynced
+# (auto-sync=no) and most ebuilds are committed without a Manifest, so this
+# mirrors the pre-rework "ebuild … digest" step and prevents emerge failures.
+v sudo find "${overlay_dst}" -name '*.ebuild' -exec ebuild {} digest \;
 
 arch=$(portageq envvar ACCEPT_KEYWORDS)
 
@@ -44,7 +54,7 @@ v sudo emerge --sync
 v sudo emerge --quiet --newuse --update --deep @world
 v sudo emerge --quiet @smart-live-rebuild
 
-x source ./sdata/dist-gentoo/metapkgs.sh
+source ./sdata/dist-gentoo/metapkgs.sh
 
 for pkg in "${metapkgs[@]}"; do
   v sudo emerge --update --quiet "${pkg}"

@@ -11,12 +11,12 @@ Note:
 - Author: [jwihardi](https://github.com/jwihardi)
 
 ## install-deps.sh
-1. Enables localrepo and guru overlays if not already enabled.
-2. Copies _keywords_ to _keywords-user_ and appends the correct unmask keywords for the user's architecture (adm64, arm64, and x86 are supported).
-3. _keywords-user_ and _useflags_ are copies over into the proper portage directories. Quickshell also uses a live ebuild.
-4. Syncs, updates, and depcleans @world.
-5. Copies over the custom live ebuilds (hyprgraphics, hyprland-qt-support, hyprland-qtutils, hyprlang, hyprwayland-scanner) into localrepo and digests them.
-6. Loops through all illogical-impulse ebuilds to digest and emerge them.
+1. Enables the `guru` and `hyproverlay` overlays if not already enabled.
+2. Purges any legacy layout in `/var/db/repos/ii-dots` and rsyncs the bundled overlay from `sdata/dist-gentoo/overlay/` into it, then registers it via `/etc/portage/repos.conf/ii-dots.conf` (`auto-sync = no`, since it is managed in-repo, not synced).
+3. Re-generates digests for every ebuild in the overlay (`ebuild <file> digest`) so all packages have a `Manifest`, mirroring the older install flow.
+4. Appends the correct unmask keywords for the user's architecture (amd64, arm64, and x86 are supported) from `keywords`, and copies `useflags` + `additional-useflags` into the proper portage directories.
+5. Syncs and updates @world (including `@smart-live-rebuild`). Quickshell also uses a live ebuild.
+6. Loops through all illogical-impulse metapackages from `metapkgs.sh` to emerge them.
 
 ## Recommended use flags (useflags)
 - **The recommended useflags are not required, this is a more out of the box experience with these**

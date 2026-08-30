@@ -1,6 +1,8 @@
 # This script is meant to be sourced.
 # It's not for directly running.
 
+source ./sdata/dist-gentoo/metapkgs.sh
+
 for pkg in "${metapkgs[@]}"; do
   v sudo emerge --unmerge "${pkg}"
 done

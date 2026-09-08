@@ -1,6 +1,7 @@
 import QtQuick
 import Quickshell
 import Quickshell.Io
+import Quickshell.Hyprland
 import qs
 import qs.modules.common.models.hyprland
 import qs.services
@@ -45,6 +46,17 @@ QuickToggleModel {
         key: "animations:enabled"
         onValueChanged: {
             GlobalStates.gameModeActive = !value;
+        }
+    }
+
+    // Hyprland reapplies fullscreen window rules when fullscreen changes. Reapply
+    // the Game Mode opacity rule so exiting fullscreen cannot restore transparency.
+    Connections {
+        target: Hyprland
+
+        function onRawEvent(event) {
+            if (GlobalStates.gameModeActive && event.name === "fullscreen")
+                HyprlandConfig.set("windowrule:opacity", "1.0 override 1.0 override", true);
         }
     }
 

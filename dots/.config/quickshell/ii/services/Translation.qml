@@ -16,6 +16,8 @@ Singleton {
     readonly property string defaultLanguage: root.manifest.defaultLanguage || root.sourceLanguage
     readonly property string translationsDir: Quickshell.shellPath("translations")
     readonly property string generatedTranslationsDir: FileUtils.trimFileProtocol(`${Directories.shellConfig}/translations`)
+    property string generatedTranslationCandidate: ""
+    property string checkedTranslationPath: ""
 
     readonly property var languages: root.manifest.languages
     readonly property var availableLanguages: root.manifest.languages.map(lang => lang.code)
@@ -130,10 +132,12 @@ Singleton {
             root.translations = {};
         }
         const overlayPath = `${root.generatedTranslationsDir}/${code}.json`;
-        if (generatedFileView.path === overlayPath)
-            generatedFileView.reload();
-        else
-            generatedFileView.path = overlayPath;
+        root.generatedTranslationCandidate = overlayPath;
+        root.checkedTranslationPath = overlayPath;
+        generatedFileCheck.running = false;
+        generatedFileView.path = "";
+        root.generatedTranslations = {};
+        generatedFileCheck.running = true;
     }
 
     function fallbackManifest() {
@@ -183,6 +187,21 @@ Singleton {
         onLoadFailed: {
             console.log("[Translation] No translation file for", root.languageCode, "— falling back to English.");
             root.translations = {};
+        }
+    }
+
+    Process {
+        id: generatedFileCheck
+        command: ["test", "-f", root.generatedTranslationCandidate]
+
+        onExited: (exitCode, exitStatus) => {
+            if (root.generatedTranslationCandidate !== root.checkedTranslationPath)
+                return;
+
+            if (exitCode === 0)
+                generatedFileView.path = root.checkedTranslationPath;
+            else
+                root.generatedTranslations = {};
         }
     }
 

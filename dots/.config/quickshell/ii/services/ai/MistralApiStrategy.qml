@@ -1,33 +1,31 @@
 import QtQuick
 
 OpenAiApiStrategy {
-    function buildRequestData(model: AiModel, messages, systemPrompt: string, temperature: real, tools: list<var>, filePath: string) {
+    function buildRequestData(model: AiModel, messages, systemPrompt: string, temperature: real, tools: list<var>, anchor) {
+        const formattedMessages = buildFormattedMessages(model, messages, anchor);
+        const finalMessages = formattedMessages.map((messageData, index) => {
+            const message = messages[index];
+            if (message?.functionResponse && message.functionResponse.length > 0
+                && message.functionName && message.functionName.length > 0) {
+                return {
+                    "role": "tool",
+                    "name": message.functionName,
+                    "content": message.functionResponse,
+                    "tool_call_id": (message.functionCall && message.functionCall.id) || ""
+                };
+            }
+            return messageData;
+        });
         let baseData = {
             "model": model.model,
             "messages": [
                 {role: "system", content: systemPrompt},
-                ...messages.map(message => {
-                    const hasFunctionCall = message.functionCall != undefined && message.functionName.length > 0
-                    let messageData = {
-                        "role": message.role,
-                        "content": message.rawContent,
-                    }
-                    if (hasFunctionCall) {
-                        if (message.functionResponse?.length > 0) {
-                            messageData.name = message.functionName;
-                            messageData.role = "tool";
-                            messageData.content = message.functionResponse;
-                            messageData.tool_call_id = message.functionCall.id
-                        }
-                    }
-                    return messageData
-                }),
+                ...finalMessages,
             ],
             "stream": true,
             "temperature": temperature,
             "tools": tools,
         };
-        // console.log("[AI] Request data: ", JSON.stringify(baseData, null, 2));
         return model.extraParams ? Object.assign({}, baseData, model.extraParams) : baseData;
     }
 

@@ -21,6 +21,18 @@ QtObject {
     property string functionResponse
     property bool functionPending: false
     property bool visibleToUser: true
+    property var attachments: []
+    function attachmentToJSON(att) {
+        if (!att)
+            return null;
+        const copy = {};
+        for (const key of Object.keys(att)) {
+            if (key === "content")
+                continue;
+            copy[key] = att[key];
+        }
+        return copy;
+    }
 
     function toJSON() {
         return {
@@ -37,7 +49,8 @@ QtObject {
             "functionName": functionName,
             "functionCall": functionCall,
             "functionResponse": functionResponse,
-            "visibleToUser": visibleToUser
+            "visibleToUser": visibleToUser,
+            "attachments": Array.isArray(attachments) ? attachments.map(att => attachmentToJSON(att)) : attachments
         };
     }
 }

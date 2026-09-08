@@ -19,6 +19,8 @@ Item {
         anchors.fill: parent
         z: 9999
         shown: Ai.messageIDs.length === 0
+            && messageInputField.text.trim().length === 0
+            && Ai.pendingFilePath.length === 0
         icon: "neurology"
         title: ""
         description: ""
@@ -61,10 +63,10 @@ Item {
     property var suggestionCommands: [
         { prefix: "model", items: () => Ai.modelList, display: n => Ai.models[n].name, desc: n => Ai.models[n].description },
         { prefix: "prompt", items: () => Ai.getPromptFiles(), display: n => FileUtils.trimFileExt(FileUtils.fileNameForPath(n)), desc: n => Translation.tr("Load prompt from %1").arg(n) },
-        { prefix: "save", items: () => Ai.savedChats, display: n => FileUtils.trimFileExt(FileUtils.fileNameForPath(n)).trim(), desc: n => Translation.tr("Save chat to %1").arg(FileUtils.trimFileExt(FileUtils.fileNameForPath(n)).trim()) },
-        { prefix: "load", items: () => Ai.savedChats, display: n => FileUtils.trimFileExt(FileUtils.fileNameForPath(n)).trim(), desc: n => Translation.tr("Load chat from %1").arg(n) },
+        { prefix: "session", items: () => root.sessionSuggestionItems(), display: n => n, desc: n => root.sessionSuggestionDescription(n) },
         { prefix: "tool", items: () => Ai.getAvailableTools(), display: n => n, desc: n => Ai.toolDescriptions[n] },
         { prefix: "key", items: () => ["set", "unset"], display: n => n, desc: n => n === "set" ? Translation.tr("Set an API key for the current model") : Translation.tr("Clear the API key") },
+        { prefix: "effort", items: () => { const opts = root.effortCycleOptions(); return opts.length > 0 ? ["none"].concat(opts) : []; }, display: n => n, desc: n => n === "none" ? Translation.tr("Disable reasoning (plain answer)") : Translation.tr("Reasoning effort level") },
     ]
 
     function getSetCommand(name, description, printFn, setFn, transform) {
@@ -97,7 +99,7 @@ Item {
     }
 
     property var allCommands: [
-        { name: "attach", description: Translation.tr("Attach a file. Only works with Gemini."), execute: args => Ai.attachFile(args.join(" ").trim()) },
+        { name: "attach", description: Translation.tr("Attach a file (image, PDF, text...) to the next message."), execute: args => Ai.attachFile(args.join(" ").trim()) },
         { name: "model", description: Translation.tr("Choose model"), execute: args => Ai.setModel(args[0]) },
         {
             name: "tool",
@@ -107,6 +109,18 @@ Item {
                     Ai.addMessage(Translation.tr("Usage: %1tool TOOL_NAME").arg(root.commandPrefix), Ai.interfaceRole);
                 } else if (Ai.setTool(args[0])) {
                     Ai.addMessage(Translation.tr("Tool set to: %1").arg(args[0]), Ai.interfaceRole);
+                }
+            }
+        },
+        {
+            name: "effort",
+            description: Translation.tr("Set reasoning effort (none, low, medium, high) for the current model."),
+            visible: () => root.effortAvailable(),
+            execute: args => {
+                if (args.length === 0 || args[0] === "get") {
+                    Ai.printEffort();
+                } else if (Ai.setEffort(args[0])) {
+                    Ai.addMessage(Translation.tr("Reasoning effort set to: %1").arg(args[0]), Ai.interfaceRole);
                 }
             }
         },
@@ -131,10 +145,28 @@ Item {
                 }
             }
         },
-        argsCommand("save", Translation.tr("Save chat"), "CHAT_NAME", Ai.saveChat),
-        argsCommand("load", Translation.tr("Load chat"), "CHAT_NAME", Ai.loadChat),
-        { name: "clear", description: Translation.tr("Clear chat history"), execute: () => Ai.clearMessages() },
-        getSetCommand("temp", Translation.tr("Set temperature (randomness) of the model. Values range between 0 to 2 for Gemini, 0 to 1 for other models. Default is 0.5."), Ai.printTemperature, temp => Ai.setTemperature(parseFloat(temp))),
+        {
+            name: "session",
+            description: Translation.tr("Save, load or clear chats: %1session save|load|clear [CHAT_NAME]").arg(root.commandPrefix),
+            execute: args => {
+                const sub = (args[0] ?? "").toLowerCase();
+                if (sub === "save" || sub === "load") {
+                    const chatName = args.slice(1).join(" ").trim();
+                    if (chatName.length === 0) {
+                        Ai.addMessage(Translation.tr("Usage: %1session %2 CHAT_NAME").arg(root.commandPrefix).arg(sub), Ai.interfaceRole);
+                    } else if (sub === "save") {
+                        Ai.saveChat(chatName);
+                    } else {
+                        Ai.loadChat(chatName);
+                    }
+                } else if (sub === "clear") {
+                    Ai.clearMessages();
+                } else {
+                    Ai.addMessage(Translation.tr("Usage: %1session save CHAT_NAME | %1session load CHAT_NAME | %1session clear").arg(root.commandPrefix), Ai.interfaceRole);
+                }
+            }
+        },
+        getSetCommand("temp", Translation.tr("Set temperature (0-1)"), Ai.printTemperature, temp => Ai.setTemperature(parseFloat(temp))),
         {
             name: "test",
             description: Translation.tr("Markdown test"),
@@ -195,6 +227,11 @@ Inline w/ backslash and round brackets \\(e^{i\\pi} + 1 = 0\\)
 
     property bool sending: false
 
+    property bool attachPromptVisible: false
+    property string attachPromptIcon: "description"
+    property string attachPromptTitle: ""
+    property string attachPromptDetail: ""
+
     function startsWithCommand(cmd) {
         return messageInputField.text.startsWith(root.commandPrefix + cmd);
     }
@@ -226,19 +263,173 @@ Inline w/ backslash and round brackets \\(e^{i\\pi} + 1 = 0\\)
         if (root.sending)
             return;
         root.sending = true;
-        const inputText = messageInputField.text;
-        if (inputText.trim().length === 0) {
+
+        if (root.attachPromptVisible) {
+            root.acceptAttachmentConversion();
             root.sending = false;
             return;
         }
-        messageInputField.text = "";
-        root.handleInput(inputText);
+        const inputText = messageInputField.text;
+        const trimmed = inputText.trim();
+        if (trimmed.length === 0 && Ai.pendingFilePath.length === 0) {
+            root.sending = false;
+            return;
+        }
+        if (trimmed.startsWith(root.commandPrefix) || Ai.pendingFilePath.length === 0) {
+            messageInputField.text = "";
+            root.handleInput(inputText);
+            root.sending = false;
+            return;
+        }
+        if (Ai.attachConverting) {
+            root.sending = false;
+            return;
+        }
+        root.beginAttachmentSend(inputText);
         root.sending = false;
     }
 
+    function beginAttachmentSend(text) {
+        const path = Ai.pendingFilePath;
+        Ai.probeAttachment(path, result => {
+            if (root.attachPromptVisible)
+                return;
+            if (!result || result.ok !== true) {
+                Ai.attachFile("");
+                const fileName = path.split("/").pop();
+                const reason = (result && result.error) ? result.error : Translation.tr("unreadable file");
+                Ai.addMessage(Translation.tr("Couldn't attach %1: %2").arg(fileName).arg(reason), Ai.interfaceRole);
+                return;
+            }
+            const model = Ai.getModel();
+            const cap = Ai.maxAttachmentBytes(model);
+            if (cap > 0 && result.sizeBytes > 0 && result.sizeBytes > cap) {
+                Ai.attachFile("");
+                Ai.addMessage(Translation.tr("%1 is %2 — this model accepts attachments up to %3.").arg(result.fileName).arg(Ai.humanFileSize(result.sizeBytes)).arg(Ai.humanFileSize(cap)), Ai.interfaceRole);
+                return;
+            }
+            if (result.needsConversion === true) {
+                if (result.canConvert !== true) {
+                    Ai.attachFile("");
+                    Ai.addMessage(Translation.tr("Couldn't attach %1: %2").arg(result.fileName).arg(result.missingTool || Translation.tr("no converter is available")), Ai.interfaceRole);
+                    return;
+                }
+                root.attachPromptIcon = result.kind === "image" ? "image_search" : "description";
+                root.attachPromptTitle = Translation.tr("Convert %1?").arg(result.fileName);
+                root.attachPromptDetail = (result.kind === "image")
+                    ? Translation.tr("This model can't receive images — the text in them will be read out instead.")
+                    : Translation.tr("This model can't receive this file type — its text will be extracted instead.");
+                root.attachPromptVisible = true;
+                return;
+            }
+            messageInputField.text = "";
+            Ai.sendUserMessage(text);
+        });
+    }
+
+    function acceptAttachmentConversion() {
+        root.attachPromptVisible = false;
+        const text = messageInputField.text;
+        messageInputField.text = "";
+        Ai.sendUserMessage(text);
+    }
+
+    function cancelAttachmentPrompt() {
+        root.attachPromptVisible = false;
+        if (Ai.pendingFilePath.length > 0)
+            Ai.attachFile("");
+    }
+
+    function attachTooltipText() {
+        if (Ai.pendingFilePath.length > 0)
+            return Translation.tr("Remove attachment");
+        return Translation.tr("Attach a file");
+    }
+
+    function toolCycleOptions() {
+        const m = Ai.getModel();
+        const modes = [];
+        if (m && Ai.allowedTools(m).includes("functions")) modes.push("functions");
+        modes.push("search");
+        return ["none"].concat(modes);
+    }
+
+    function cycleTool() {
+        const options = root.toolCycleOptions();
+        if (options.length <= 1) return;
+        const current = Ai.currentTool;
+        const index = options.indexOf(current);
+        const next = options[(index + 1) % options.length] ?? "none";
+        Ai.setTool(next);
+    }
+
+    function toolCycleNames() {
+        return {
+            "none": Translation.tr("off"),
+            "functions": Translation.tr("functions"),
+            "search": Translation.tr("web search")
+        };
+    }
+
+    function effortCycleOptions() {
+        const m = Ai.getModel();
+        if (!m) return [];
+        return (m.reasoningEffortOptions ?? []).filter(o => o !== "none");
+    }
+
+    function effortAvailable() {
+        return root.effortCycleOptions().length > 0;
+    }
+
+    function cycleEffort() {
+        const options = ["none"].concat(root.effortCycleOptions());
+        if (options.length <= 1) return;
+        const current = Ai.currentEffort || "none";
+        const next = options[(options.indexOf(current) + 1) % options.length] ?? "none";
+        Ai.setEffort(next);
+    }
+
+    function tryAttachFromClipboard() {
+        if (Ai.pendingFilePath && Ai.pendingFilePath.length > 0) {
+            Ai.attachFile("");
+            return;
+        }
+        const currentClipboardEntry = Cliphist.entries[0];
+        const cleanCliphistEntry = StringUtils.cleanCliphistEntry(currentClipboardEntry);
+        if (/^\d+\t\[\[.*binary data.*\d+x\d+.*\]\]$/.test(currentClipboardEntry)) {
+            decodeImageAndAttachProc.handleEntry(currentClipboardEntry);
+        } else if (cleanCliphistEntry.startsWith("file://")) {
+            Ai.attachFile(decodeURIComponent(cleanCliphistEntry));
+        } else {
+            root.insertCommand("attach ");
+        }
+    }
+
+    function sessionSuggestionItems() {
+        const parts = messageInputField.text.trim().split(/\s+/).filter(Boolean);
+        const sub = parts.length > 1 ? parts[1].toLowerCase() : "";
+        if (sub === "save" || sub === "load") return Ai.savedChats;
+        if (sub === "") return ["save", "load", "clear"];
+        return [];
+    }
+
+    function sessionSuggestionDescription(item) {
+        const parts = messageInputField.text.trim().split(/\s+/).filter(Boolean);
+        const sub = parts.length > 1 ? parts[1].toLowerCase() : "";
+        if (sub === "") return Translation.tr("Save, load or clear a chat session");
+        if (sub === "save") return Translation.tr("Save the current chat as %1").arg(item);
+        if (sub === "load") return Translation.tr("Load the saved chat %1").arg(item);
+        return Translation.tr("Clear the current chat");
+    }
+
+    function temperatureTooltipText() {
+        return Translation.tr("Temperature: %1 (0-1)").arg(Ai.temperature.toFixed(1));
+    }
+
     function buildSuggestions(commandName, items, displayFn, descriptionFn) {
-        root.suggestionQuery = messageInputField.text.split(" ")[1] ?? "";
-        const needsPrefix = messageInputField.text.trim().split(" ").length === 1;
+        const tokens = messageInputField.text.trim().split(/\s+/).filter(Boolean);
+        root.suggestionQuery = tokens.length > 1 ? (tokens[tokens.length - 1] ?? "") : "";
+        const needsPrefix = tokens.length === 1;
         const results = Fuzzy.go(root.suggestionQuery, items.map(item => ({
             name: Fuzzy.prepare(item),
             obj: item
@@ -268,6 +459,14 @@ Inline w/ backslash and round brackets \\(e^{i\\pi} + 1 = 0\\)
             } else {
                 console.error("[AiChat] Failed to decode image in clipboard content");
             }
+        }
+    }
+
+    Connections {
+        target: Ai
+        function onPendingFilePathChanged() {
+            if (Ai.pendingFilePath.length === 0 && root.attachPromptVisible)
+                root.attachPromptVisible = false;
         }
     }
 
@@ -378,7 +577,7 @@ Inline w/ backslash and round brackets \\(e^{i\\pi} + 1 = 0\\)
                 vertical: true
             }
 
-            StyledListView { // Message list
+            StyledListView {
                 id: messageListView
                 z: 0
                 anchors.fill: parent
@@ -483,11 +682,26 @@ Inline w/ backslash and round brackets \\(e^{i\\pi} + 1 = 0\\)
             onRemove: Ai.attachFile("")
         }
 
+        AttachmentDecisionBanner {
+            id: conversionBanner
+            visible: root.attachPromptVisible
+            Layout.fillWidth: true
+            iconName: root.attachPromptIcon
+            title: root.attachPromptTitle
+            detail: root.attachPromptDetail
+            confirmLabel: Translation.tr("Convert & send")
+            cancelLabel: Translation.tr("Cancel")
+            onConfirmed: root.acceptAttachmentConversion()
+            onCancelled: root.cancelAttachmentPrompt()
+        }
+
         TextCanvas {
             id: messageInputField
             Layout.fillWidth: true
             maxHeight: root.inputMaxHeight
-            placeholderText: Translation.tr('Message the model... "%1" for commands').arg(root.commandPrefix)
+            placeholderText: Ai.modelList.length === 0
+                ? Translation.tr('No model available — start Ollama or add one ("%1" for commands)').arg(root.commandPrefix)
+                : Translation.tr('Message the model... "%1" for commands').arg(root.commandPrefix)
 
             onInputTextChanged: {
                 if (messageInputField.text.length === 0) {
@@ -500,10 +714,13 @@ Inline w/ backslash and round brackets \\(e^{i\\pi} + 1 = 0\\)
                     root.buildSuggestions(cmd.prefix, cmd.items(), cmd.display, cmd.desc);
                 } else if (messageInputField.text.startsWith(root.commandPrefix)) {
                     root.suggestionQuery = messageInputField.text;
-                    root.suggestionList = root.allCommands.filter(c => c.name.startsWith(messageInputField.text.substring(1))).map(c => ({
-                        name: `${root.commandPrefix}${c.name}`,
-                        description: `${c.description}`
-                    }));
+                    root.suggestionList = root.allCommands
+                        .filter(c => (typeof c.visible === "function" ? c.visible() : true))
+                        .filter(c => c.name.startsWith(messageInputField.text.substring(1)))
+                        .map(c => ({
+                            name: `${root.commandPrefix}${c.name}`,
+                            description: `${c.description}`
+                        }));
                 }
             }
 
@@ -546,7 +763,10 @@ Inline w/ backslash and round brackets \\(e^{i\\pi} + 1 = 0\\)
                     }
                     event.accepted = false;
                 } else if (event.key === Qt.Key_Escape) {
-                    if (Ai.pendingFilePath.length > 0) {
+                    if (root.attachPromptVisible) {
+                        root.cancelAttachmentPrompt();
+                        event.accepted = true;
+                    } else if (Ai.pendingFilePath.length > 0) {
                         Ai.attachFile("");
                         event.accepted = true;
                     } else {
@@ -563,35 +783,51 @@ Inline w/ backslash and round brackets \\(e^{i\\pi} + 1 = 0\\)
 
             IconButton {
                 iconName: "api"
+                tooltipText: Translation.tr("Choose model (current: %1)").arg(Ai.getModel()?.name ?? "-")
                 onClicked: root.insertCommand("model ")
             }
 
-            StatusChip {
-                id: keyChip
-                icon: Ai.currentModelHasApiKey ? "key" : "key_off"
-                text: Ai.currentModelHasApiKey ? Translation.tr("Key set") : Translation.tr("No key")
-                visible: Ai.getModel()?.requires_key ?? false
-                onClicked: root.insertCommand("key ")
+            IconButton {
+                visible: root.toolCycleOptions().length > 1
+                iconName: Ai.currentTool === "functions" ? "terminal" : (Ai.currentTool === "search" ? "search" : "toggle_off")
+                tooltipText: {
+                    const current = Ai.currentTool;
+                    if (current === "none")
+                        return Translation.tr("Tools off - click to cycle");
+                    return Translation.tr("Tool: %1").arg(root.toolCycleNames()[current] ?? current);
+                }
+                colBackground: Ai.currentTool !== "none"
+                    ? Appearance.colors.colSecondaryContainer : Appearance.colors.colLayer2
+                colBackgroundHover: Ai.currentTool !== "none"
+                    ? Appearance.colors.colSecondaryContainerHover : Appearance.colors.colLayer2Hover
+                onClicked: root.cycleTool()
+            }
+
+            IconButton {
+                iconName: "neurology"
+                visible: root.effortCycleOptions().length > 0
+                tooltipText: Translation.tr("Reasoning effort: %1 - click to cycle").arg(Ai.currentEffort || "none")
+                colBackground: (Ai.currentEffort || "none") !== "none"
+                    ? Appearance.colors.colSecondaryContainer : Appearance.colors.colLayer2
+                colBackgroundHover: (Ai.currentEffort || "none") !== "none"
+                    ? Appearance.colors.colSecondaryContainerHover : Appearance.colors.colLayer2Hover
+                onClicked: root.cycleEffort()
+            }
+
+            IconButton {
+                iconName: "attach_file"
+                tooltipText: root.attachTooltipText()
+                onClicked: root.tryAttachFromClipboard()
             }
 
             StatusChip {
                 icon: "device_thermostat"
                 text: Ai.temperature.toFixed(1)
+                tooltipText: Ai.currentModelId ? root.temperatureTooltipText() : ""
                 scrollable: true
                 scrollValue: Ai.temperature
                 onScrollUpdated: (value) => Ai.setTemperature(value)
                 onClicked: root.insertCommand("temp ")
-            }
-
-            StatusChip {
-                icon: "service_toolbox"
-                text: {
-                    const tools = Ai.tools[Ai.getModel()?.api_format]?.[Ai.currentTool];
-                    if (tools && tools.length > 0)
-                        return Ai.currentTool.charAt(0).toUpperCase() + Ai.currentTool.slice(1);
-                    return "None";
-                }
-                onClicked: root.insertCommand("tool ")
             }
 
             Item { Layout.fillWidth: true }
@@ -601,13 +837,15 @@ Inline w/ backslash and round brackets \\(e^{i\\pi} + 1 = 0\\)
 
                 IconButton {
                     labelText: "/"
+                    tooltipText: Translation.tr("Type a command")
                     onClicked: root.insertCommand("")
                 }
 
                 IconButton {
                     iconName: "delete"
+                    tooltipText: Translation.tr("Clear chat")
                     onClicked: {
-                        root.handleInput(`${root.commandPrefix}clear`);
+                        Ai.clearMessages();
                         messageInputField.text = "";
                     }
                 }

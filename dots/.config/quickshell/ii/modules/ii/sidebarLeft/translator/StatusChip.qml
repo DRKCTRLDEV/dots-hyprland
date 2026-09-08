@@ -63,7 +63,7 @@ Rectangle {
         onWheel: (wheel) => {
             if (root.scrollable) {
                 const delta = wheel.angleDelta.y > 0 ? 0.1 : -0.1;
-                root.pendingScrollValue = Math.max(0, Math.min(2, Math.round((root.pendingScrollValue + delta) * 10) / 10));
+                root.pendingScrollValue = Math.max(0, Math.min(1, Math.round((root.pendingScrollValue + delta) * 10) / 10));
                 debounce.restart();
             }
         }

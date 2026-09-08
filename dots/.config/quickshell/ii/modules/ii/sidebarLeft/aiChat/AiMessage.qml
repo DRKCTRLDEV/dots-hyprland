@@ -22,6 +22,14 @@ Rectangle {
 
     property list<var> messageBlocks: StringUtils.splitMarkdownBlocks(root.messageData?.content)
 
+    readonly property var displayAttachments: {
+        const attachments = root.messageData?.attachments ?? [];
+        if (Array.isArray(attachments) && attachments.length > 0)
+            return attachments;
+        const legacy = root.messageData?.localFilePath ?? "";
+        return legacy.length > 0 ? [{ "filePath": legacy }] : [];
+    }
+
     anchors.left: parent?.left
     anchors.right: parent?.right
     implicitHeight: columnLayout.implicitHeight + root.messagePadding * 2
@@ -31,16 +39,13 @@ Rectangle {
 
     function saveMessage() {
         if (!root.editing) return;
-        // Get all Loader children (each represents a segment)
         const segments = messageContentColumnLayout.children
             .map(child => child.segment)
             .filter(segment => (segment));
 
-        // Reconstruct markdown
         const newContent = segments.map(segment => {
             if (segment.type === "code") {
                 const lang = segment.lang ? segment.lang : "";
-                // Remove trailing newlines
                 const code = segment.content.replace(/\n+$/, "");
                 return "```" + lang + "\n" + code + "\n```";
             } else {
@@ -53,22 +58,21 @@ Rectangle {
     }
 
     Keys.onPressed: (event) => {
-        if ( // Prevent de-select
-            event.key === Qt.Key_Control || 
-            event.key == Qt.Key_Shift || 
-            event.key == Qt.Key_Alt || 
+        if (
+            event.key === Qt.Key_Control ||
+            event.key == Qt.Key_Shift ||
+            event.key == Qt.Key_Alt ||
             event.key == Qt.Key_Meta
         ) {
             event.accepted = true
         }
-        // Ctrl + S to save
         if ((event.key === Qt.Key_S) && event.modifiers == Qt.ControlModifier) {
             root.saveMessage();
             event.accepted = true;
         }
     }
 
-    ColumnLayout { // Main layout of the whole thing
+    ColumnLayout {
         id: columnLayout
 
         anchors.left: parent.left
@@ -83,8 +87,8 @@ Rectangle {
             implicitHeight: headerRowLayout.implicitHeight + 4 * 2
             color: Appearance.colors.colSecondaryContainer
             radius: Appearance.rounding.small
-        
-            RowLayout { // Header
+
+            RowLayout {
                 id: headerRowLayout
                 anchors {
                     fill: parent
@@ -92,7 +96,7 @@ Rectangle {
                 }
                 spacing: 18
 
-                Item { // Name
+                Item {
                     id: nameWrapper
                     implicitHeight: Math.max(nameRowLayout.implicitHeight + 5 * 2, 30)
                     Layout.fillWidth: true
@@ -132,9 +136,9 @@ Rectangle {
                                 visible: !modelIcon.visible
                                 iconSize: Appearance.font.pixelSize.larger
                                 color: Appearance.m3colors.m3onSecondaryContainer
-                                text: messageData?.role == 'user' ? 'person' : 
-                                    messageData?.role == 'interface' ? 'settings' : 
-                                    messageData?.role == 'assistant' ? 'neurology' : 
+                                text: messageData?.role == 'user' ? 'person' :
+                                    messageData?.role == 'interface' ? 'settings' :
+                                    messageData?.role == 'assistant' ? 'neurology' :
                                     'computer'
                             }
                         }
@@ -153,7 +157,7 @@ Rectangle {
                     }
                 }
 
-                Button { // Not visible to model
+                Button {
                     id: modelVisibilityIndicator
                     visible: messageData?.role == 'interface'
                     implicitWidth: 16
@@ -185,7 +189,7 @@ Rectangle {
                         onClicked: {
                             Ai.regenerate(root.messageIndex)
                         }
-                        
+
                         StyledToolTip {
                             text: Translation.tr("Regenerate")
                         }
@@ -209,7 +213,7 @@ Rectangle {
                                 copyButton.activated = false
                             }
                         }
-                        
+
                         StyledToolTip {
                             text: Translation.tr("Copy")
                         }
@@ -221,7 +225,7 @@ Rectangle {
                         buttonIcon: "edit"
                         onClicked: {
                             root.editing = !root.editing
-                            if (!root.editing) { // Save changes
+                            if (!root.editing) {
                                 root.saveMessage()
                             }
                         }
@@ -237,7 +241,7 @@ Rectangle {
                             root.renderMarkdown = !root.renderMarkdown
                         }
                         StyledToolTip {
-                            text: Translation.tr("View Markdown source")
+                            text: root.renderMarkdown ? Translation.tr("View Markdown source") : Translation.tr("View rendered")
                         }
                     }
                     AiMessageControlButton {
@@ -254,16 +258,18 @@ Rectangle {
             }
         }
 
-        Loader {
+        Repeater {
             Layout.fillWidth: true
-            active: Boolean(root.messageData?.localFilePath && root.messageData?.localFilePath.length > 0)
-            sourceComponent: AttachedFileIndicator {
-                filePath: root.messageData?.localFilePath
+            model: root.displayAttachments
+            delegate: AttachedFileIndicator {
+                Layout.fillWidth: true
+                filePath: modelData?.filePath ?? ""
+                attachment: (modelData?.mimeType || modelData?.kind) ? modelData : null
                 canRemove: false
             }
         }
 
-        ColumnLayout { // Message content
+        ColumnLayout {
             id: messageContentColumnLayout
             spacing: 0
 
@@ -323,7 +329,7 @@ Rectangle {
             }
         }
 
-        Flow { // Annotations
+        Flow {
             visible: root.messageData?.annotationSources?.length > 0
             spacing: 5
             Layout.fillWidth: true
@@ -341,7 +347,7 @@ Rectangle {
             }
         }
 
-        Flow { // Search queries
+        Flow {
             visible: root.messageData?.searchQueries?.length > 0
             spacing: 5
             Layout.fillWidth: true
@@ -360,4 +366,3 @@ Rectangle {
 
     }
 }
-

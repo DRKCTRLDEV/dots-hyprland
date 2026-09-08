@@ -36,32 +36,18 @@ WindowDialog {
         Layout.topMargin: -16
         Layout.fillWidth: true
 
-        ConfigSwitch {
-            anchors {
-                left: parent.left
-                right: parent.right
-            }
-            iconSize: Appearance.font.pixelSize.larger
+        DialogSwitch {
             buttonIcon: "check"
             text: Translation.tr("Enable now")
             checked: Hyprsunset.temperatureActive
-            onCheckedChanged: {
-                Hyprsunset.toggleTemperature(checked)
-            }
+            onClicked: Hyprsunset.toggleTemperature(!Hyprsunset.temperatureActive)
         }
 
-        ConfigSwitch {
-            anchors {
-                left: parent.left
-                right: parent.right
-            }
-            iconSize: Appearance.font.pixelSize.larger
+        DialogSwitch {
             buttonIcon: "night_sight_auto"
             text: Translation.tr("Automatic")
             checked: Config.options.light.night.automatic
-            onCheckedChanged: {
-                Config.options.light.night.automatic = checked;
-            }
+            onClicked: Config.options.light.night.automatic = !Config.options.light.night.automatic
         }
 
         WindowDialogSlider {
@@ -96,36 +82,24 @@ WindowDialog {
         Layout.topMargin: -16
         Layout.fillWidth: true
 
-        ConfigSwitch {
-            anchors {
-                left: parent.left
-                right: parent.right
-            }
-            iconSize: Appearance.font.pixelSize.larger
+        DialogSwitch {
             buttonIcon: "filter"
             text: Translation.tr("Content adjustment")
             checked: HyprlandAntiFlashbangShader.enabled
-            onCheckedChanged: {
-                if (checked) HyprlandAntiFlashbangShader.enable()
-                else HyprlandAntiFlashbangShader.disable()
+            onClicked: {
+                if (HyprlandAntiFlashbangShader.enabled) HyprlandAntiFlashbangShader.disable()
+                else HyprlandAntiFlashbangShader.enable()
             }
             StyledToolTip {
                 text: Translation.tr("<b>Dims screen content</b> as needed.<br><br>Pros: Immediately responsive<br>Cons: Expensive and can hurt color accuracy<br><br><i>Uses a Hyprland screen shader</i>")
             }
         }
 
-        ConfigSwitch {
-            anchors {
-                left: parent.left
-                right: parent.right
-            }
-            iconSize: Appearance.font.pixelSize.larger
+        DialogSwitch {
             buttonIcon: "light_mode"
             text: Translation.tr("Brightness adjustment")
             checked: Config.options.light.antiFlashbang.enable
-            onCheckedChanged: {
-                Config.options.light.antiFlashbang.enable = checked;
-            }
+            onClicked: Config.options.light.antiFlashbang.enable = !Config.options.light.antiFlashbang.enable
             StyledToolTip {
                 text: Translation.tr("Adapts the <b>display (physical screen) brightness</b><br><br>Pros: Less expensive, retains colors<br>Cons: Not immediately responsive<br><br><i>Adjusts display brightness after each Hyprland IPC event</i>")
             }

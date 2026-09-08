@@ -34,20 +34,4 @@ FooterRectangle {
             }
         }
     }
-
-    // Settings button
-    WBorderlessButton {
-        anchors.verticalCenter: parent.verticalCenter
-        anchors.right: parent.right
-        anchors.rightMargin: 12
-
-        onClicked: {
-            GlobalStates.sidebarLeftOpen = false;
-            Quickshell.execDetached(["qs", "-p", Quickshell.shellPath("settings.qml")]);
-        }
-
-        contentItem: FluentIcon {
-            icon: "settings"
-        }
-    }
 }

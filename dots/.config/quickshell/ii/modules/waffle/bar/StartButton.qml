@@ -46,12 +46,6 @@ AppButton {
                 }
             },
             {
-                text: Translation.tr("Settings"),
-                action: () => {
-                    Quickshell.execDetached(["qs", "-p", Quickshell.shellPath("settings.qml")]);
-                }
-            },
-            {
                 text: Translation.tr("File Explorer"),
                 action: () => {
                     Qt.openUrlExternally(Directories.home);

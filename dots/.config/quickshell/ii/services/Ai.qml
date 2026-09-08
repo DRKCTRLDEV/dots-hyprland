@@ -463,19 +463,13 @@ Singleton {
     function maybeStartDuckAiDiscovery() {
         if (root.duckAiLoaded || !Config.ready)
             return;
-        const duckAi = root.duckAiOptions();
-        if (!duckAi.enable)
+        if (!(Config.options?.ai?.duckAi?.autoDiscoverDuckAI ?? true))
             return;
         root.duckAiLoaded = true;
-        duckAiDiscovery.baseUrl = String(duckAi.proxyBaseUrl || "http://127.0.0.1:8787").replace(/\/+$/, "");
-        duckAiDiscovery.profileHeader = duckAi.profile || "";
+        duckAiDiscovery.baseUrl = String(Config.options?.ai?.duckAi?.proxyBaseUrl || "http://127.0.0.1:8787").replace(/\/+$/, "");
         duckAiDiscovery.attemptsLeft = 2;
         duckAiDiscovery.outputBuffer = "";
-        const modelsPath = String(duckAi.modelsPath || "/v1/models").startsWith("/") ? duckAi.modelsPath : "/" + duckAi.modelsPath;
-        const profileArg = duckAiDiscovery.profileHeader.length > 0
-            ? ` -H 'x-proxy-profile: ${CF.StringUtils.shellSingleQuoteEscape(duckAiDiscovery.profileHeader)}'`
-            : "";
-        duckAiDiscovery.command = ["bash", "-c", `curl --silent --show-error --location --max-time 10 ${duckAiDiscovery.baseUrl}${modelsPath}${profileArg}`];
+        duckAiDiscovery.command = ["bash", "-c", `curl --silent --show-error --location --max-time 10 ${duckAiDiscovery.baseUrl}/v1/models`];
         duckAiDiscovery.running = true;
     }
 
@@ -492,7 +486,6 @@ Singleton {
     Process {
         id: duckAiDiscovery
         property string baseUrl: "http://127.0.0.1:8787"
-        property string profileHeader: ""
         property string outputBuffer: ""
         property int attemptsLeft: 2
         stdout: SplitParser {
@@ -569,15 +562,14 @@ Singleton {
         const effortOptions = Array.isArray(meta.supportedReasoningEffort) ? meta.supportedReasoningEffort : [];
         const duckAi = root.duckAiOptions();
         const baseUrl = String(duckAi.proxyBaseUrl || "http://127.0.0.1:8787").replace(/\/+$/, "");
-        const chatPath = String(duckAi.chatPath || "/v1/chat/completions").startsWith("/") ? duckAi.chatPath : "/" + duckAi.chatPath;
         root.addModel(safeId, {
             "name": root.prettyDuckAiName(item.id, provider),
             "icon": root.duckAiIcon(provider),
             "description": root.duckAiDescription(item.id, provider, meta),
-            "endpoint": `${baseUrl}${chatPath}`,
+            "endpoint": `${baseUrl}/v1/chat/completions`,
             "model": item.id,
             "requires_key": true,
-            "key_id": duckAi.keyId || "duckai",
+            "key_id": "duckai",
             "key_get_description": Translation.tr("**Instructions**: set the API key for this model's endpoint once with `/key set YOUR_KEY`; models of the same provider share it."),
             "api_format": "duckai",
             "duckai": true,
@@ -685,10 +677,8 @@ Singleton {
         if (explicit > 0) return explicit;
         if (model.api_format === "gemini")
             return 50 * 1024 * 1024;
-        if (model.api_format === "duckai") {
-            const maxBytes = root.duckAiOptions()?.maxFileBytes ?? 0;
-            return maxBytes > 0 ? maxBytes : 5 * 1024 * 1024;
-        }
+        if (model.api_format === "duckai")
+            return 5 * 1024 * 1024;
         return 20 * 1024 * 1024;
     }
 
@@ -1086,9 +1076,6 @@ Singleton {
             let requestHeaders = {
                 "Content-Type": "application/json"
             };
-            const duckAiOptions = root.duckAiOptions();
-            if (duckAiOptions.profile && duckAiOptions.profile.length > 0)
-                requestHeaders["x-proxy-profile"] = duckAiOptions.profile;
 
             requester.message = root.aiMessageComponent.createObject(root, {
                 "role": "assistant",

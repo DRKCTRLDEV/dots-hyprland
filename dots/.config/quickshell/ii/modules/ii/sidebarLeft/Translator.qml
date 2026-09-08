@@ -289,8 +289,8 @@ Item {
         command: ["bash", "-c", `trans -brief -no-bidi` + ` -source '${StringUtils.shellSingleQuoteEscape(root.sourceLanguage)}'` + ` -target '${StringUtils.shellSingleQuoteEscape(root.targetLanguage)}'` + ` '${StringUtils.shellSingleQuoteEscape(root.inputText.trim())}'`]
         property string buffer: ""
         stdout: SplitParser {
-            onRead: data => {
-                translateProc.buffer += data + "\n";
+            onRead: line => {
+                translateProc.buffer += line + "\n";
             }
         }
         onExited: () => {
@@ -305,8 +305,8 @@ Item {
         property list<string> bufferList: []
         running: true
         stdout: SplitParser {
-            onRead: data => {
-                const lang = data.trim();
+            onRead: line => {
+                const lang = line.trim();
                 if (lang.length > 0 && lang !== "auto") {
                     getLanguagesProc.bufferList.push(lang);
                 }

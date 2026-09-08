@@ -109,15 +109,8 @@ Singleton {
                     }
                 ]
                 property JsonObject duckAi: JsonObject {
-                    property bool enable: true
-                    property bool autoDiscover: true
+                    property bool autoDiscoverDuckAI: true
                     property string proxyBaseUrl: "http://127.0.0.1:8787"
-                    property string modelsPath: "/v1/models"
-                    property string chatPath: "/v1/chat/completions"
-                    property string keyId: "duckai"
-                    property string profile: ""
-                    property string effort: "none"
-                    property int maxFileBytes: 5 * 1024 * 1024
                 }
             }
 

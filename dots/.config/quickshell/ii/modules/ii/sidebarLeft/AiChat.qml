@@ -700,8 +700,8 @@ Inline w/ backslash and round brackets \\(e^{i\\pi} + 1 = 0\\)
             Layout.fillWidth: true
             maxHeight: root.inputMaxHeight
             placeholderText: Ai.modelList.length === 0
-                ? Translation.tr('No model available — start Ollama or add one ("%1" for commands)').arg(root.commandPrefix)
-                : Translation.tr('Message the model... "%1" for commands').arg(root.commandPrefix)
+                ? Translation.tr('No model available — start Ollama or add one ("%1" for commands)').arg(root ? root.commandPrefix : "/")
+                : Translation.tr('Message the model... "%1" for commands').arg(root ? root.commandPrefix : "/")
 
             onInputTextChanged: {
                 if (messageInputField.text.length === 0) {
@@ -816,14 +816,14 @@ Inline w/ backslash and round brackets \\(e^{i\\pi} + 1 = 0\\)
 
             IconButton {
                 iconName: "attach_file"
-                tooltipText: root.attachTooltipText()
+                tooltipText: root ? root.attachTooltipText() : ""
                 onClicked: root.tryAttachFromClipboard()
             }
 
             StatusChip {
                 icon: "device_thermostat"
                 text: Ai.temperature.toFixed(1)
-                tooltipText: Ai.currentModelId ? root.temperatureTooltipText() : ""
+                tooltipText: Ai.currentModelId && root ? root.temperatureTooltipText() : ""
                 scrollable: true
                 scrollValue: Ai.temperature
                 onScrollUpdated: (value) => Ai.setTemperature(value)

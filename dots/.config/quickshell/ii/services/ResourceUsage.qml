@@ -35,33 +35,22 @@ Singleton {
         return (kb / (1024 * 1024)).toFixed(1) + " GB";
     }
 
-    function updateMemoryUsageHistory() {
-        memoryUsageHistory = [...memoryUsageHistory, memoryUsedPercentage]
-        if (memoryUsageHistory.length > historyLength) {
-            memoryUsageHistory.shift()
-        }
-    }
-    function updateSwapUsageHistory() {
-        swapUsageHistory = [...swapUsageHistory, swapUsedPercentage]
-        if (swapUsageHistory.length > historyLength) {
-            swapUsageHistory.shift()
-        }
-    }
-    function updateCpuUsageHistory() {
-        cpuUsageHistory = [...cpuUsageHistory, cpuUsage]
-        if (cpuUsageHistory.length > historyLength) {
-            cpuUsageHistory.shift()
-        }
-    }
-    function updateHistories() {
-        updateMemoryUsageHistory()
-        updateSwapUsageHistory()
-        updateCpuUsageHistory()
+    function appendHistory(history, value) {
+        const keepCount = Math.max(0, historyLength - 1);
+        const updated = keepCount > 0 ? history.slice(-keepCount) : [];
+        updated.push(value);
+        return updated;
     }
 
-	Timer {
-		interval: 1
-        running: true 
+    function updateHistories() {
+        memoryUsageHistory = appendHistory(memoryUsageHistory, memoryUsedPercentage);
+        swapUsageHistory = appendHistory(swapUsageHistory, swapUsedPercentage);
+        cpuUsageHistory = appendHistory(cpuUsageHistory, cpuUsage);
+    }
+
+    Timer {
+        interval: Config.options?.resources?.updateInterval ?? 3000
+        running: true
         repeat: true
 		onTriggered: {
             // Reload files
@@ -93,7 +82,6 @@ Singleton {
             }
 
             root.updateHistories()
-            interval = Config.options?.resources?.updateInterval ?? 3000
         }
 	}
 

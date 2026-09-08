@@ -18,6 +18,7 @@ Singleton {
     property var activeWorkspace: null
     property var monitors: []
     property var layers: ({})
+    property bool refreshPending: false
 
     function toplevelsForWorkspace(workspace) {
         return ToplevelManager.toplevels.values.filter(toplevel => {
@@ -40,23 +41,33 @@ Singleton {
     }
 
     function updateWindowList() {
-        getAll.running = true;
+        updateAll();
     }
 
     function updateLayers() {
-        getAll.running = true;
+        updateAll();
     }
 
     function updateMonitors() {
-        getAll.running = true;
+        updateAll();
     }
 
     function updateWorkspaces() {
-        getAll.running = true;
+        updateAll();
     }
 
     function updateAll() {
-        getAll.running = true;
+        root.refreshPending = true;
+        updateTimer.restart();
+    }
+
+    function activeFullscreenWorkspaceForMonitor(monitorName) {
+        if (!monitorName) return null;
+        return Hyprland.workspaces.values.find(workspace =>
+            workspace.monitor?.name === monitorName &&
+            workspace.active &&
+            workspace.toplevels.values.some(window => window.wayland?.fullscreen)
+        ) ?? null;
     }
 
     function biggestWindowForWorkspace(workspaceId) {
@@ -184,6 +195,17 @@ Singleton {
         }
     }
 
+    Timer {
+        id: updateTimer
+        interval: 20
+        repeat: false
+        onTriggered: {
+            if (getAll.running) return;
+            root.refreshPending = false;
+            getAll.running = true;
+        }
+    }
+
     Process {
         id: getAll
         command: ["hyprctl", "--batch", "j/clients; j/monitors; j/layers; j/workspaces; j/activeworkspace"]
@@ -192,6 +214,10 @@ Singleton {
             onStreamFinished: {
                 root.handleBatchOutput(batchCollector.text);
             }
+        }
+        onExited: {
+            if (root.refreshPending)
+                updateTimer.restart();
         }
     }
 }

@@ -34,6 +34,7 @@ Singleton {
 
     property string networkName: ""
     property int networkStrength
+    property bool statusUpdatePending: false
     property string materialSymbol: root.ethernet
         ? "lan"
         : (root.wifiEnabled && root.wifiStatus === "connected")
@@ -154,10 +155,8 @@ Singleton {
 
     // Status update
     function update() {
-        updateConnectionType.startCheck();
-        wifiStatusProcess.running = true
-        updateNetworkName.running = true;
-        updateNetworkStrength.running = true;
+        root.statusUpdatePending = true;
+        statusUpdateTimer.restart();
     }
 
     Process {
@@ -169,90 +168,64 @@ Singleton {
         }
     }
 
-    Process {
-        id: updateConnectionType
-        property string buffer
-        command: ["sh", "-c", "nmcli -t -f TYPE,STATE d status && nmcli -t -f CONNECTIVITY g"]
-        running: true
-        function startCheck() {
-            buffer = "";
-            updateConnectionType.running = true;
-        }
-        stdout: SplitParser {
-            onRead: data => {
-                updateConnectionType.buffer += data + "\n";
-            }
-        }
-        onExited: (exitCode, exitStatus) => {
-            const lines = updateConnectionType.buffer.trim().split('\n');
-            const connectivity = lines.pop() // none, limited, full
-            let hasEthernet = false;
-            let hasWifi = false;
-            let wifiStatus = "disconnected";
-            lines.forEach(line => {
-                if (line.includes("ethernet") && line.includes("connected"))
-                    hasEthernet = true;
-                else if (line.includes("wifi:")) {
-                    if (line.includes("disconnected")) {
-                        wifiStatus = "disconnected"
-                    }
-                    else if (line.includes("connected")) {
-                        hasWifi = true;
-                        wifiStatus = "connected"
-
-                        if (connectivity === "limited") {
-                            hasWifi = false;
-                            wifiStatus = "limited"
-                        }
-                    }
-                    else if (line.includes("connecting")) {
-                        wifiStatus = "connecting"
-                    }
-                    else if (line.includes("unavailable")) {
-                        wifiStatus = "disabled"
-                    }
-                }
-            });
-            root.wifiStatus = wifiStatus;
-            root.ethernet = hasEthernet;
-            root.wifi = hasWifi;
+    Timer {
+        id: statusUpdateTimer
+        interval: 100
+        repeat: false
+        onTriggered: {
+            if (statusProcess.running) return;
+            root.statusUpdatePending = false;
+            statusProcess.running = true;
         }
     }
 
     Process {
-        id: updateNetworkName
-        command: ["sh", "-c", "nmcli -t -f NAME c show --active | head -1"]
+        id: statusProcess
+        command: ["bash", "-c", "marker=__II_NETWORK_STATUS__; printf '%s\\n' \"$marker\"; nmcli -t -f TYPE,STATE d status; printf '%s\\n' \"$marker\"; nmcli -t -f CONNECTIVITY g; printf '%s\\n' \"$marker\"; nmcli -t -f NAME c show --active | head -1; printf '%s\\n' \"$marker\"; nmcli -f IN-USE,SIGNAL,SSID device wifi | awk '/^\\*/{if (NR!=1) {print $2}}'; printf '%s\\n' \"$marker\"; nmcli radio wifi"]
         running: true
-        stdout: SplitParser {
-            onRead: data => {
-                root.networkName = data;
-            }
-        }
-    }
-
-    Process {
-        id: updateNetworkStrength
-        running: true
-        command: ["sh", "-c", "nmcli -f IN-USE,SIGNAL,SSID device wifi | awk '/^\\*/{if (NR!=1) {print $2}}'"]
-        stdout: SplitParser {
-            onRead: data => {
-                root.networkStrength = parseInt(data);
-            }
-        }
-    }
-
-    Process {
-        id: wifiStatusProcess
-        command: ["nmcli", "radio", "wifi"]
-        Component.onCompleted: running = true
         environment: ({
             LANG: "C",
             LC_ALL: "C"
         })
         stdout: StdioCollector {
             onStreamFinished: {
-                root.wifiEnabled = text.trim() === "enabled";
+                const marker = "__II_NETWORK_STATUS__";
+                const sections = text.split(marker).map(section => section.trim());
+                const deviceLines = (sections[1] ?? "").split(/\r?\n/).filter(Boolean);
+                const connectivity = sections[2] ?? "none";
+                const activeName = sections[3] ?? "";
+                const activeStrength = parseInt(sections[4] ?? "", 10);
+                const wifiRadio = sections[5] ?? "";
+                let hasEthernet = false;
+                let hasWifi = false;
+                let wifiStatus = "disconnected";
+
+                for (const line of deviceLines) {
+                    if (line.includes("ethernet") && line.includes("connected")) {
+                        hasEthernet = true;
+                    } else if (line.includes("wifi:")) {
+                        if (line.includes("connected")) {
+                            hasWifi = connectivity !== "limited";
+                            wifiStatus = connectivity === "limited" ? "limited" : "connected";
+                        } else if (line.includes("connecting")) {
+                            wifiStatus = "connecting";
+                        } else if (line.includes("unavailable")) {
+                            wifiStatus = "disabled";
+                        }
+                    }
+                }
+
+                root.wifiStatus = wifiStatus;
+                root.ethernet = hasEthernet;
+                root.wifi = hasWifi;
+                root.networkName = activeName;
+                root.networkStrength = Number.isNaN(activeStrength) ? 0 : activeStrength;
+                root.wifiEnabled = wifiRadio === "enabled";
             }
+        }
+        onExited: {
+            if (root.statusUpdatePending)
+                statusUpdateTimer.restart();
         }
     }
 
